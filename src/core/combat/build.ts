@@ -74,7 +74,12 @@ export function buildCombatShip(o: BuildOpts): CShip {
     const def = m ? MODULES_BY_ID[m.defId] : null;
     if (m && def && m.enabled && m.condition > 0) {
       const g = groupOf(def.kind);
-      if (g) need[g] += def.power * QUALITY[m.quality].power * stats.slotInfo[sl.index].draw;
+      if (g)
+        need[g] +=
+          def.power *
+          QUALITY[m.quality].power *
+          stats.slotInfo[sl.index].draw *
+          (def.kind === 'jump' ? 0.3 : 1);
     }
     return {
       slot: sl.index,
@@ -110,7 +115,7 @@ export function buildCombatShip(o: BuildOpts): CShip {
     });
   });
   // radiators and coolers dissipate combat heat
-  let cooling = 3.2;
+  let cooling = 2.4;
   o.ship.slots.forEach((m) => {
     if (!m || !m.enabled || m.condition <= 0) return;
     const k = MODULES_BY_ID[m.defId].kind;
@@ -131,7 +136,7 @@ export function buildCombatShip(o: BuildOpts): CShip {
         ? Math.min(o.ship.shield, stats.shieldCap) * SHIELD_SCALE
         : stats.shieldCap * SHIELD_SCALE,
     shieldMax: stats.shieldCap * SHIELD_SCALE,
-    shieldRegen: stats.shieldCap * SHIELD_SCALE * 0.04,
+    shieldRegen: stats.shieldCap * SHIELD_SCALE * 0.03,
     rooms,
     weapons,
     crew: o.crew,

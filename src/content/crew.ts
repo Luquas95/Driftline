@@ -149,7 +149,7 @@ export const OFFICERS: OfficerDef[] = [
     race: 'tessari',
     portrait: 1101,
     eventId: 'officer_haggler',
-    wageMult: 3,
+    wageMult: 1.8,
   },
   {
     id: 'ghost',
@@ -158,7 +158,7 @@ export const OFFICERS: OfficerDef[] = [
     race: 'sylk',
     portrait: 1102,
     eventId: 'officer_ghost',
-    wageMult: 3,
+    wageMult: 1.8,
   },
   {
     id: 'taskmaster',
@@ -167,7 +167,7 @@ export const OFFICERS: OfficerDef[] = [
     race: 'brakh',
     portrait: 1103,
     eventId: 'officer_taskmaster',
-    wageMult: 3,
+    wageMult: 1.8,
   },
   {
     id: 'sharpshooter',
@@ -176,7 +176,7 @@ export const OFFICERS: OfficerDef[] = [
     race: 'nyxul',
     portrait: 1104,
     eventId: 'officer_sharpshooter',
-    wageMult: 3,
+    wageMult: 1.8,
   },
   {
     id: 'mender',
@@ -185,7 +185,7 @@ export const OFFICERS: OfficerDef[] = [
     race: 'veth',
     portrait: 1105,
     eventId: 'officer_mender',
-    wageMult: 3,
+    wageMult: 1.8,
   },
   {
     id: 'navigator',
@@ -194,7 +194,7 @@ export const OFFICERS: OfficerDef[] = [
     race: 'orrin',
     portrait: 1106,
     eventId: 'officer_navigator',
-    wageMult: 3,
+    wageMult: 1.8,
   },
 ];
 export const OFFICERS_BY_ID = Object.fromEntries(OFFICERS.map((o) => [o.id, o])) as Record<

@@ -4,6 +4,7 @@
  */
 import { ENEMIES } from '../content/enemies';
 import { GOODS_BY_ID } from '../content/goods';
+import { HULLS_BY_ID } from '../content/hulls';
 import { defaultCrew } from '../core/crew';
 import { MODULES_BY_ID } from '../content/modules';
 import { WEAPON_SIZES } from '../content/weapons';
@@ -85,11 +86,11 @@ export function duels(a: DuelSide, b: DuelSide[], n: number, tag: string): DuelR
   for (let i = 0; i < n; i++) {
     const c = makeDuel(`${tag}:${i}`, a, b);
     autoResolve(c);
-    // running away from a lost fight counts as a loss, an enemy that runs counts as a win
-    if (c.outcome === 'victory' || c.outcome === 'surrender' || c.outcome === 'enemy-fled') {
+    // only kills and surrenders count as wins; a fight that ends with either side running away is a draw
+    if (c.outcome === 'victory' || c.outcome === 'surrender') {
       r.win++;
       r.meanHullLeft += c.player.hull / c.player.hullMax;
-    } else if (c.outcome === 'defeat' || c.outcome === 'fled') r.loss++;
+    } else if (c.outcome === 'defeat') r.loss++;
     else r.draw++;
     r.meanTime += c.time;
   }
@@ -297,7 +298,7 @@ export function combatReport(o: CombatReportOpts): string[] {
   // loot economics by difficulty
   L.push('## Boj: kořist proti nákladům', '');
   L.push(
-    `Skutečné střety (loď třídy mule se smíšenou výzbrojí, auto-boj, ${o.lootFights} soubojů na protivníka a úroveň). Kořist = kredity + hodnota zboží ze zničeného vraku. Náklady = účet za opravu trupu a modulů ve stanici + spotřebované rakety (${MISSILE_COST} kr/ks). Zničení lodi se do nákladů nepočítá, ale je uvedeno zvlášť.`,
+    `Skutečné střety (loď třídy mule se smíšenou výzbrojí, auto-boj, ${o.lootFights} soubojů na protivníka a úroveň). Kořist = kredity + hodnota zboží ze zničeného vraku. Náklady = účet za opravu trupu a modulů ve stanici + spotřebované rakety (${MISSILE_COST} kr/ks). Zničení lodi se počítá jako spoluúčast pojištění (25 % ceny trupu).`,
     '',
   );
   for (const risk of ['low', 'normal', 'high'] as const) {
@@ -305,7 +306,11 @@ export function combatReport(o: CombatReportOpts): string[] {
     const wins = rows.reduce((a, r) => a + r.wins, 0);
     const fights = rows.reduce((a, r) => a + r.fights, 0);
     const loot = rows.reduce((a, r) => a + r.loot, 0);
-    const bills = rows.reduce((a, r) => a + r.repair + r.missiles * MISSILE_COST, 0);
+    const deductible = Math.round((HULLS_BY_ID.mule.price * 0.25) / 10) * 10;
+    const bills = rows.reduce(
+      (a, r) => a + r.repair + r.missiles * MISSILE_COST + r.ownLosses * deductible,
+      0,
+    );
     const lost = rows.reduce((a, r) => a + r.ownLosses, 0);
     L.push(
       `### Obtížnost rizika: ${risk === 'low' ? 'nízké' : risk === 'normal' ? 'normální' : 'vysoké'}`,

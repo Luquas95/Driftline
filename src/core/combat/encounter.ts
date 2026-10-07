@@ -29,7 +29,10 @@ export function buildEnemyShip(def: EnemyDef, tier: number, rng: Rng, index: num
     }
   });
   // weaker tiers carry fewer modules: tier 3 the full loadout, tier 2 one less, tier 1 two less (at least two)
-  const loadout = def.loadout.slice(0, Math.max(Math.min(2, def.loadout.length), def.loadout.length - (3 - tier)));
+  const loadout = def.loadout.slice(
+    0,
+    Math.max(Math.min(2, def.loadout.length), def.loadout.length - (3 - tier)),
+  );
   let li = 0;
   for (const sl of slots) {
     if (sl.core || li >= loadout.length) continue;
@@ -148,20 +151,35 @@ export function startCombat(state: GameState, enc: Encounter, extra?: { surprise
 
 /* ------------------------------ encounters ------------------------------ */
 
-export function threatLevel(state: GameState, systemId: number): number {
+/** The player counts as wanted for 30 days after attacking customs, or while reputation at home is very low. */
+export function isWanted(state: GameState): boolean {
+  const w = state.flags['wanted'];
+  return (
+    (typeof w === 'number' && w > 0 && state.day - w < 30) || (state.stations[state.home]?.rep ?? 0) <= -4
+  );
+}
+
+/**
+ * Encounter chance for a jump. `days` is the travel time: short hops are proportionally safer, and a recent
+ * encounter makes the next days quiet (no farming of fights by hopping around).
+ */
+export function threatLevel(state: GameState, systemId: number, days = 3): number {
   const g = galaxyOf(state);
   const sys = g.systems[systemId];
   const cargoValue = state.cargo.reduce((s, i) => s + i.qty * (GOODS_BY_ID[i.goodId]?.basePrice ?? 0), 0);
   const hasIllegal = state.cargo.some(
     (c) => GOODS_BY_ID[c.goodId]?.tags.includes('illegal') && !c.contractId,
   );
-  const wanted = (state.flags['wanted'] as number) > 0 || (state.stations[state.home]?.rep ?? 0) <= -4;
+  const wanted = isWanted(state);
   let p =
     T.encounter.base *
     (0.35 + sys.danger * 1.3) *
     riskFactor(state.difficulty.risk) *
     (1 + Math.min(1, cargoValue / 6000));
   if (state.day < 4) p *= 0.25;
+  p *= Math.max(0.3, Math.min(1.5, days / 3));
+  const last = state.flags['lastEncounter'];
+  if (typeof last === 'number' && state.day - last < 3) p *= 0.3;
   if (hasIllegal && sys.region !== 'rim') p += 0.03;
   if (wanted) p += 0.05;
   return Math.min(0.5, p);
@@ -252,9 +270,9 @@ export function makeEncounter(
 }
 
 /** Roll for a random encounter after a jump. Sets `state.encounter` when one happens. */
-export function rollEncounter(state: GameState, systemId: number): boolean {
+export function rollEncounter(state: GameState, systemId: number, days = 3): boolean {
   if (state.encounter || state.combat || state.pendingEvent) return false;
-  const p = threatLevel(state, systemId);
+  const p = threatLevel(state, systemId, days);
   return withRng(state, (rng) => {
     if (!rng.chance(p)) return false;
     const g = galaxyOf(state);
@@ -262,7 +280,7 @@ export function rollEncounter(state: GameState, systemId: number): boolean {
     const hasIllegal = state.cargo.some(
       (c) => GOODS_BY_ID[c.goodId]?.tags.includes('illegal') && !c.contractId,
     );
-    const wanted = (state.flags['wanted'] as number) > 0 || (state.stations[state.home]?.rep ?? 0) <= -4;
+    const wanted = isWanted(state);
     const weights: [EncounterKind, number][] = [
       ['pirate', 3],
       ['fauna', sys.region === 'rim' || sys.region === 'outer' ? 1.2 : 0.2],
@@ -273,6 +291,7 @@ export function rollEncounter(state: GameState, systemId: number): boolean {
     const enc = makeEncounter(state, kind, systemId, rng);
     if (!enc) return false;
     state.encounter = enc;
+    state.flags['lastEncounter'] = state.day;
     return true;
   });
 }

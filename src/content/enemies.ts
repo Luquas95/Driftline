@@ -25,7 +25,7 @@ const w = (core: number, inner: number, outer: number, rim: number) => ({ core, 
 
 /** Quality of enemy modules by tier. */
 export const TIER_QUALITY: Record<number, Quality> = { 1: 'D', 2: 'C', 3: 'B' };
-export const TIER_HULL: Record<number, number> = { 1: 0.9, 2: 1, 3: 1.15 };
+export const TIER_HULL: Record<number, number> = { 1: 0.85, 2: 1, 3: 1.2 };
 
 export const ENEMIES: EnemyDef[] = [
   {

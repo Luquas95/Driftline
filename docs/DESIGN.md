@@ -201,9 +201,9 @@ Boj je **čistá simulace s pevným krokem** `DT = 0,1 s`. Stav (`CombatState`) 
 
 **Úhyb** `= 0,1 · obratnost trupu · energie motorů · výkon motorů · (1 + 0,06 · pilotáž)`, nejvýše 55 % (rakety ×0,6, ion ×0,8).
 
-**Teplo.** Výstřel přidá `teplo · √velikost`, chlazení `3,2 + 2,2 · radiátor + 0,6 · chladič` za sekundu (· (1 + 0,04 · inženýr)). Při 100 se vypnou zbraně a štíty, zapnou se zpět pod 55.
+**Teplo.** Výstřel přidá `teplo · √velikost`, chlazení `3,2 + 2,2 · radiátor + 0,6 · chladič` za sekundu (· (1 + 0,03 · inženýr)). Při 100 se vypnou zbraně a štíty, zapnou se zpět pod 55.
 
-**Požár.** Šance při zásahu = `fire` zbraně; oheň roste 1,8/s do 100, ubírá systému `0,035 · síla/s`, členům posádky `0,04 · síla · násobek rasy/s` a šíří se na sousedy (`síla/100 · 0,07` za sekundu). Zhasne bez kyslíku (pod 12 %), při průrazu, nebo ho hasí posádka (`9 · (0,6 + 0,1 · inženýrství)/s`, inženýr plně, ostatní poloviční).
+**Požár.** Šance při zásahu = `fire` zbraně; oheň roste 1,8/s do 100, ubírá systému `0,035 · síla/s`, členům posádky `0,03 · síla · násobek rasy/s` a šíří se na sousedy (`síla/100 · 0,07` za sekundu). Zhasne bez kyslíku (pod 12 %), při průrazu, nebo ho hasí posádka (`9 · (0,6 + 0,1 · inženýrství)/s`, inženýr plně, ostatní poloviční).
 
 **Průraz a kyslík.** Zásah může prorazit trup (`breach`): místnost ztrácí 15 % kyslíku za sekundu, sousedé s ní vyrovnávají 0,35/s, podpora života doplňuje `6 · energie · výkon`. Pod 25 % kyslíku bere posádce zdraví podle rasy. Průraz utěsní posádka.
 

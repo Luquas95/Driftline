@@ -217,7 +217,7 @@ export function jump(state: GameState, toId: number): Result<{ report: JumpRepor
     if (state.dead || state.location.stationId !== null) return ok({ report });
   }
   arrive(state, toId);
-  if (!rollEncounter(state, toId)) rollEvent(state, 'jump', 0.42, { systemId: toId });
+  if (!rollEncounter(state, toId, plan.days)) rollEvent(state, 'jump', 0.42, { systemId: toId });
   if (!state.pendingEvent) rollEvent(state, 'arrival', 0.12, { systemId: toId });
   void stats;
   return ok({ report });

@@ -35,7 +35,7 @@ export function chooseRoom(rng: Rng, kind: string, foe: CShip): number {
     if (kind === 'energy' && foe.shield > 4 && r.kind === 'shield') s += 1.5;
     if (kind === 'kinetic' && ['energy', 'kinetic', 'missile'].includes(r.kind ?? '')) s += 0.8;
     if (kind === 'missile' && r.kind === 'reactor') s += 1;
-    if (foe.canFlee && r.kind === 'jump') s += 0.7;
+    if (foe.canFlee && r.kind === 'jump') s += foe.fleeing ? 3.5 : 0.7;
     if (r.ion > 0 && kind === 'ion') s -= 3;
     return { i, s };
   });
@@ -98,10 +98,10 @@ export function aiControl(c: CombatState, rng: Rng, s: CShip, dt: number): void 
   const foes = foesOf(c, s);
   // power: personalities lean on weapons or shields, and back off when hot
   const lean: Record<string, Partial<Record<PowerGroup, number>>> = {
-    aggressive: { weapons: 1.5, shields: 0.9 },
-    cautious: { weapons: 0.9, shields: 1.5, engines: 1.1 },
-    greedy: { weapons: 1.2, engines: 1.1 },
-    feral: { weapons: 1.4 },
+    aggressive: { weapons: 1.5, shields: 0.9, engines: 0.6 },
+    cautious: { weapons: 0.9, shields: 1.5, engines: 1.0 },
+    greedy: { weapons: 1.2, engines: 0.8 },
+    feral: { weapons: 1.4, engines: 0.7 },
     turret: { weapons: 1.5 },
   };
   const mult = lean[s.personality] ?? {};

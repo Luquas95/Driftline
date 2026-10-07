@@ -123,7 +123,12 @@ export function resolveCombat(state: GameState, c: CombatState): CombatSummary {
         const goodId = rng.pick(def.goods);
         const good = GOODS_BY_ID[goodId];
         if (!good) continue;
-        const qty = Math.max(1, Math.round(rng.range(2, 9) * (e.out === 'surrendered' ? 1.3 : 1)));
+        // cargo value, not unit count, keeps loot in line with the trading economy
+        const price = Math.max(1, good.basePrice);
+        const qty = Math.max(
+          1,
+          Math.round(rng.range(2, 9) * Math.min(1, 100 / price) * (e.out === 'surrendered' ? 1.3 : 1)),
+        );
         sum.goods.push({ goodId, qty });
       }
       sum.fuel += Math.round(rng.range(0, 6));
@@ -156,12 +161,12 @@ export function resolveCombat(state: GameState, c: CombatState): CombatSummary {
     if (dRep) {
       const st = state.stations[state.home];
       if (st) st.rep = clamp(st.rep + dRep, -10, 10);
-      if (c.kind === 'customs') state.flags['wanted'] = ((state.flags['wanted'] as number) || 0) + 1;
+      if (c.kind === 'customs') state.flags['wanted'] = state.day;
     }
     msg(state, 'msg.combat.victory', { credits: sum.credits }, 'good');
   } else if (outcome === 'tribute') {
     const share = c.demand ?? 0.4;
-    const items = state.cargo.filter((i) => !i.contractId);
+    const items = state.cargo.filter((i) => !i.contractId && i.goodId !== 'missiles');
     for (const it of items) {
       const take = Math.floor(it.qty * share);
       if (take > 0) {
@@ -170,6 +175,13 @@ export function resolveCombat(state: GameState, c: CombatState): CombatSummary {
       }
     }
     state.cargo = state.cargo.filter((i) => i.qty > 0);
+    // an empty hold does not make the pirates go away for free: they take a floor in credits
+    const floor = 120 + 0.08 * state.credits;
+    if (sum.tribute < floor) {
+      const pay = Math.min(state.credits, Math.round(floor - sum.tribute));
+      state.credits -= pay;
+      sum.tribute += pay;
+    }
     msg(state, 'msg.combat.tribute', { value: Math.round(sum.tribute) }, 'warn');
   } else if (outcome === 'fled') {
     state.stats.fled++;

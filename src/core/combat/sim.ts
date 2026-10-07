@@ -58,7 +58,7 @@ export function evasionOf(s: CShip): number {
   const sk = s.crew.some((c) => c.officer === 'ghost' && c.room === s.rooms.indexOf(er)) ? 0.08 : 0;
   return Math.max(
     0,
-    Math.min(0.55, 0.1 * s.agility * powerEff(s, 'engines') * roomPerf(er) * (1 + 0.06 * ps) + sk),
+    Math.min(0.55, 0.2 * s.agility * powerEff(s, 'engines') * roomPerf(er) * (1 + 0.06 * ps) + sk),
   );
 }
 
@@ -237,6 +237,8 @@ function resolveHit(c: CombatState, rng: Rng, p: Projectile): void {
   const hullDmg = ws.hullDmg * scale;
   ts.hull -= hullDmg;
   room.sys = Math.max(0, room.sys - ws.sysDmg * scale);
+  // hitting the jump drive while the target is charging an escape sets the charge back
+  if (room.kind === 'jump' && ts.fleeing) ts.jumpCharge = Math.max(0, ts.jumpCharge - 0.25 * scale);
   if (ws.ion > 0 && scale > 0) room.ion += ws.ion * scale;
   for (const m of ts.crew) {
     if (m.room === p.toRoom && m.boardedOn < 0 && ws.dmg > 0) {
@@ -284,7 +286,7 @@ function stepRooms(c: CombatState, rng: Rng, s: CShip, dt: number): void {
     if (r.ion > 0) r.ion = Math.max(0, r.ion - dt);
     let o2 = r.o2 + refill * dt;
     for (const a of r.adj) o2 += (s.rooms[a].o2 - r.o2) * 0.35 * dt;
-    if (r.breach > 0) o2 -= 15 * dt;
+    if (r.breach > 0) o2 -= 20 * dt;
     next[i] = Math.max(0, Math.min(100, o2));
   });
   s.rooms.forEach((r, i) => {
@@ -478,7 +480,7 @@ function stepJump(c: CombatState, s: CShip, dt: number): void {
   if (!s.fleeing || !s.canFlee || s.out) return;
   const jr = roomOf(s, 'jump');
   if (!jr || jr.sys <= 0 || jr.ion > 0) return;
-  const t = 14 / Math.max(0.05, powerEff(s, 'engines') * roomPerf(jr) * (1 + 0.06 * pilotSkill(s)));
+  const t = 30 / Math.max(0.05, powerEff(s, 'engines') * roomPerf(jr) * (1 + 0.06 * pilotSkill(s)));
   s.jumpCharge += dt / Math.min(60, t);
   if (s.jumpCharge >= 1) {
     s.out = 'fled';
