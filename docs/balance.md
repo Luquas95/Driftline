@@ -4,12 +4,12 @@ Vygenerováno příkazem `npm run balance` (10 semínek × 120 dní na strategii
 
 | Strategie | Příjem/den (medián) | Příjem/den (průměr) | Čistá hodnota po 30 dnech | Dny do +3000 kr | První vylepšení (den) | Nehody/100 dnů | Zničení lodi | Zničení do dne 20 | Skoků |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| trader | 102 | 111 | 2881 | 34 (9/10) | 0 | 2.8 | 8 | 0/10 | 51 |
-| hauler | 69 | 48 | 2787 | 34 (6/10) | 0 | 2.7 | 1 | 0/10 | 43 |
-| miner | 98 | 95 | 2903 | 32 (10/10) | 0 | 2.9 | 6 | 0/10 | 51 |
-| explorer | 41 | 30 | 206 | 41 (6/10) | 0 | 2.6 | 9 | 0/10 | 46 |
-| oracle | 228 | 242 | 9822 | 13 (9/10) | 0 | 2.7 | 8 | 1/10 | 45 |
-| loop | -41 | -42 | -2227 | 11 (1/10) | — | 2.1 | 4 | 0/10 | 21 |
+| trader | 118 | 141 | 2881 | 40 (10/10) | 0 | 2.7 | 2 | 0/10 | 52 |
+| hauler | 69 | 52 | 2787 | 34 (7/10) | 0 | 2.8 | 0 | 0/10 | 43 |
+| miner | 170 | 151 | 2903 | 34 (10/10) | 0 | 3.0 | 1 | 0/10 | 50 |
+| explorer | 97 | 69 | 206 | 61 (8/10) | 0 | 2.2 | 2 | 0/10 | 49 |
+| oracle | 401 | 428 | 10446 | 14 (10/10) | 0 | 3.1 | 0 | 0/10 | 49 |
+| loop | -41 | -21 | -1043 | 11 (1/10) | — | 2.8 | 0 | 0/10 | 21 |
 
 ## Test smyčky zisku (pevná trasa A↔B)
 
@@ -18,32 +18,32 @@ Bot opakuje jedinou nejlepší trasu tam a zpět (okruh = obě cesty). Zisk jedn
 | Okruh | Průměrný zisk (kr) | Vzorků |
 |---:|---:|---:|
 | 1 | 870 | 10 |
-| 2 | 194 | 10 |
-| 3 | -209 | 10 |
-| 4 | -672 | 10 |
-| 5 | -389 | 10 |
-| 6 | -386 | 9 |
-| 7 | -289 | 8 |
+| 2 | 422 | 10 |
+| 3 | -38 | 10 |
+| 4 | -151 | 10 |
+| 5 | -226 | 10 |
+| 6 | -351 | 10 |
+| 7 | -263 | 9 |
 | 8 | -270 | 7 |
 | 9 | -228 | 6 |
 | 10 | -183 | 6 |
 | 11 | -138 | 6 |
 | 12 | -111 | 6 |
 
-Zisk raných okruhů ≈ 532 kr, pozdních ≈ -190 kr (poměr -0.36).
+Zisk raných okruhů ≈ 646 kr, pozdních ≈ 43 kr (poměr 0.07).
 
 ## Nejvýdělečnější trasy (součet přes všechny boty)
 
 | Trasa (stanice>stanice:zboží) | Zisk |
 |---|---:|
+| 253:0>154:0:machinery | 29684 |
 | 68:0>145:0:spare_parts | 21740 |
-| 253:0>154:0:machinery | 20624 |
+| 15:0>287:0:machinery | 20499 |
+| 253:0>154:0:spare_parts | 18885 |
 | 145:0>68:0:iron_ore | 14100 |
-| 272:1>272:0:machinery | 12983 |
-| 253:0>154:0:spare_parts | 10421 |
+| 76:0>15:0:computers | 11990 |
+| 272:1>272:0:machinery | 11407 |
 | 3:0>113:2:machinery | 9940 |
-| 83:0>83:2:machinery | 9935 |
-| 279:1>279:0:machinery | 9612 |
 
 ## Čistě obchodní hra bez zbraní (střety se řeší únikem, úplatkem, vyhnutím)
 
@@ -51,12 +51,12 @@ Boti nemají zbraně a střetům se vyhýbají (vyhnout se > zaplatit > úplatek
 
 | Strategie | Střety/100 dní | Boje/100 dní | Úplatky (kr/100 dní) | Zničení lodi | Příjem/den (medián) |
 |---|---:|---:|---:|---:|---:|
-| trader | 2.8 | 0.8 | 635 | 8 | 102 |
-| hauler | 2.2 | 0.2 | 555 | 1 | 69 |
-| miner | 2.8 | 0.7 | 680 | 6 | 98 |
-| explorer | 2.5 | 0.8 | 145 | 9 | 41 |
-| oracle | 2.7 | 0.7 | 1279 | 8 | 228 |
-| loop | 2.1 | 1.0 | 69 | 4 | -41 |
+| trader | 2.5 | 0.6 | 612 | 2 | 118 |
+| hauler | 2.0 | 0.2 | 467 | 0 | 69 |
+| miner | 2.4 | 0.6 | 714 | 1 | 170 |
+| explorer | 2.8 | 0.7 | 165 | 2 | 97 |
+| oracle | 2.9 | 0.9 | 1780 | 0 | 401 |
+| loop | 1.8 | 0.7 | 46 | 0 | -41 |
 
 ## Boj: míra výher zbraní (AI proti AI)
 
@@ -126,4 +126,4 @@ Míra výher 36 %, zničení vlastní lodi 56 %, průměrná kořist na souboj 3
 | drones | 36 % | 36 % | 36 % |
 | mixed | 36 % | 36 % | 36 % |
 
-Doba běhu simulace: 88 s.
+Doba běhu simulace: 92 s.
