@@ -194,6 +194,10 @@ test.describe('core game flow', () => {
     await page.getByTestId('menu-new').click();
     await page.getByTestId('new-permadeath').check();
     await page.getByTestId('menu-start').click();
+    // a new game starts in the shipyard: buy the cheapest ship first
+    await page.locator('[data-testid^="offer-"]').first().click();
+    await page.getByTestId('btn-buy-ship').click();
+    await expect(page.getByTestId('screen-station')).toBeVisible();
     await openScreen(page, 'settings');
     await expect(page.getByTestId('seed-display')).toBeVisible();
     expect((await state(page)).difficulty.permadeath).toBe(true);
