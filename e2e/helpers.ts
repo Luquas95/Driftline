@@ -11,6 +11,20 @@ export interface DL {
   encounter: (enemy: string, tier?: number) => void;
   fightStep: (seconds: number) => void;
   fightAuto: () => void;
+  setAnim: (a: 'full' | 'reduced' | 'off') => void;
+  sys: () => {
+    zoom: number;
+    cam: { zoom: number; x: number; y: number };
+    flying: boolean;
+    ship: { x: number; y: number };
+    body: (i: number) => { x: number; y: number; r: number } | null;
+    station: (id: string) => { x: number; y: number } | null;
+  } | null;
+  map: () => {
+    cam: { x: number; y: number; zoom: number };
+    jumping: boolean;
+    pos: (id: number) => { x: number; y: number };
+  } | null;
   roomPos: (side: 'player' | 'enemy', ship: number, room: number) => { x: number; y: number } | null;
 }
 

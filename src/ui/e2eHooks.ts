@@ -95,7 +95,9 @@ export function installE2eHooks(): void {
     },
     map: () => {
       const sc = mapScene();
-      return sc ? { cam: sc.getCam(), pos: (id: number) => sc.systemScreenPos(id) } : null;
+      return sc
+        ? { cam: sc.getCam(), jumping: sc.isJumping(), pos: (id: number) => sc.systemScreenPos(id) }
+        : null;
     },
     sys: () => {
       const sc = systemScene();

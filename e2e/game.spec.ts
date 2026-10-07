@@ -15,7 +15,9 @@ test.describe('core game flow', () => {
   test('tutorial guides through the first trade and can be skipped', async ({ page }) => {
     await startGame(page, { tutorial: true });
     const tut = page.getByTestId('tutorial');
-    await expect(tut).toContainText('1/5');
+    await expect(tut).toContainText('1/6');
+    await page.getByTestId('tutorial-next').click();
+    await expect(tut).toContainText('2/6');
     const row = page
       .locator('[data-testid^="good-"]')
       .filter({ hasNotText: /chlazené|citlivé|nelegální|nebezpečné/ })
@@ -24,7 +26,7 @@ test.describe('core game flow', () => {
     await page.getByTestId('trade-max-buy').click();
     await page.getByTestId('btn-buy').click();
     await closeTrade(page);
-    await expect(tut).toContainText('2/5');
+    await expect(tut).toContainText('3/6');
     await page.getByTestId('tutorial-skip').click();
     await expect(tut).toBeHidden();
   });

@@ -1,4 +1,4 @@
-# Herní design a vzorce (v1 + v2)
+# Herní design a vzorce (v1 + v2 + v3)
 
 Dokument popisuje herní systémy tak, jak jsou implementované, včetně vzorců a ladicích konstant. Konstanty žijí v `src/core/tuning.ts` a v definicích obsahu `src/content/`. Čísla v tabulkách jsou výchozí hodnoty.
 
@@ -222,3 +222,44 @@ Boj je **čistá simulace s pevným krokem** `DT = 0,1 s`. Stav (`CombatState`) 
 ## 13. Vizuál a ovládání boje
 
 `render/combatscene.ts` kreslí loď shora z místností (barva podle druhu modulu, tmavnutí při ztrátě kyslíku, oheň, praskliny, zásah iontem), vrstvy štítu jako bubliny s vlnami při zásahu, projektily s glow (částicové sprity s aditivním mícháním, nejvýše 360), výbuchy, kouř a jiskry v poškozených místnostech a chvění obrazovky (vypínatelné, vypnuté i při `prefers-reduced-motion`). Zvuk je procedurální (Web Audio). Ovládání: mezerník pauza, `1–9` zbraň, klik/klepnutí na cílovou místnost, přetažení posádky, `Q W E R T` energie (s Shift ubrat), `F` útěk, `A` auto. Na dotyku jsou prvky větší a boj se při každém výběru pozastaví (nastavení).
+
+## 14. Nový začátek: kapitál a první loď (`src/core/firstShip.ts`, `start.ts`)
+
+Nová hra začíná **v doku startovní stanice bez lodi** (`GameState.noShip`) a s kapitálem podle obtížnosti cen (`T.startCapital`): snadná 60 000 kr, normální 40 000 kr, těžká 25 000 kr. První obrazovka je *Loděnice: tvoje první loď*, dokud hráč loď nekoupí. Do té doby `undock`, `jump` a `buyGoods` vrací `err.noShip`. Uložená hra z v1 a v2 se migruje na `noShip: false`, takže začátek platí jen pro nové hry. Testy a boty mohou začít starým způsobem (`quickStart: true`: základní loď, 2 500 kr).
+
+**Nabídka** (`firstShipOffers(state)`) je deterministická ze semínka, seřazená od nejlevnější po nejdražší (při stejné ceně podle id). Každý trup má novou nabídku za `cena · faktor cen` (snadná 0,85, normální 1, těžká 1,2); ojetý raketoplán je jen ojetý. Ojeté kusy (šance 60 %, u drahých trupů 35 %) mají cenu `nová · (0,5 až 0,72) · (0,5 + stav/200)`, **stav modulů 48–82 %** a trup 62–92 %; jádrové moduly jsou třídy C jako u nových lodí, jen opotřebené, takže každá nabídka je letuschopná (test). Náhled `previewOffer` ukáže zbylé kredity a varuje: pod 1 500 kr „nakoupíš jen malý náklad“, pod nulou „nemáš dost peněz“. Loď se kupuje se základní výbavou (5 jádrových modulů), posádkou podle kajut trupu a plným palivem; jméno lodi je volitelné (návrh ze semínka).
+
+**Trupy** (14, rozpětí cen 4 200 až 110 000 kr; ceny jsou rozložené tak, aby se za normální kapitál dalo koupit několik levných trupů a nejvýš jeden střední, kdežto těžké a luxusní zůstávají cílem):
+
+| Trup | Role | Cena (kr) | Náklad (buňky) | Palivo | Trup (hp) | Volné sloty | Kajuty | Obratnost |
+|---|---|---:|---:|---:|---:|---|---:|---:|
+| Ojetý raketoplán (`shuttle`) | levný start | 4 200 | 3 | 35 | 40 | S1 M0 L0 | 1 | 1 |
+| Kurýr (`courier`) | kurýr | 7 000 | 4 | 50 | 45 | S1 M0 L0 | 1 | 1.3 |
+| Poutník (`wayfarer`) | univerzální | 9 000 | 10 | 60 | 100 | S1 M2 L1 | 2 | 1 |
+| Průzkumník (`scout`) | dálkový průzkumník | 11 500 | 4 | 85 | 70 | S4 M0 L0 | 2 | 1.15 |
+| Poštolka (`kestrel`) | lehký průzkumník | 12 500 | 4 | 55 | 60 | S2 M1 L0 | 1 | 1.35 |
+| Mula (`mule`) | nákladní | 14 500 | 16 | 50 | 90 | S2 M2 L0 | 2 | 0.8 |
+| Šipka (`swift`) | kurýr | 15 500 | 3 | 40 | 45 | S2 M1 L0 | 1 | 1.7 |
+| Prospektor (`prospector`) | těžební | 18 500 | 8 | 70 | 110 | S1 M3 L0 | 2 | 0.9 |
+| Obchodník (`merchant`) | obchodní | 31 000 | 24 | 60 | 100 | S2 M4 L0 | 2 | 0.95 |
+| Vrták (`borer`) | těžební | 46 000 | 18 | 90 | 150 | S4 M2 L1 | 3 | 0.7 |
+| Pancéřník (`armored`) | pancéřovaná | 58 000 | 26 | 80 | 260 | S1 M4 L1 | 3 | 0.5 |
+| Behemot (`behemoth`) | těžký nákladní | 74 000 | 36 | 140 | 220 | S3 M4 L2 | 4 | 0.55 |
+| Luxusní jachta (`yacht`) | pro cestující | 92 000 | 6 | 110 | 120 | S0 M4 L2 | 5 | 1.1 |
+| Expediční loď (`expedition`) | expediční | 110 000 | 20 | 230 | 170 | S1 M5 L1 | 4 | 0.75 |
+
+## 15. Scéna systému a animace (`src/render/systemscene.ts`, `sysmath.ts`)
+
+Všechno v této kapitole je **jen vrstva vykreslování**: nic nemění stav jádra ani determinismus. Čisté výpočty (kamera, oběžné rychlosti, dráha letu, rozlišení klepnutí a tažení) jsou v `sysmath.ts` a mají unit testy.
+
+**Oběžné dráhy.** Úhlová rychlost planety je `2π / (240 s · a^1,5)` (třetí Keplerův zákon: vnitřní planety jsou rychlé, vnější se téměř nehýbou), měsíce `2π / (22 s · n^1,5)` kolem planety. Vzdálenosti na obrazovce jsou logaritmické, aby se vešly i soustavy s 30 AU, ale poměr rychlostí je skutečný.
+
+**Kamera.** Zoom 0,7× až 80× (celý systém až detail tělesa), kolečko zoomuje ke kurzoru, pinch na dotyku (dva prsty i posouvají), tlačítka + − ⌖ a klávesy `+`, `−`, `0`. Tažení posouvá se setrvačností a klepnutí bez pohybu vybírá (práh 6 px myší, 10 px dotykem). Dvojklik nebo dvojité klepnutí přiblíží těleso a kamera ho sleduje po oběžné dráze; `Esc` nebo ⌖ vrátí celý systém. Kamera se pro systém pamatuje po dobu sezení. Shadery planet přidávají s velikostí na obrazovce další oktávy šumu (`uDetail`).
+
+**Loď hráče** je skutečný `drawShip` (stejný trup, moduly a semínko jako na obrazovce Loď), natočený ve směru letu, s výtryskem a stopou; při oddálení se nahradí siluetou trupu a kroužkem. Lety uvnitř systému jdou po Bézierově křivce s rozjezdem a brzděním (1–3 s podle vzdálenosti, 0,4 s při omezených animacích, žádný let při vypnutých), jdou přeskočit klikem, mezerníkem nebo Enterem. Přistání: loď zpomalí k doku a zmenší se, teprve potom se přepne obrazovka (stav je už dokovaný). Odlet ze stanice a příletový záblesk z hyperprostoru po skoku mají vlastní efekt.
+
+**Stanice** jsou vektorové stavby podle typu a semínka (kolo, průmyslový komplex, panely, anténa a parabola, těžební skála, pirátská základna) s blikajícími světly na orbitě kolem tělesa. **Provoz:** 2–6 cizích lodí (`drawShip` s náhodnými trupy) létá mezi stanicemi, tělesy a skokovým bodem; poloha je čistou funkcí času a semínka systému, takže je deterministická a bez vlivu na simulaci.
+
+**Efekty:** sken (vlna z lodi, tělesa se odhalují postupně), těžba (paprsek, jiskry, u plynných obrů nasávání), sonda (letí k tělesu a zaniká). Na mapě galaxie letí silueta lodi po trase (nabití, rozmazaná stopa, záblesk), dny v horním panelu přibývají plynule. Nákup a prodej ukážou potvrzení, odpočet kreditů a ikony zboží letící do nákladu; přechody obrazovek, tlačítka a změny hodnot (zelené a červené probliknutí) jsou CSS.
+
+**Animace** řídí nastavení *plné / omezené / vypnuté* (`animLevel()`, sníženo i `prefers-reduced-motion`); vypnuté nepoužije žádné přechody a pohyby, omezené krátké a jednoduché. `?fps=1` (a vývojový režim) ukazuje měřič FPS.

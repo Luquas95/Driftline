@@ -93,13 +93,13 @@ const hulls: Record<string, [string, string]> = {
 
 const hullRoles: Record<string, string> = {
   universal: 'univerzální',
-  scout: 'průzkumník',
+  scout: 'lehký průzkumník',
   cargo: 'nákladní',
   courier: 'kurýr',
   mining: 'těžební',
   heavy: 'těžký nákladní',
   budget: 'levný start',
-  explorer: 'průzkumná',
+  explorer: 'dálkový průzkumník',
   trader: 'obchodní',
   armored: 'pancéřovaná',
   passenger: 'pro cestující',
