@@ -30,7 +30,9 @@ function blocked(d: GridDims, x: number, y: number): boolean {
 }
 
 export function occupancyGrid(d: GridDims, items: CargoItem[], ignoreUid?: string): (string | null)[][] {
-  const g: (string | null)[][] = Array.from({ length: totalRows(d) }, () => Array<string | null>(d.cols).fill(null));
+  const g: (string | null)[][] = Array.from({ length: totalRows(d) }, () =>
+    Array<string | null>(d.cols).fill(null),
+  );
   for (const it of items) {
     if (it.uid === ignoreUid) continue;
     for (let dy = 0; dy < it.h; dy++)
@@ -43,7 +45,15 @@ export function occupancyGrid(d: GridDims, items: CargoItem[], ignoreUid?: strin
   return g;
 }
 
-export function fitsAt(d: GridDims, items: CargoItem[], w: number, h: number, x: number, y: number, ignoreUid?: string): boolean {
+export function fitsAt(
+  d: GridDims,
+  items: CargoItem[],
+  w: number,
+  h: number,
+  x: number,
+  y: number,
+  ignoreUid?: string,
+): boolean {
   const g = occupancyGrid(d, items, ignoreUid);
   for (let dy = 0; dy < h; dy++)
     for (let dx = 0; dx < w; dx++) {
@@ -53,10 +63,22 @@ export function fitsAt(d: GridDims, items: CargoItem[], w: number, h: number, x:
 }
 
 /** First-fit scan: nominal rows first, overflow rows last. Tries rotation. */
-export function findSpot(d: GridDims, items: CargoItem[], w: number, h: number, allowOverflow = true): { x: number; y: number; w: number; h: number } | null {
+export function findSpot(
+  d: GridDims,
+  items: CargoItem[],
+  w: number,
+  h: number,
+  allowOverflow = true,
+): { x: number; y: number; w: number; h: number } | null {
   const g = occupancyGrid(d, items);
   const rows = allowOverflow ? totalRows(d) : d.rows;
-  const orientations = w === h ? [[w, h]] : [[w, h], [h, w]];
+  const orientations =
+    w === h
+      ? [[w, h]]
+      : [
+          [w, h],
+          [h, w],
+        ];
   for (let y = 0; y < rows; y++) {
     for (let x = 0; x < d.cols; x++) {
       for (const [ow, oh] of orientations) {
@@ -79,8 +101,7 @@ export function findSpot(d: GridDims, items: CargoItem[], w: number, h: number, 
 
 export function overloadCells(d: GridDims, items: CargoItem[]): number {
   let n = 0;
-  for (const it of items)
-    for (let dy = 0; dy < it.h; dy++) if (it.y + dy >= d.rows) n += it.w;
+  for (const it of items) for (let dy = 0; dy < it.h; dy++) if (it.y + dy >= d.rows) n += it.w;
   return n;
 }
 
@@ -102,7 +123,11 @@ export function capacityOf(good: GoodDef, w: number, h: number): number {
 export function shapesFor(good: GoodDef, qty: number): { w: number; h: number; qty: number }[] {
   const out: { w: number; h: number; qty: number }[] = [];
   let left = qty;
-  for (const [w, h] of [[2, 2], [2, 1], [1, 1]] as const) {
+  for (const [w, h] of [
+    [2, 2],
+    [2, 1],
+    [1, 1],
+  ] as const) {
     const cap = capacityOf(good, w, h);
     while (left >= cap || (left > 0 && w === 1)) {
       const q = Math.min(left, cap);
@@ -214,7 +239,18 @@ export function addGoods(
           break;
         }
         const q = Math.min(left, cap1);
-        items.push({ uid: nextCargoUid(), goodId, qty: q, w: 1, h: 1, x: s1.x, y: s1.y, cost: q * unitCost, acquiredDay: day, contractId });
+        items.push({
+          uid: nextCargoUid(),
+          goodId,
+          qty: q,
+          w: 1,
+          h: 1,
+          x: s1.x,
+          y: s1.y,
+          cost: q * unitCost,
+          acquiredDay: day,
+          contractId,
+        });
         if (good.tags.includes('chilled')) use.chilled++;
         if (good.tags.includes('sensitive')) use.secure++;
         left -= q;
@@ -223,26 +259,50 @@ export function addGoods(
       }
       break;
     }
-    items.push({ uid: nextCargoUid(), goodId, qty: sh.qty, w: spot.w, h: spot.h, x: spot.x, y: spot.y, cost: sh.qty * unitCost, acquiredDay: day, contractId });
+    items.push({
+      uid: nextCargoUid(),
+      goodId,
+      qty: sh.qty,
+      w: spot.w,
+      h: spot.h,
+      x: spot.x,
+      y: spot.y,
+      cost: sh.qty * unitCost,
+      acquiredDay: day,
+      contractId,
+    });
     use.chilled += good.tags.includes('chilled') ? cells : 0;
     use.secure += good.tags.includes('sensitive') ? cells : 0;
     added += sh.qty;
     remaining -= sh.qty;
   }
-  return { added, items, reason: added < qty ? reason ?? 'full' : undefined };
+  return { added, items, reason: added < qty ? (reason ?? 'full') : undefined };
 }
 
 /** How many units can still be loaded (simulation on a copy). */
-export function loadableUnits(items: CargoItem[], d: GridDims, quotas: QuotaInfo, goodId: string, want: number, allowOverflow = true): number {
+export function loadableUnits(
+  items: CargoItem[],
+  d: GridDims,
+  quotas: QuotaInfo,
+  goodId: string,
+  want: number,
+  allowOverflow = true,
+): number {
   const copy = items.map((i) => ({ ...i }));
   return addGoods(copy, d, quotas, goodId, want, 0, 0, undefined, allowOverflow).added;
 }
 
 /** Removes `qty` units of a good, FIFO by acquisition day. Returns {removed, cost}. */
-export function removeGoods(items: CargoItem[], goodId: string, qty: number): { removed: number; cost: number } {
+export function removeGoods(
+  items: CargoItem[],
+  goodId: string,
+  qty: number,
+): { removed: number; cost: number } {
   let left = qty;
   let cost = 0;
-  const own = items.filter((i) => i.goodId === goodId && !i.contractId).sort((a, b) => a.acquiredDay - b.acquiredDay);
+  const own = items
+    .filter((i) => i.goodId === goodId && !i.contractId)
+    .sort((a, b) => a.acquiredDay - b.acquiredDay);
   for (const it of own) {
     if (left <= 0) break;
     const take = Math.min(it.qty, left);
@@ -258,7 +318,8 @@ export function removeGoods(items: CargoItem[], goodId: string, qty: number): { 
 
 export function unitsOf(items: CargoItem[], goodId: string, contractId?: string): number {
   let n = 0;
-  for (const i of items) if (i.goodId === goodId && (contractId ? i.contractId === contractId : !i.contractId)) n += i.qty;
+  for (const i of items)
+    if (i.goodId === goodId && (contractId ? i.contractId === contractId : !i.contractId)) n += i.qty;
   return n;
 }
 

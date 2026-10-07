@@ -6,7 +6,20 @@ import type { Cond, Effect, EventDef, EventTrigger } from './eventTypes';
 import { dist } from './galaxy';
 import type { Rng } from './rng';
 import { newModule, slotsOfKind, wearModule } from './ship';
-import { analyze, damageHull, destroyShip, fail, galaxyOf, learnStation, msg, newUid, ok, updateSeen, withRng, type Result } from './state';
+import {
+  analyze,
+  damageHull,
+  destroyShip,
+  fail,
+  galaxyOf,
+  learnStation,
+  msg,
+  newUid,
+  ok,
+  updateSeen,
+  withRng,
+  type Result,
+} from './state';
 import { passTime } from './time';
 import type { GameState, Quality } from './types';
 
@@ -43,7 +56,9 @@ export function evalCond(state: GameState, c: Cond): boolean {
     case 'cargoTag':
       return state.cargo.some((i) => GOODS_BY_ID[i.goodId].tags.includes(c.tag) && !i.contractId);
     case 'hasModule':
-      return state.ship.slots.some((m) => m && m.enabled && m.condition > 0 && m.defId.startsWith(c.kind + '_'));
+      return state.ship.slots.some(
+        (m) => m && m.enabled && m.condition > 0 && m.defId.startsWith(c.kind + '_'),
+      );
     case 'creditsMin':
       return state.credits >= c.n;
     case 'creditsMax':
@@ -76,7 +91,13 @@ export function eligibleEvents(state: GameState, trigger: EventTrigger): EventDe
 }
 
 /** Roll for an event of the given trigger; sets `pendingEvent` on success. */
-export function rollEvent(state: GameState, trigger: EventTrigger, chance: number, ctx: EventContext, forceId?: string): boolean {
+export function rollEvent(
+  state: GameState,
+  trigger: EventTrigger,
+  chance: number,
+  ctx: EventContext,
+  forceId?: string,
+): boolean {
   if (state.pendingEvent) return false;
   return withRng(state, (rng) => {
     if (forceId) {
@@ -160,7 +181,9 @@ export function applyEffect(state: GameState, e: Effect, ctx?: EventContext): vo
           const idx = e.kind ? (slots.length ? rng.pick(slots) : null) : randomInstalled(state, rng);
           if (idx !== null) wearModule(state.ship, idx, e.n);
         } else {
-          const worn = state.ship.slots.map((m, i) => ({ m, i })).filter((x) => x.m && x.m.condition < 100 && (!e.kind || x.m.defId.startsWith(e.kind + '_')));
+          const worn = state.ship.slots
+            .map((m, i) => ({ m, i }))
+            .filter((x) => x.m && x.m.condition < 100 && (!e.kind || x.m.defId.startsWith(e.kind + '_')));
           if (worn.length) {
             const w = rng.pick(worn);
             w.m!.condition = Math.min(100, w.m!.condition - e.n);
@@ -217,7 +240,13 @@ export function applyEffect(state: GameState, e: Effect, ctx?: EventContext): vo
     case 'discover': {
       const sys = g.systems[ctx?.systemId ?? state.location.systemId];
       const id = ctx?.anomalyId ?? `event:${state.discoveries.length}:${sys.id}`;
-      state.discoveries.push({ id, name: sys.name, day: state.day, value: Math.round(e.value * 1), sold: false });
+      state.discoveries.push({
+        id,
+        name: sys.name,
+        day: state.day,
+        value: Math.round(e.value * 1),
+        sold: false,
+      });
       state.stats.discoveries++;
       break;
     }

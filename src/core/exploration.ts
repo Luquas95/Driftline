@@ -13,7 +13,14 @@ void _unused;
 export const CHARTED_FACTOR: Record<string, number> = { core: 0.3, inner: 0.5, outer: 1, rim: 1.8 };
 
 export function bodyDyn(state: GameState, id: string): BodyDyn {
-  return (state.bodies[id] ??= { surface: false, probed: false, mined: {}, minedDay: {}, revealed: [], anomaliesDone: [] });
+  return (state.bodies[id] ??= {
+    surface: false,
+    probed: false,
+    mined: {},
+    minedDay: {},
+    revealed: [],
+    anomaliesDone: [],
+  });
 }
 
 export function bodyAu(sys: SystemStatic, idx: number): number {
@@ -33,7 +40,9 @@ export function travelToBody(state: GameState, bodyIdx: number): Result<{ days: 
   const days = sublightDays(stats, au);
   state.location.stationId = null;
   state.location.body = bodyIdx;
+  const deaths0 = state.stats.deaths;
   passTime(state, days);
+  if (state.stats.deaths !== deaths0) return fail('err.shipLost');
   return ok({ days });
 }
 
@@ -42,7 +51,12 @@ function thresholdFor(difficulty: number): number {
 }
 
 export function systemSurveyValue(sys: SystemStatic): number {
-  return Math.round((60 + sys.bodies.length * 35 + sys.richness * 120) * (CHARTED_FACTOR[sys.region] ?? 1) * T.firstDiscoveryBonus * 0.6);
+  return Math.round(
+    (90 + sys.bodies.length * 55 + sys.richness * 200) *
+      (CHARTED_FACTOR[sys.region] ?? 1) *
+      T.firstDiscoveryBonus *
+      0.85,
+  );
 }
 
 /** System scan: reveals bodies by sensor power and satisfies survey / rescue contracts. */
@@ -63,7 +77,13 @@ export function scanSystem(state: GameState): Result<{ found: number; total: num
   passTime(state, 0.3);
   const key = `sys:${sys.id}`;
   if (!state.discoveries.some((d) => d.id === key)) {
-    state.discoveries.push({ id: key, name: sys.name, day: state.day, value: systemSurveyValue(sys), sold: false });
+    state.discoveries.push({
+      id: key,
+      name: sys.name,
+      day: state.day,
+      value: systemSurveyValue(sys),
+      sold: false,
+    });
     state.stats.discoveries++;
     msg(state, 'msg.discoveredSystem', { name: sys.name }, 'good');
   }
@@ -79,7 +99,11 @@ export function scanSystem(state: GameState): Result<{ found: number; total: num
 }
 
 /** Surface scan of one body (flies there first). Optionally with a probe for full accuracy. */
-export function scanSurface(state: GameState, bodyIdx: number, useProbe = false): Result<{ deposits: number; anomalies: number }> {
+export function scanSurface(
+  state: GameState,
+  bodyIdx: number,
+  useProbe = false,
+): Result<{ deposits: number; anomalies: number }> {
   const g = galaxyOf(state);
   const sys = g.systems[state.location.systemId];
   const body = sys.bodies[bodyIdx];
@@ -119,7 +143,9 @@ export function scanSurface(state: GameState, bodyIdx: number, useProbe = false)
   wearKind(state.ship, useProbe ? 'probe' : 'surface', 1.2);
   const key = `body:${body.id}`;
   if (!state.discoveries.some((d) => d.id === key)) {
-    const val = Math.round((T.survey.body * 0.35 + dep * 25 + ano * 140) * (CHARTED_FACTOR[sys.region] ?? 1));
+    const val = Math.round(
+      (T.survey.body * 0.5 + dep * 45 + ano * 220) * (CHARTED_FACTOR[sys.region] ?? 1) * 1.3,
+    );
     state.discoveries.push({ id: key, name: body.name, day: state.day, value: val, sold: false });
     state.stats.discoveries++;
   }
@@ -138,7 +164,10 @@ export function scanSurface(state: GameState, bodyIdx: number, useProbe = false)
 export function salvage(state: GameState): Result {
   const g = galaxyOf(state);
   const sys = g.systems[state.location.systemId];
-  const c = state.contracts.find((x) => x.state === 'active' && x.kind === 'rescue' && x.targetSystem === sys.id && (x.progress ?? 0) === 1);
+  const c = state.contracts.find(
+    (x) =>
+      x.state === 'active' && x.kind === 'rescue' && x.targetSystem === sys.id && (x.progress ?? 0) === 1,
+  );
   if (!c) return fail('err.noWreck');
   const body = sys.bodies.find((b) => b.id === c.targetBody);
   if (body) {
@@ -173,8 +202,8 @@ export function exploreAnomaly(state: GameState, bodyIdx: number, anomalyId: str
 
 export const INTENSITY = [
   { mult: 1, fuel: 0.6, risk: 0.5 },
-  { mult: 1.9, fuel: 1.4, risk: 1.4 },
-  { mult: 3.2, fuel: 2.8, risk: 3.2 },
+  { mult: 1.6, fuel: 1.4, risk: 1.4 },
+  { mult: 2.4, fuel: 2.8, risk: 3.2 },
 ];
 
 /** Goods the refinery converts: input -> [output, ratio]. */
@@ -193,8 +222,8 @@ export function mineMethodFor(body: BodyStatic): MineMethod {
 }
 
 export function depositDecay(dyn: BodyDyn, depId: string, day: number): number {
-  const n = Math.max(0, (dyn.mined[depId] ?? 0) - (day - (dyn.minedDay[depId] ?? day)) / 15);
-  return Math.pow(0.82, n);
+  const n = Math.max(0, (dyn.mined[depId] ?? 0) - (day - (dyn.minedDay[depId] ?? day)) / 25);
+  return Math.pow(0.7, n);
 }
 
 export interface MineOutcome {
@@ -207,7 +236,12 @@ export interface MineOutcome {
 }
 
 /** Mine a revealed deposit for one day at intensity 0..2. */
-export function mine(state: GameState, bodyIdx: number, depositId: string, intensity: 0 | 1 | 2): Result<{ out: MineOutcome }> {
+export function mine(
+  state: GameState,
+  bodyIdx: number,
+  depositId: string,
+  intensity: 0 | 1 | 2,
+): Result<{ out: MineOutcome }> {
   const g = galaxyOf(state);
   const sys = g.systems[state.location.systemId];
   const body = sys.bodies[bodyIdx];
@@ -217,11 +251,10 @@ export function mine(state: GameState, bodyIdx: number, depositId: string, inten
   if (!dyn.revealed.includes(dep.id)) return fail('err.depositUnknown');
   const { stats, dims } = analyze(state);
   const method = mineMethodFor(body);
-  let base = 0;
-  if (method === 'laser') base = stats.laserYield;
-  else if (method === 'scoop') base = stats.scoopYield;
-  else base = stats.probeValue * 5.5;
-  if (base <= 0) return fail(method === 'laser' ? 'err.noLaser' : method === 'scoop' ? 'err.noScoop' : 'err.noDrill');
+  const base =
+    method === 'laser' ? stats.laserYield : method === 'scoop' ? stats.scoopYield : stats.probeValue * 5.5;
+  if (base <= 0)
+    return fail(method === 'laser' ? 'err.noLaser' : method === 'scoop' ? 'err.noScoop' : 'err.noDrill');
   if (method === 'drill' && state.ship.probes < 1) return fail('err.noProbes');
   if (stats.powerMine < -0.001 && method !== 'drill') return fail('err.power');
   if (method === 'drill' && stats.powerScan < -0.001) return fail('err.power');
@@ -235,8 +268,14 @@ export function mine(state: GameState, bodyIdx: number, depositId: string, inten
   const decay = depositDecay(dyn, dep.id, state.day);
   const units = Math.max(1, Math.round(base * lvl.mult * (0.4 + dep.richness) * decay));
   // risk
-  const wearAvg = state.ship.slots.reduce((s, m) => s + (m ? 100 - m.condition : 0), 0) / Math.max(1, state.ship.slots.filter(Boolean).length) / 100;
-  const pRisk = Math.min(0.85, 0.035 * lvl.risk * body.hazard * riskFactor(state.difficulty.risk) * (1 + wearAvg * 1.5));
+  const wearAvg =
+    state.ship.slots.reduce((s, m) => s + (m ? 100 - m.condition : 0), 0) /
+    Math.max(1, state.ship.slots.filter(Boolean).length) /
+    100;
+  const pRisk = Math.min(
+    0.85,
+    0.035 * lvl.risk * body.hazard * riskFactor(state.difficulty.risk) * (1 + wearAvg * 1.5),
+  );
   let hullDamage = 0;
   let toolWear = 0;
   withRng(state, (rng) => {
@@ -247,12 +286,15 @@ export function mine(state: GameState, bodyIdx: number, depositId: string, inten
   });
   const wearKindName = method === 'laser' ? 'laser' : method === 'scoop' ? 'scoop' : 'probe';
   wearKind(state.ship, wearKindName, (method === 'laser' ? 2.2 : 1.4) * lvl.mult + toolWear);
-  if (stats.refineRate > 0 && REFINE[dep.goodId] && stats.powerMine >= -0.001) wearKind(state.ship, 'refinery', 0.8);
-  dyn.mined[dep.id] = Math.max(0, (dyn.mined[dep.id] ?? 0) - (state.day - (dyn.minedDay[dep.id] ?? state.day)) / 15) + lvl.mult * 0.55;
+  if (stats.refineRate > 0 && REFINE[dep.goodId] && stats.powerMine >= -0.001)
+    wearKind(state.ship, 'refinery', 0.8);
+  dyn.mined[dep.id] =
+    Math.max(0, (dyn.mined[dep.id] ?? 0) - (state.day - (dyn.minedDay[dep.id] ?? state.day)) / 25) +
+    lvl.mult * 0.55;
   dyn.minedDay[dep.id] = state.day;
   // refine?
   let goodId = dep.goodId;
-  let outUnits = units;
+  let outUnits: number;
   let refined = false;
   const rf = REFINE[dep.goodId];
   if (rf && stats.refineRate > 0 && stats.powerMine >= -0.001) {
@@ -263,14 +305,17 @@ export function mine(state: GameState, bodyIdx: number, depositId: string, inten
       // add refined product first, then the raw remainder
       const quotas = { chilledCells: stats.chilledCells, secureCells: stats.secureCells };
       const r1 = addGoods(state.cargo, dims, quotas, rf[0], refinedUnits, 0, state.day);
-      const r2 = rest > 0 ? addGoods(state.cargo, dims, quotas, dep.goodId, rest, 0, state.day) : { added: 0 };
+      const r2 =
+        rest > 0 ? addGoods(state.cargo, dims, quotas, dep.goodId, rest, 0, state.day) : { added: 0 };
       goodId = rf[0];
       outUnits = r1.added + r2.added;
       refined = true;
       state.stats.unitsMined += outUnits;
       passTime(state, 1);
       if (hullDamage) damageHull(state, hullDamage);
-      return ok({ out: { units: outUnits, goodId, refined, lost: refinedUnits + rest - outUnits, hullDamage, toolWear } });
+      return ok({
+        out: { units: outUnits, goodId, refined, lost: refinedUnits + rest - outUnits, hullDamage, toolWear },
+      });
     }
   }
   const quotas = { chilledCells: stats.chilledCells, secureCells: stats.secureCells };
@@ -278,13 +323,17 @@ export function mine(state: GameState, bodyIdx: number, depositId: string, inten
   state.stats.unitsMined += r.added;
   passTime(state, 1);
   if (hullDamage) damageHull(state, hullDamage);
+  if (!state.dead) rollEvent(state, 'mine', 0.1, { systemId: state.location.systemId, bodyId: body.id });
   void GOODS_BY_ID;
   void newUid;
   void unitsOf;
   return ok({ out: { units: r.added, goodId, refined, lost: units - r.added, hullDamage, toolWear } });
 }
 
-export function sellDiscoveries(state: GameState, stationId: string): Result<{ total: number; count: number }> {
+export function sellDiscoveries(
+  state: GameState,
+  stationId: string,
+): Result<{ total: number; count: number }> {
   const g = galaxyOf(state);
   const st = g.stationsById[stationId];
   if (!st) return fail('err.noStation');
@@ -296,4 +345,55 @@ export function sellDiscoveries(state: GameState, stationId: string): Result<{ t
   state.stations[st.id].rep += 1;
   msg(state, 'msg.soldData', { total }, 'good');
   return ok({ total, count: items.length });
+}
+
+export interface MineEstimate {
+  method: MineMethod;
+  units: number;
+  fuel: number;
+  /** Probability of damage per day (0..1). */
+  risk: number;
+  refined: boolean;
+  /** Error key when mining is currently impossible. */
+  blocked?: string;
+}
+
+/** Preview for the UI: what mining a deposit at an intensity would yield, cost and risk. Mirrors `mine`. */
+export function estimateMine(
+  state: GameState,
+  bodyIdx: number,
+  depositId: string,
+  intensity: 0 | 1 | 2,
+): MineEstimate | null {
+  const g = galaxyOf(state);
+  const body = g.systems[state.location.systemId].bodies[bodyIdx];
+  const dep = body?.deposits.find((d) => d.id === depositId);
+  if (!body || !dep) return null;
+  const { stats } = analyze(state);
+  const method = mineMethodFor(body);
+  const dyn = bodyDyn(state, body.id);
+  const base =
+    method === 'laser' ? stats.laserYield : method === 'scoop' ? stats.scoopYield : stats.probeValue * 5.5;
+  const lvl = INTENSITY[intensity];
+  const units = Math.max(
+    1,
+    Math.round(base * lvl.mult * (0.4 + dep.richness) * depositDecay(dyn, dep.id, state.day)),
+  );
+  const wearAvg =
+    state.ship.slots.reduce((s, m) => s + (m ? 100 - m.condition : 0), 0) /
+    Math.max(1, state.ship.slots.filter(Boolean).length) /
+    100;
+  const risk = Math.min(
+    0.85,
+    0.035 * lvl.risk * body.hazard * riskFactor(state.difficulty.risk) * (1 + wearAvg * 1.5),
+  );
+  let blocked: string | undefined;
+  if (base <= 0)
+    blocked = method === 'laser' ? 'err.noLaser' : method === 'scoop' ? 'err.noScoop' : 'err.noDrill';
+  else if (method === 'drill' && state.ship.probes < 1) blocked = 'err.noProbes';
+  else if (method !== 'drill' && stats.powerMine < -0.001) blocked = 'err.power';
+  else if (method === 'drill' && stats.powerScan < -0.001) blocked = 'err.power';
+  else if (state.ship.fuel < lvl.fuel) blocked = 'err.noFuel';
+  const refined = !!REFINE[dep.goodId] && stats.refineRate > 0 && stats.powerMine >= -0.001;
+  return { method, units, fuel: lvl.fuel, risk, refined, blocked };
 }

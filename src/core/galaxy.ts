@@ -131,7 +131,10 @@ export function generateGalaxy(seed: string, n = T.galaxySystems): Galaxy {
     while (usedNames.has(name)) name = systemName(rng);
     usedNames.add(name);
     const sector = nearestSector(sectors, p.x, p.y);
-    const spectral = rng.weighted(Object.keys(SPECTRAL_WEIGHTS[region]) as SpectralClass[], (c) => SPECTRAL_WEIGHTS[region][c]);
+    const spectral = rng.weighted(
+      Object.keys(SPECTRAL_WEIGHTS[region]) as SpectralClass[],
+      (c) => SPECTRAL_WEIGHTS[region][c],
+    );
     const richness = clamp01(REGION_RICH[region] + rng.gauss(0, 0.14));
     const danger = clamp01(REGION_DANGER[region] + rng.gauss(0, 0.12));
     return {
@@ -214,7 +217,8 @@ function buildRoutes(systems: SystemStatic[], rng: Rng): void {
     parent[find(a)] = find(b);
   }
   const cand: { a: number; b: number; d: number }[] = [];
-  for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) cand.push({ a: i, b: j, d: dist(systems[i], systems[j]) });
+  for (let i = 0; i < n; i++)
+    for (let j = i + 1; j < n; j++) cand.push({ a: i, b: j, d: dist(systems[i], systems[j]) });
   cand.sort((x, y) => x.d - y.d);
   for (const c of cand) {
     if (find(c.a) !== find(c.b)) {
@@ -231,7 +235,10 @@ function buildRoutes(systems: SystemStatic[], rng: Rng): void {
 }
 
 function generateBodies(s: SystemStatic, rng: Rng): BodyStatic[] {
-  const count = Math.max(1, Math.min(8, Math.round(2 + rng.next() * 3 + s.richness * 2.5 + rng.gauss(0, 0.8))));
+  const count = Math.max(
+    1,
+    Math.min(8, Math.round(2 + rng.next() * 3 + s.richness * 2.5 + rng.gauss(0, 0.8))),
+  );
   const hz = HZ[s.spectral];
   const bodies: BodyStatic[] = [];
   let orbit = 0.25 * Math.max(0.5, hz ** 0.6) * rng.range(0.8, 1.3);
@@ -240,10 +247,22 @@ function generateBodies(s: SystemStatic, rng: Rng): BodyStatic[] {
   for (let i = 0; i < planetCount; i++) {
     const rel = orbit / hz;
     let kind: BodyKind;
-    if (rel < 0.55) kind = rng.weighted<BodyKind>(['rocky', 'volcanic', 'desert', 'dead'], (k) => (k === 'volcanic' ? 3 : k === 'dead' ? 2 : 2));
-    else if (rel < 1.7) kind = rng.weighted<BodyKind>(['rocky', 'ocean', 'desert', 'volcanic', 'belt'], (k) => (k === 'ocean' ? 3 : k === 'rocky' ? 4 : k === 'belt' ? 1 : 2));
-    else if (rel < 6) kind = rng.weighted<BodyKind>(['gas', 'ice', 'belt', 'rocky', 'dead'], (k) => (k === 'gas' ? 4 : k === 'belt' ? 2 : k === 'ice' ? 3 : 1));
-    else kind = rng.weighted<BodyKind>(['ice', 'gas', 'dead', 'belt'], (k) => (k === 'ice' ? 4 : k === 'gas' ? 3 : k === 'dead' ? 2 : 1));
+    if (rel < 0.55)
+      kind = rng.weighted<BodyKind>(['rocky', 'volcanic', 'desert', 'dead'], (k) =>
+        k === 'volcanic' ? 3 : k === 'dead' ? 2 : 2,
+      );
+    else if (rel < 1.7)
+      kind = rng.weighted<BodyKind>(['rocky', 'ocean', 'desert', 'volcanic', 'belt'], (k) =>
+        k === 'ocean' ? 3 : k === 'rocky' ? 4 : k === 'belt' ? 1 : 2,
+      );
+    else if (rel < 6)
+      kind = rng.weighted<BodyKind>(['gas', 'ice', 'belt', 'rocky', 'dead'], (k) =>
+        k === 'gas' ? 4 : k === 'belt' ? 2 : k === 'ice' ? 3 : 1,
+      );
+    else
+      kind = rng.weighted<BodyKind>(['ice', 'gas', 'dead', 'belt'], (k) =>
+        k === 'ice' ? 4 : k === 'gas' ? 3 : k === 'dead' ? 2 : 1,
+      );
     if (kind === 'belt') {
       if (beltCount >= 2) kind = 'dead';
       else beltCount++;
@@ -261,9 +280,23 @@ function generateBodies(s: SystemStatic, rng: Rng): BodyStatic[] {
   return bodies;
 }
 
-function makeBody(s: SystemStatic, index: number, kind: BodyKind, orbit: number, parent: number, rng: Rng): BodyStatic {
+function makeBody(
+  s: SystemStatic,
+  index: number,
+  kind: BodyKind,
+  orbit: number,
+  parent: number,
+  rng: Rng,
+): BodyStatic {
   const id = `${s.id}.${index}`;
-  const size = kind === 'gas' ? rng.range(1.6, 2.6) : kind === 'moon' ? rng.range(0.25, 0.6) : kind === 'belt' ? 1 : rng.range(0.6, 1.25);
+  const size =
+    kind === 'gas'
+      ? rng.range(1.6, 2.6)
+      : kind === 'moon'
+        ? rng.range(0.25, 0.6)
+        : kind === 'belt'
+          ? 1
+          : rng.range(0.6, 1.25);
   const dep: Deposit[] = [];
   const pool = DEPOSIT_POOL[kind];
   const nDep = kind === 'belt' ? rng.int(2, 3) : rng.int(1, 3);
@@ -274,7 +307,12 @@ function makeBody(s: SystemStatic, index: number, kind: BodyKind, orbit: number,
     taken.add(good);
     const rich = clamp01(rng.range(0.15, 0.7) * (0.55 + s.richness) + rng.range(0, 0.15));
     const rareBias = good === 'rare_ore' || good === 'crystals' || good === 'radioactives' ? 1 : 0;
-    dep.push({ id: `${id}#${i}`, goodId: good, richness: rich, hidden: Math.min(3, rng.int(0, 2) + rareBias) });
+    dep.push({
+      id: `${id}#${i}`,
+      goodId: good,
+      richness: rich,
+      hidden: Math.min(3, rng.int(0, 2) + rareBias),
+    });
   }
   const anomalies: BodyStatic['anomalies'] = [];
   const anomalyChance = 0.07 + (s.region === 'rim' ? 0.1 : s.region === 'outer' ? 0.05 : 0) + s.danger * 0.05;
@@ -283,20 +321,29 @@ function makeBody(s: SystemStatic, index: number, kind: BodyKind, orbit: number,
       anomalies.push({ id: `${id}!0`, eventId: rng.pick(ANOMALY_EVENT_IDS), hidden: rng.int(1, 3) });
     }
   }
-  const hazard = kind === 'volcanic' ? 1.6 : kind === 'gas' ? 1.3 : kind === 'belt' ? 1.2 : kind === 'dead' ? 1.1 : 1;
+  const hazard =
+    kind === 'volcanic' ? 1.6 : kind === 'gas' ? 1.3 : kind === 'belt' ? 1.2 : kind === 'dead' ? 1.1 : 1;
   const names = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'];
   return {
     id,
     systemId: s.id,
     index,
     kind,
-    name: parent >= 0 ? `${s.name} ${names[Math.min(parent, 9)]}-${String.fromCharCode(97 + (index % 26))}` : `${s.name} ${names[Math.min(index, 9)]}`,
+    name:
+      parent >= 0
+        ? `${s.name} ${names[Math.min(parent, 9)]}-${String.fromCharCode(97 + (index % 26))}`
+        : `${s.name} ${names[Math.min(index, 9)]}`,
     orbit: parent >= 0 ? orbit : orbit,
     parent,
     seed: rng.nextU32(),
     size,
     rings: kind === 'gas' ? rng.chance(0.4) : false,
-    scanDifficulty: kind === 'belt' ? rng.int(0, 1) : kind === 'moon' ? rng.int(1, 2) : rng.int(0, 1) + (kind === 'dead' ? 1 : 0),
+    scanDifficulty:
+      kind === 'belt'
+        ? rng.int(0, 1)
+        : kind === 'moon'
+          ? rng.int(1, 2)
+          : rng.int(0, 1) + (kind === 'dead' ? 1 : 0),
     deposits: dep,
     anomalies,
     hazard,
@@ -314,15 +361,20 @@ function generateStations(s: SystemStatic, rng: Rng): StationStatic[] {
     const type = rng.weighted(STATION_TYPES, (t) => t.weight[s.region]).id as StationTypeId;
     const sizeW = SIZE_WEIGHTS[s.region];
     const size = rng.weighted<StationSize>(['small', 'medium', 'large'], (k) => sizeW[k]);
-    const habitable = s.bodies.filter((b) => ['rocky', 'ocean', 'desert', 'ice', 'moon'].includes(b.kind) && b.kind !== 'belt');
-    const colony = habitable.length > 0 && rng.chance(type === 'agricultural' ? 0.8 : type === 'pirate' ? 0.15 : 0.35);
+    const habitable = s.bodies.filter(
+      (b) => ['rocky', 'ocean', 'desert', 'ice', 'moon'].includes(b.kind) && b.kind !== 'belt',
+    );
+    const colony =
+      habitable.length > 0 && rng.chance(type === 'agricultural' ? 0.8 : type === 'pirate' ? 0.15 : 0.35);
     const host = colony ? rng.pick(habitable) : rng.pick(s.bodies);
     let name: string;
     do name = `${rng.pick(STATION_PREFIX)} ${stationSuffix(rng)}`;
     while (usedNames.has(name));
     usedNames.add(name);
     const def = STATION_TYPES_BY_ID[type];
-    const blackMarket = def.blackMarket || (!def.lawful ? true : (s.region === 'outer' || s.region === 'rim') && rng.chance(0.1));
+    const blackMarket =
+      def.blackMarket ||
+      (!def.lawful ? true : (s.region === 'outer' || s.region === 'rim') && rng.chance(0.1));
     const st: StationStatic = {
       id: `${s.id}:${i}`,
       systemId: s.id,
@@ -370,12 +422,18 @@ function assignRoles(st: StationStatic, rng: Rng): void {
     }
   }
   // legal stations never list illegal goods unless they own a black market
-  st.goods = [...goods].filter((g) => st.blackMarket || !GOODS.find((x) => x.id === g)!.tags.includes('illegal')).sort();
+  st.goods = [...goods]
+    .filter((g) => st.blackMarket || !GOODS.find((x) => x.id === g)!.tags.includes('illegal'))
+    .sort();
   st.role = Object.fromEntries(Object.entries(role).filter(([g]) => st.goods.includes(g)));
 }
 
 /** The galaxy must offer a safe, full-service starting point in a non-hostile region. */
-function guaranteeStartingStation(systems: SystemStatic[], byId: Record<string, StationStatic>, rng: Rng): void {
+function guaranteeStartingStation(
+  systems: SystemStatic[],
+  byId: Record<string, StationStatic>,
+  rng: Rng,
+): void {
   if (findStartSystem(systems)) return;
   const cand = systems.filter((s) => s.region === 'outer' || s.region === 'inner')[0] ?? systems[0];
   const st: StationStatic = {
@@ -398,14 +456,20 @@ function guaranteeStartingStation(systems: SystemStatic[], byId: Record<string, 
 export function findStartSystem(systems: SystemStatic[]): SystemStatic | undefined {
   const ok = (s: SystemStatic) =>
     (s.region === 'outer' || s.region === 'inner') &&
-    s.stations.some((st) => st.type !== 'pirate' && st.size !== 'small' && STATION_TYPES_BY_ID[st.type].shipyard >= 1) &&
+    s.stations.some(
+      (st) => st.type !== 'pirate' && st.size !== 'small' && STATION_TYPES_BY_ID[st.type].shipyard >= 1,
+    ) &&
     s.neighbors.length >= 2 &&
     s.neighbors.some((n) => systems[n].stations.length > 0);
-  const hubs = systems.filter((s) => ok(s) && s.stations.some((st) => STATION_TYPES_BY_ID[st.type].shipyard >= 2));
+  const hubs = systems.filter(
+    (s) => ok(s) && s.stations.some((st) => STATION_TYPES_BY_ID[st.type].shipyard >= 2),
+  );
   const pool = hubs.length ? hubs : systems.filter(ok);
   if (!pool.length) return undefined;
   // prefer a start close to the middle of the map ring (outer/inner border)
-  return [...pool].sort((a, b) => Math.abs(Math.hypot(a.x, a.y) - 34) - Math.abs(Math.hypot(b.x, b.y) - 34))[0];
+  return [...pool].sort(
+    (a, b) => Math.abs(Math.hypot(a.x, a.y) - 34) - Math.abs(Math.hypot(b.x, b.y) - 34),
+  )[0];
 }
 
 export function hashSeedNumber(seed: string): number {
@@ -413,7 +477,12 @@ export function hashSeedNumber(seed: string): number {
 }
 
 /** Dijkstra over the route graph by distance. */
-export function shortestPath(g: Galaxy, from: number, to: number, allowed?: (id: number) => boolean): number[] | null {
+export function shortestPath(
+  g: Galaxy,
+  from: number,
+  to: number,
+  allowed?: (id: number) => boolean,
+): number[] | null {
   if (from === to) return [from];
   const n = g.systems.length;
   const d = new Array<number>(n).fill(Infinity);
@@ -423,7 +492,12 @@ export function shortestPath(g: Galaxy, from: number, to: number, allowed?: (id:
   for (;;) {
     let u = -1,
       best = Infinity;
-    for (let i = 0; i < n; i++) if (!done[i] && d[i] < best) (best = d[i]), (u = i);
+    for (let i = 0; i < n; i++) {
+      if (!done[i] && d[i] < best) {
+        best = d[i];
+        u = i;
+      }
+    }
     if (u < 0 || u === to) break;
     done[u] = true;
     for (const v of g.systems[u].neighbors) {

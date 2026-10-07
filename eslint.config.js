@@ -13,6 +13,12 @@ export default tseslint.config(
     },
   },
   {
+    files: ['scripts/**', '*.config.ts', 'src/sim/**', 'tests/**', 'e2e/**', 'src/persist/**'],
+    languageOptions: {
+      globals: { process: 'readonly', console: 'readonly', window: 'readonly', localStorage: 'readonly' },
+    },
+  },
+  {
     // The simulation core must stay deterministic and DOM-free.
     files: ['src/core/**/*.ts', 'src/content/**/*.ts'],
     rules: {

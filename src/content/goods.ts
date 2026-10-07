@@ -40,7 +40,10 @@ export const GOODS: GoodDef[] = [
   g('fusion_cells', 'tech', 210, 8, 0.3, ['hazardous'], { inputs: { hydrocarbons: 1, radioactives: 1 } }),
   // medical
   g('medicine', 'medical', 145, 12, 0.1, ['chilled'], { inputs: { polymers: 1, hydrocarbons: 1 } }),
-  g('vaccines', 'medical', 230, 10, 0.1, ['chilled', 'perishable'], { shelfDays: 30, inputs: { medicine: 1 } }),
+  g('vaccines', 'medical', 230, 10, 0.1, ['chilled', 'perishable'], {
+    shelfDays: 30,
+    inputs: { medicine: 1 },
+  }),
   g('biosamples', 'medical', 120, 8, 0.1, ['chilled', 'perishable', 'sensitive'], { shelfDays: 18 }),
   // luxury
   g('textiles', 'luxury', 75, 12, 0.15, [], { inputs: { polymers: 2 } }),

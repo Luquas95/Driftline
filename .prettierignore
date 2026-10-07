@@ -6,3 +6,7 @@ e2e/__screenshots__
 package-lock.json
 playwright-report
 test-results
+
+*.md
+*.css
+public

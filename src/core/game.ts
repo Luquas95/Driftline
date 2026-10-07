@@ -5,16 +5,47 @@
 import { GOODS_BY_ID, GOOD_INDEX, isIllegal } from '../content/goods';
 import { MODULES_BY_ID, QUALITY } from '../content/modules';
 import { STATION_TYPES_BY_ID } from '../content/stations';
-import { addGoods, autoArrange, freshness, loadableUnits, moveItem, removeGoods, rotateItem, unitsOf } from './cargo';
+import {
+  addGoods,
+  autoArrange,
+  freshness,
+  loadableUnits,
+  moveItem,
+  removeGoods,
+  rotateItem,
+  unitsOf,
+} from './cargo';
 import { completeContractsAt } from './contractOps';
 import { refreshBoard } from './contracts';
-import { feesFor, isBlackMarketGood, quoteBuy, quoteSell, serviceMult, snapshotPrice, type Quote } from './economy';
+import {
+  feesFor,
+  isBlackMarketGood,
+  quoteBuy,
+  quoteSell,
+  serviceMult,
+  snapshotPrice,
+  type Quote,
+} from './economy';
 import { rollEvent } from './events';
 import { dist } from './galaxy';
 import { bodyAu, travelToBody } from './exploration';
 import { canJump, jumpDays, jumpFuelCost, sublightDays, wearKind, wearModule } from './ship';
 import { refreshShop } from './shop';
-import { analyze, arrive, damageHull, fail, galaxyOf, learnStation, msg, ok, stationOf, updateSeen, withRng, type Result } from './state';
+import {
+  analyze,
+  arrive,
+  damageHull,
+  fail,
+  galaxyOf,
+  learnStation,
+  msg,
+  ok,
+  premiumPerDay,
+  stationOf,
+  updateSeen,
+  withRng,
+  type Result,
+} from './state';
 import { passTime } from './time';
 import { T, riskFactor } from './tuning';
 import type { Contract, GameState, StationStatic } from './types';
@@ -34,10 +65,13 @@ export function dockAt(state: GameState, stationId: string): Result<{ report: Do
   if (state.location.stationId === stationId) return ok({ report: { completed: [] } });
   const { stats } = analyze(state);
   if (stats.speedAuDay <= 0 || stats.powerFree < -0.001) return fail('err.noEngine');
+  const deaths0 = state.stats.deaths;
   const t = travelToBody(state, st.bodyIndex);
   if (!t.ok) return t;
   passTime(state, T.dockDays);
   if (state.dead) return fail('err.dead');
+  // the ship was lost on the way (e.g. starvation): the insured respawn already placed the player elsewhere
+  if (state.stats.deaths !== deaths0) return fail('err.shipLost');
   state.location.stationId = st.id;
   state.location.body = st.bodyIndex;
   state.home = st.id;
@@ -73,7 +107,14 @@ function inspect(state: GameState, st: StationStatic): { fine: number; confiscat
   const { stats } = analyze(state);
   const cells = illegal.reduce((s, c) => s + c.w * c.h, 0);
   const concealment = Math.min(0.7, (stats.secureCells / Math.max(1, cells)) * 0.6);
-  const p = Math.min(0.95, T.inspectionBase * security * riskFactor(state.difficulty.risk) * (1 - concealment) * (1 + (st.blackMarket ? 0.3 : 0)));
+  const p = Math.min(
+    0.95,
+    T.inspectionBase *
+      security *
+      riskFactor(state.difficulty.risk) *
+      (1 - concealment) *
+      (1 + (st.blackMarket ? 0.3 : 0)),
+  );
   const caught = withRng(state, (rng) => rng.chance(p));
   if (!caught) return null;
   let value = 0;
@@ -140,7 +181,15 @@ export function jump(state: GameState, toId: number): Result<{ report: JumpRepor
   const danger = (here.danger + to.danger) / 2;
   const slots = state.ship.slots.filter(Boolean);
   const wearAvg = slots.reduce((s, m) => s + (100 - m!.condition), 0) / Math.max(1, slots.length) / 100;
-  const p = Math.min(0.5, T.baseAccident * riskFactor(state.difficulty.risk) * (1 + danger * 1.2) * (1 + wearAvg * 3.5) * (1 + overload * T.overloadRisk * 8) * (1 + unit * 0.15));
+  const p = Math.min(
+    0.5,
+    T.baseAccident *
+      riskFactor(state.difficulty.risk) *
+      (1 + danger * 1.2) *
+      (1 + wearAvg * 3.5) *
+      (1 + overload * T.overloadRisk * 8) *
+      (1 + unit * 0.15),
+  );
   const accident = withRng(state, (rng) => {
     if (!rng.chance(p)) return null;
     const hazardous = state.cargo.some((c) => GOODS_BY_ID[c.goodId].tags.includes('hazardous'));
@@ -151,11 +200,15 @@ export function jump(state: GameState, toId: number): Result<{ report: JumpRepor
       ['cargoLoss', state.cargo.some((c) => !c.contractId) ? 2 : 0],
       ['hazmat', hazardous ? 3 : 0],
     ];
-    const [kind] = rng.weighted(kinds.filter((k) => k[1] > 0), (k) => k[1]);
+    const [kind] = rng.weighted(
+      kinds.filter((k) => k[1] > 0),
+      (k) => k[1],
+    );
     return { kind, roll: rng.next(), roll2: rng.next() };
   });
+  const deaths0 = state.stats.deaths;
   passTime(state, plan.days);
-  if (state.dead) return ok({ report });
+  if (state.dead || state.stats.deaths !== deaths0) return ok({ report });
   if (accident) {
     state.stats.accidents++;
     const amount = applyAccident(state, accident.kind, accident.roll, accident.roll2);
@@ -247,6 +300,11 @@ export function callTow(state: GameState): Result<{ station: string; fee: number
   return ok({ station: best.id, fee });
 }
 
+/** True when no neighbouring system can be reached with the current fuel and power. */
+export function isStranded(state: GameState): boolean {
+  return !planJumpsPossible(state);
+}
+
 function planJumpsPossible(state: GameState): boolean {
   const g = galaxyOf(state);
   return g.systems[state.location.systemId].neighbors.some((n) => planJump(state, n).ok);
@@ -254,7 +312,8 @@ function planJumpsPossible(state: GameState): boolean {
 
 /** Just let time pass at the current location. */
 export function wait(state: GameState, days: number): Result {
-  if (days <= 0) return fail('err.badAmount');
+  if (!Number.isFinite(days) || days <= 0) return fail('err.badAmount');
+  days = Math.min(days, 365);
   passTime(state, days);
   return ok();
 }
@@ -270,7 +329,13 @@ export function stockOf(state: GameState, stationId: string, goodId: string): nu
   return state.stations[stationId].stock[GOOD_INDEX[goodId]];
 }
 
-export function quoteFor(state: GameState, stationId: string, goodId: string, side: 'buy' | 'sell', qty: number): Quote {
+export function quoteFor(
+  state: GameState,
+  stationId: string,
+  goodId: string,
+  side: 'buy' | 'sell',
+  qty: number,
+): Quote {
   const st = stationOf(state, stationId);
   const fees = feesFor(st, state.difficulty, isBlackMarketGood(goodId));
   const stock = stockOf(state, stationId, goodId);
@@ -301,17 +366,27 @@ export function maxBuy(state: GameState, stationId: string, goodId: string): num
   return q;
 }
 
-export function buyGoods(state: GameState, stationId: string, goodId: string, qty: number): Result<{ qty: number; paid: number }> {
+export function buyGoods(
+  state: GameState,
+  stationId: string,
+  goodId: string,
+  qty: number,
+): Result<{ qty: number; paid: number }> {
   const st = atStation(state, stationId);
   if (!st) return fail('err.notDocked');
   if (!st.goods.includes(goodId)) return fail('err.notSold');
+  if (!Number.isFinite(qty)) return fail('err.badAmount');
   qty = Math.floor(qty);
   if (qty <= 0) return fail('err.badAmount');
   const max = maxBuy(state, stationId, goodId);
   if (max <= 0) {
     const stock = stockOf(state, stationId, goodId);
     if (stock < 1) return fail('err.outOfStock');
-    return fail(state.credits < quoteFor(state, stationId, goodId, 'buy', 1).total ? 'err.noCredits' : 'err.noCargoSpace');
+    return fail(
+      state.credits < quoteFor(state, stationId, goodId, 'buy', 1).total
+        ? 'err.noCredits'
+        : 'err.noCargoSpace',
+    );
   }
   qty = Math.min(qty, max);
   const quote = quoteFor(state, stationId, goodId, 'buy', qty);
@@ -334,16 +409,24 @@ export function buyGoods(state: GameState, stationId: string, goodId: string, qt
 }
 
 /** Sell goods of one type, oldest first. Returns revenue and profit vs. the cost basis. */
-export function sellGoods(state: GameState, stationId: string, goodId: string, qty: number): Result<{ qty: number; revenue: number; profit: number }> {
+export function sellGoods(
+  state: GameState,
+  stationId: string,
+  goodId: string,
+  qty: number,
+): Result<{ qty: number; revenue: number; profit: number }> {
   const st = atStation(state, stationId);
   if (!st) return fail('err.notDocked');
   if (!st.goods.includes(goodId)) return fail('err.notBought');
   const good = GOODS_BY_ID[goodId];
   const have = unitsOf(state.cargo, goodId);
+  if (!Number.isFinite(qty)) return fail('err.badAmount');
   qty = Math.min(Math.floor(qty), have);
   if (qty <= 0) return fail('err.badAmount');
   const fees = feesFor(st, state.difficulty, isBlackMarketGood(goodId));
-  const items = state.cargo.filter((c) => c.goodId === goodId && !c.contractId).sort((a, b) => a.acquiredDay - b.acquiredDay);
+  const items = state.cargo
+    .filter((c) => c.goodId === goodId && !c.contractId)
+    .sort((a, b) => a.acquiredDay - b.acquiredDay);
   let left = qty;
   let revenue = 0;
   let cost = 0;
@@ -374,10 +457,15 @@ export function serviceCost(state: GameState, stationId: string): number {
   return serviceMult(st, g.systems[st.systemId].region, state.difficulty);
 }
 
-export function buyFuel(state: GameState, stationId: string, units: number): Result<{ units: number; paid: number }> {
+export function buyFuel(
+  state: GameState,
+  stationId: string,
+  units: number,
+): Result<{ units: number; paid: number }> {
   const st = atStation(state, stationId);
   if (!st) return fail('err.notDocked');
   const { stats } = analyze(state);
+  if (!Number.isFinite(units)) return fail('err.badAmount');
   const room = Math.floor(stats.fuelCap - state.ship.fuel);
   const unit = T.fuelPrice * serviceCost(state, stationId);
   const n = Math.min(Math.floor(units), room, Math.floor(state.credits / unit));
@@ -388,10 +476,15 @@ export function buyFuel(state: GameState, stationId: string, units: number): Res
   return ok({ units: n, paid });
 }
 
-export function buySupplies(state: GameState, stationId: string, units: number): Result<{ units: number; paid: number }> {
+export function buySupplies(
+  state: GameState,
+  stationId: string,
+  units: number,
+): Result<{ units: number; paid: number }> {
   const st = atStation(state, stationId);
   if (!st) return fail('err.notDocked');
   const { stats } = analyze(state);
+  if (!Number.isFinite(units)) return fail('err.badAmount');
   const room = Math.floor(stats.suppliesCap - state.ship.supplies);
   const unit = T.suppliesPrice * serviceCost(state, stationId);
   const n = Math.min(Math.floor(units), room, Math.floor(state.credits / unit));
@@ -402,9 +495,14 @@ export function buySupplies(state: GameState, stationId: string, units: number):
   return ok({ units: n, paid });
 }
 
-export function buyProbes(state: GameState, stationId: string, n: number): Result<{ units: number; paid: number }> {
+export function buyProbes(
+  state: GameState,
+  stationId: string,
+  n: number,
+): Result<{ units: number; paid: number }> {
   const st = atStation(state, stationId);
   if (!st) return fail('err.notDocked');
+  if (!Number.isFinite(n)) return fail('err.badAmount');
   const unit = T.probePrice * serviceCost(state, stationId);
   const units = Math.min(Math.floor(n), Math.floor(state.credits / unit), 20 - state.ship.probes);
   if (units <= 0) return fail('err.noCredits');
@@ -424,7 +522,9 @@ export function moduleRepairCost(state: GameState, stationId: string, slot: numb
   if (!m) return 0;
   const def = MODULES_BY_ID[m.defId];
   const price = def.price * QUALITY[m.quality].price;
-  return Math.round(((100 - m.condition) / 100) * price * T.repairModuleFactor * serviceCost(state, stationId));
+  return Math.round(
+    ((100 - m.condition) / 100) * price * T.repairModuleFactor * serviceCost(state, stationId),
+  );
 }
 
 export function repairHull(state: GameState, stationId: string): Result<{ paid: number }> {
@@ -467,7 +567,7 @@ export function fieldRepair(state: GameState, target: 'hull' | number): Result<{
   if (stats.repairRate <= 0) return fail('err.noRepairModule');
   if (stats.powerScan < -0.001) return fail('err.power');
   if (unitsOf(state.cargo, 'spare_parts') < 1) return fail('err.noSpareParts');
-  let restored = 0;
+  let restored: number;
   if (target === 'hull') {
     if (state.ship.hp >= stats.hpMax) return fail('err.nothingToRepair');
     restored = Math.min(stats.hpMax - state.ship.hp, stats.repairRate * 0.8);
@@ -562,3 +662,25 @@ export function snapshotAt(state: GameState, st: StationStatic, goodId: string) 
   return snapshotPrice(st, stockOf(state, st.id, goodId), goodId, state.difficulty, state.day);
 }
 
+/* ------------------------------ insurance ----------------------------- */
+
+/** Re-activate a lapsed policy at a station: pays the debt plus a re-activation fee. */
+export function renewInsurance(state: GameState): Result<{ paid: number }> {
+  if (!state.location.stationId) return fail('err.notDocked');
+  if (!state.difficulty.insurance) return fail('err.noInsuranceMode');
+  if (state.insurance.active) return fail('err.alreadyInsured');
+  const fee = Math.round(state.insurance.due + premiumPerDay(state) * 5);
+  if (state.credits < fee) return fail('err.noCredits');
+  state.credits -= fee;
+  state.insurance = { ...state.insurance, active: true, due: 0, lapsedSince: null };
+  msg(state, 'msg.insuranceRenewed', undefined, 'good');
+  return ok({ paid: fee });
+}
+
+/** Full coverage also insures optional modules (higher premium). */
+export function setFullCoverage(state: GameState, full: boolean): Result {
+  if (!state.location.stationId) return fail('err.notDocked');
+  if (!state.insurance.active) return fail('err.notInsured');
+  state.insurance.full = full;
+  return ok();
+}

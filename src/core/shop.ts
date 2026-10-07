@@ -3,10 +3,28 @@ import { MODULES, MODULES_BY_ID } from '../content/modules';
 import { STATION_TYPES_BY_ID } from '../content/stations';
 import { serviceMult } from './economy';
 import { Rng } from './rng';
-import { autoArrange, gridDims } from './cargo';
-import { buildStarterShip, computeShipStats, hullSlots, moduleFits, modulePrice, moduleValue, newModule, type ShipStats } from './ship';
+import { autoArrange, cargoMass, gridDims } from './cargo';
+import {
+  buildStarterShip,
+  computeShipStats,
+  hullSlots,
+  moduleFits,
+  modulePrice,
+  moduleValue,
+  newModule,
+  type ShipStats,
+} from './ship';
 import { analyze, fail, galaxyOf, msg, newUid, ok, stationOf, type Result } from './state';
-import { QUALITIES, type GameState, type ModuleInstance, type Quality, type Ship, type StationStatic } from './types';
+import {
+  QUALITIES,
+  type GameState,
+  type ModuleInstance,
+  type Quality,
+  type Ship,
+  type StationStatic,
+} from './types';
+
+const SIZE_RANK = { S: 1, M: 2, L: 3 } as const;
 
 export const SHOP_EPOCH_DAYS = 10;
 
@@ -26,7 +44,9 @@ export function refreshShop(state: GameState, st: StationStatic): void {
   const g = galaxyOf(state);
   const region = g.systems[st.systemId].region;
   const mult = serviceMult(st, region, state.difficulty);
-  const hulls = HULLS.filter((h) => h.tier <= tier || (h.tier === tier + 1 && rng.chance(0.3)) || h.id === 'wayfarer').map((h) => h.id);
+  const hulls = HULLS.filter(
+    (h) => h.tier <= tier || (h.tier === tier + 1 && rng.chance(0.3)) || h.id === 'wayfarer',
+  ).map((h) => h.id);
   const mods: ModuleInstance[] = [];
   const prices: number[] = [];
   const push = (defId: string, q: Quality) => {
@@ -37,7 +57,9 @@ export function refreshShop(state: GameState, st: StationStatic): void {
   // always available basics
   for (const id of ['cargo_s', 'cargo_m', 'fuel_s', 'fuel_m']) push(id, 'C');
   const count = 6 + tier * 3;
-  const pool = MODULES.filter((m) => (m.size !== 'L' || tier >= 2) && !(tier === 1 && m.kind === 'amplifier'));
+  const pool = MODULES.filter(
+    (m) => (m.size !== 'L' || tier >= 2) && !(tier === 1 && m.kind === 'amplifier'),
+  );
   for (let i = 0; i < count; i++) {
     const def = rng.pick(pool);
     push(def.id, rng.pick(QUALITY_BY_TIER[tier]));
@@ -56,7 +78,27 @@ export function hullTradeIn(state: GameState): number {
 
 export function hullPrice(state: GameState, st: StationStatic, hullId: string): number {
   const g = galaxyOf(state);
-  return Math.round((HULLS_BY_ID[hullId].price * serviceMult(st, g.systems[st.systemId].region, state.difficulty)) / 50) * 50;
+  return (
+    Math.round(
+      (HULLS_BY_ID[hullId].price * serviceMult(st, g.systems[st.systemId].region, state.difficulty)) / 50,
+    ) * 50
+  );
+}
+
+/**
+ * Would the ship still work with these slots? Cargo must still fit, and carried passengers need their beds.
+ * On success the repacked cargo positions are applied; returns an error key otherwise.
+ */
+function refit(state: GameState, slots: (ModuleInstance | null)[]): string | null {
+  const trial: Ship = { ...state.ship, slots };
+  const stats = computeShipStats(trial);
+  const copy = state.cargo.map((c) => ({ ...c }));
+  if (!autoArrange(copy, gridDims(stats))) return 'err.cargoWontFit';
+  const pax = state.contracts.filter((c) => c.state === 'active' && c.kind === 'passenger');
+  const need = pax.reduce((s, c) => s + (c.passengers ?? 0), 0);
+  if (need > stats.beds || pax.some((c) => (c.comfort ?? 1) > stats.comfort)) return 'err.passengersAboard';
+  for (let i = 0; i < state.cargo.length; i++) Object.assign(state.cargo[i], { x: copy[i].x, y: copy[i].y });
+  return null;
 }
 
 export function sellValue(m: ModuleInstance): number {
@@ -78,7 +120,13 @@ export function buyModule(state: GameState, stationId: string, itemUid: string):
   if (state.credits < item.price) return fail('err.noCredits');
   state.credits -= item.price;
   dyn.shop.modules = dyn.shop.modules.filter((m) => m.uid !== itemUid);
-  state.inventory.push({ uid: item.uid, defId: item.defId, quality: item.quality, condition: 100, enabled: true });
+  state.inventory.push({
+    uid: item.uid,
+    defId: item.defId,
+    quality: item.quality,
+    condition: 100,
+    enabled: true,
+  });
   msg(state, 'msg.boughtModule', { module: item.defId, price: item.price }, 'info');
   return ok();
 }
@@ -96,7 +144,13 @@ export function sellModule(state: GameState, stationId: string, uid: string): Re
       // refuse to strip the last core module of a kind
       return fail('err.sellCore');
     }
+    const bad = refit(
+      state,
+      state.ship.slots.map((x, i) => (i === idx ? null : x)),
+    );
+    if (bad) return fail(bad);
     state.ship.slots[idx] = null;
+    clampShipResources(state);
   }
   const price = sellValue(m);
   state.credits += price;
@@ -121,7 +175,8 @@ export function installModule(state: GameState, uid: string, slotIndex: number):
   state.inventory.splice(inv, 1);
   if (old) state.inventory.push(old);
   state.ship.slots[slotIndex] = m;
-  for (let i = 0; i < state.cargo.length; i++) Object.assign(state.cargo[i], { x: cargoCopy[i].x, y: cargoCopy[i].y });
+  for (let i = 0; i < state.cargo.length; i++)
+    Object.assign(state.cargo[i], { x: cargoCopy[i].x, y: cargoCopy[i].y });
   clampShipResources(state);
   return ok();
 }
@@ -130,13 +185,20 @@ export function removeModuleToInventory(state: GameState, slotIndex: number): Re
   if (!state.location.stationId) return fail('err.mustBeDocked');
   const m = state.ship.slots[slotIndex];
   if (!m) return fail('err.noModule');
+  if (MODULES_BY_ID[m.defId].core) return fail('err.sellCore');
+  const bad = refit(
+    state,
+    state.ship.slots.map((x, i) => (i === slotIndex ? null : x)),
+  );
+  if (bad) return fail(bad);
   const trial: Ship = { ...state.ship, slots: state.ship.slots.map((x, i) => (i === slotIndex ? null : x)) };
   const dims = gridDims(computeShipStats(trial));
   const cargoCopy = state.cargo.map((c) => ({ ...c }));
   if (!autoArrange(cargoCopy, dims)) return fail('err.cargoWontFit');
   state.ship.slots[slotIndex] = null;
   state.inventory.push(m);
-  for (let i = 0; i < state.cargo.length; i++) Object.assign(state.cargo[i], { x: cargoCopy[i].x, y: cargoCopy[i].y });
+  for (let i = 0; i < state.cargo.length; i++)
+    Object.assign(state.cargo[i], { x: cargoCopy[i].x, y: cargoCopy[i].y });
   clampShipResources(state);
   return ok();
 }
@@ -153,25 +215,42 @@ export function toggleModule(state: GameState, slotIndex: number, enabled?: bool
   if (!m) return fail('err.noModule');
   const kind = MODULES_BY_ID[m.defId].kind;
   if (kind === 'reactor' || kind === 'life') return fail('err.cannotDisable');
-  m.enabled = enabled ?? !m.enabled;
+  const next = enabled ?? !m.enabled;
+  if (!next) {
+    const bad = refit(
+      state,
+      state.ship.slots.map((x, i) => (i === slotIndex ? { ...x!, enabled: false } : x)),
+    );
+    if (bad) return fail(bad);
+  }
+  m.enabled = next;
+  clampShipResources(state);
   return ok();
 }
 
 /** Disassemble a module into raw materials (works anywhere, even in an emergency). */
-export function disassembleModule(state: GameState, uid: string, addGoodsFn: (goodId: string, qty: number) => number): Result<{ metals: number; parts: number }> {
+export function disassembleModule(
+  state: GameState,
+  uid: string,
+  addGoodsFn: (goodId: string, qty: number) => number,
+): Result<{ metals: number; parts: number }> {
   let m = state.inventory.find((x) => x.uid === uid);
-  let fromSlot = -1;
   if (m) state.inventory = state.inventory.filter((x) => x.uid !== uid);
   else {
-    fromSlot = state.ship.slots.findIndex((x) => x?.uid === uid);
+    const fromSlot = state.ship.slots.findIndex((x) => x?.uid === uid);
     if (fromSlot < 0) return fail('err.itemGone');
     m = state.ship.slots[fromSlot]!;
     if (MODULES_BY_ID[m.defId].core) return fail('err.sellCore');
+    const bad = refit(
+      state,
+      state.ship.slots.map((x, i) => (i === fromSlot ? null : x)),
+    );
+    if (bad) return fail(bad);
     state.ship.slots[fromSlot] = null;
   }
   const value = modulePrice(MODULES_BY_ID[m.defId], m.quality);
-  const metals = Math.max(2, Math.round(value / 90));
-  const parts = Math.max(1, Math.round(value / 260));
+  const metals = Math.max(2, Math.round(value / 180));
+  const parts = Math.max(1, Math.round(value / 520));
   addGoodsFn('metals', metals);
   addGoodsFn('spare_parts', parts);
   clampShipResources(state);
@@ -205,7 +284,11 @@ function swapCore(state: GameState, hullId: string, cost: number): HullSwapPrevi
   const moved: string[] = [];
   const toInv: string[] = [];
   const old = state.ship.slots.filter(Boolean) as ModuleInstance[];
-  const order = [...old].sort((a, b) => Number(MODULES_BY_ID[b.defId].core) - Number(MODULES_BY_ID[a.defId].core) || QUALITIES.indexOf(b.quality) - QUALITIES.indexOf(a.quality));
+  const order = [...old].sort(
+    (a, b) =>
+      Number(MODULES_BY_ID[b.defId].core) - Number(MODULES_BY_ID[a.defId].core) ||
+      QUALITIES.indexOf(b.quality) - QUALITIES.indexOf(a.quality),
+  );
   const result: Ship = { ...fresh, slots: [...fresh.slots] };
   const placedInv: ModuleInstance[] = [];
   for (const m of order) {
@@ -214,7 +297,14 @@ function swapCore(state: GameState, hullId: string, cost: number): HullSwapPrevi
     for (const s of slots) {
       if (!moduleFits(s, def)) continue;
       const cur = result.slots[s.index];
-      if (!cur || (defaults.has(cur.uid) && def.core && QUALITIES.indexOf(m.quality) >= QUALITIES.indexOf(cur.quality))) {
+      if (
+        !cur ||
+        (defaults.has(cur.uid) &&
+          def.core &&
+          (SIZE_RANK[def.size] > SIZE_RANK[MODULES_BY_ID[cur.defId].size] ||
+            (def.size === MODULES_BY_ID[cur.defId].size &&
+              QUALITIES.indexOf(m.quality) > QUALITIES.indexOf(cur.quality))))
+      ) {
         target = s.index;
         break;
       }
@@ -228,13 +318,24 @@ function swapCore(state: GameState, hullId: string, cost: number): HullSwapPrevi
     }
   }
   const before = analyze(state).stats;
-  const after = computeShipStats(result, before.mass - before.hullMass + 0);
+  const after = computeShipStats(result, cargoMass(state.cargo));
   const dims = gridDims(computeShipStats(result));
   const cargoCopy = state.cargo.map((c) => ({ ...c }));
   const cargoFits = autoArrange(cargoCopy, dims);
   result.fuel = Math.min(state.ship.fuel, after.fuelCap);
   result.supplies = Math.min(state.ship.supplies, after.suppliesCap);
-  return { ok: true, cost, newShip: result, moved, toInventory: toInv, inventoryAdds: placedInv, before, after, cargoFits };
+  result.probes = state.ship.probes;
+  return {
+    ok: true,
+    cost,
+    newShip: result,
+    moved,
+    toInventory: toInv,
+    inventoryAdds: placedInv,
+    before,
+    after,
+    cargoFits,
+  };
 }
 
 export function buyHull(state: GameState, stationId: string, hullId: string): Result {

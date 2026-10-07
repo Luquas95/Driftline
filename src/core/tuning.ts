@@ -16,7 +16,7 @@ export const T = {
   capSize: { small: 0.4, medium: 1, large: 2.4 },
   /** Fuel: units per ly per ton of ship mass at jump efficiency 1. */
   fuelK: 0.0105,
-  fuelPrice: 4,
+  fuelPrice: 8,
   suppliesPrice: 6,
   probePrice: 55,
   /** Sublight: days per AU at mass/thrust = 1 */
@@ -26,7 +26,7 @@ export const T = {
   repairHullPrice: 12,
   repairModuleFactor: 0.25,
   supplyPerCrewDay: 0.35,
-  insuranceRate: 0.0007,
+  insuranceRate: 0.0015,
   insuranceLapseDays: 6,
   overloadRow: 1,
   overloadRisk: 0.05,
