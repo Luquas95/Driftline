@@ -781,6 +781,7 @@ const base: Record<string, string> = {
   'err.alreadyInsured': 'Pojištění je aktivní.',
   'err.notInsured': 'Nejsi pojištěný.',
   'err.nothingToSell': 'Nemáš co prodat.',
+  'err.cargoFull': 'V nákladovém prostoru není místo.',
   'err.crewFull': 'Na lodi není místo pro další posádku. Přidej ubikace.',
   'err.lastCrew': 'Poslední člen posádky nemůže odejít.',
   'err.noEncounter': 'Žádný střet neprobíhá.',

@@ -496,6 +496,37 @@ export function buySupplies(
   return ok({ units: n, paid });
 }
 
+/** Missiles are ammunition for missile launchers; they live in the cargo hold as the `missiles` good. */
+export function buyMissiles(
+  state: GameState,
+  stationId: string,
+  n: number,
+): Result<{ units: number; paid: number }> {
+  const st = atStation(state, stationId);
+  if (!st) return fail('err.notDocked');
+  if (!Number.isFinite(n)) return fail('err.badAmount');
+  const unit = T.missilePrice * serviceCost(state, stationId);
+  const { dims, stats } = analyze(state);
+  const want = Math.min(Math.floor(n), Math.floor(state.credits / unit));
+  if (want <= 0) return fail('err.noCredits');
+  const quotas = { chilledCells: stats.chilledCells, secureCells: stats.secureCells };
+  const r = addGoods(
+    state.cargo,
+    dims,
+    quotas,
+    'missiles',
+    want,
+    Math.round(want * unit),
+    state.day,
+    undefined,
+    false,
+  );
+  if (r.added <= 0) return fail('err.cargoFull');
+  const paid = Math.round(r.added * unit);
+  state.credits -= paid;
+  return ok({ units: r.added, paid });
+}
+
 export function buyProbes(
   state: GameState,
   stationId: string,

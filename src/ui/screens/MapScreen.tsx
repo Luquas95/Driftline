@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { MARKET_GOODS } from '../../content/goods';
 import { STATION_TYPES_BY_ID } from '../../content/stations';
 import { recommendTrades, planRoute, type RoutePlan } from '../../core/advisor';
+import { routeThreat, threatBand, threatLevel } from '../../core/combat/encounter';
 import { callTow, dockAt, isStranded, jump, planJump, undock } from '../../core/game';
 import { dockReport } from '../DockReport';
 import { createMapScene, type MapFilter, type MapScene } from '../../render/mapscene';
@@ -392,6 +393,18 @@ function SystemPanel({
             </dd>
             <dt>{t('map.danger')}</dt>
             <dd class="mono">{Math.round(sys.danger * 100)} %</dd>
+            <dt>{t('map.threat')}</dt>
+            <dd data-testid="threat">
+              {(() => {
+                const p = threatLevel(s, sysId);
+                const b = threatBand(p);
+                return (
+                  <span class={b === 'high' ? 'neg' : b === 'mid' ? 'warn' : 'pos'}>
+                    {t(`map.threat.${b}`)} ({Math.round(p * 100)} %)
+                  </span>
+                );
+              })()}
+            </dd>
           </dl>
         ) : (
           <p class="dim">{t('map.unexploredHelp')}</p>
@@ -426,6 +439,10 @@ function SystemPanel({
               <dt>{t('map.routeTime')}</dt>
               <dd class="mono">
                 {fmt(route.days, 1)} {t('unit.days')}
+              </dd>
+              <dt>{t('map.routeThreat')}</dt>
+              <dd class="mono" data-testid="route-threat">
+                {Math.round(routeThreat(s, route.path) * 100)} %
               </dd>
               <dt>{t('map.routeRisk')}</dt>
               <dd class={riskLabel === 'high' ? 'neg' : riskLabel === 'mid' ? 'warn' : 'pos'}>

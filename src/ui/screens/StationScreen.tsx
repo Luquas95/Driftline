@@ -9,6 +9,7 @@ import {
   buyGoods,
   buyIntel,
   buyProbes,
+  buyMissiles,
   buySupplies,
   hullRepairCost,
   intelPrice,
@@ -255,6 +256,32 @@ function ServiceBlock({ s, st }: { s: GameState; st: StationStatic }) {
             </Btn>
             <span class="faint">
               {money(probePrice)}/{t('unit.piece')}
+            </span>
+          </div>
+        </div>
+        <div class="service">
+          <div class="spread">
+            <span class="dim">{t('good.missiles')}</span>
+            <span class="mono" data-testid="missile-count">
+              {unitsOf(s.cargo, 'missiles')}
+            </span>
+          </div>
+          <div class="row wrap">
+            {[5, 10].map((n) => (
+              <Btn
+                key={n}
+                small
+                testid={`btn-missiles-${n}`}
+                onClick={() => {
+                  const r = act((x) => buyMissiles(x, st.id, n));
+                  if (report(r)) sfx('buy');
+                }}
+              >
+                +{n}
+              </Btn>
+            ))}
+            <span class="faint">
+              {money(Math.round(T.missilePrice * serviceCost(s, st.id)))}/{t('unit.piece')}
             </span>
           </div>
         </div>

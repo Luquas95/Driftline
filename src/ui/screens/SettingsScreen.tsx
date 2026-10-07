@@ -130,6 +130,27 @@ export function SettingsScreen() {
               </label>
             </div>
           </Panel>
+          <Panel title={t('settings.combat')} icon="power">
+            <div class="stack">
+              {(
+                [
+                  ['autoCombat', 'settings.autoCombat'],
+                  ['shake', 'settings.shake'],
+                  ['pauseOnSelect', 'settings.pauseOnSelect'],
+                ] as const
+              ).map(([key, label]) => (
+                <label class="row" key={key}>
+                  <input
+                    type="checkbox"
+                    checked={set[key]}
+                    data-testid={`set-${key}`}
+                    onChange={(e) => updateSettings({ [key]: (e.target as HTMLInputElement).checked })}
+                  />
+                  <span>{t(label)}</span>
+                </label>
+              ))}
+            </div>
+          </Panel>
           <Panel title={t('settings.galaxy')} icon="map">
             <dl class="kv">
               <dt>{t('settings.seed')}</dt>

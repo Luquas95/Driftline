@@ -162,6 +162,19 @@ export function threatLevel(state: GameState, systemId: number): number {
   return Math.min(0.5, p);
 }
 
+export type ThreatBand = 'low' | 'mid' | 'high';
+
+export function threatBand(p: number): ThreatBand {
+  return p < 0.06 ? 'low' : p < 0.14 ? 'mid' : 'high';
+}
+
+/** Chance of at least one encounter when travelling the given system path (the start is excluded). */
+export function routeThreat(state: GameState, path: number[]): number {
+  let ok = 1;
+  for (const id of path.slice(1)) ok *= 1 - threatLevel(state, id);
+  return 1 - ok;
+}
+
 function pickEnemy(rng: Rng, kind: EncounterKind, region: string, tier: number): EnemyDef | null {
   const pool = ENEMIES.filter((e) => e.kind === kind && tier >= e.tiers[0] && tier <= e.tiers[1]);
   if (!pool.length) return null;

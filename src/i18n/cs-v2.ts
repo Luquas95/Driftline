@@ -59,7 +59,7 @@ export const csV2: Record<string, string> = {
   'officer.haggler.desc': 'Obchod: o 15 % menší skluz cen ve tvůj prospěch.',
   'officer.ghost.desc': 'Pilot: jednou za cestu uteče z boje bez spotřeby paliva.',
   'officer.taskmaster.desc': 'Inženýr: posádka je stabilnější, morálka pomalu roste.',
-  'officer.sharpshooter.desc': 'Střelec: zbraně se nabíjejí rychleji.',
+  'officer.sharpshooter.desc': 'Střelec: zbraně střílejí přesněji.',
   'officer.mender.desc': 'Lékař: zranění se hojí výrazně rychleji.',
   'officer.navigator.desc': 'Vědec: skoky spotřebují o 8 % méně paliva.',
 
@@ -69,6 +69,16 @@ export const csV2: Record<string, string> = {
   'fx.crewLeave': 'Někdo odchází z posádky',
   'fx.crewJoin': 'Nový člen posádky',
   'fx.fight': 'Boj!',
+
+  'settings.combat': 'Boj',
+  'settings.autoCombat': 'Auto-boj proti slabým protivníkům (výsledek počítá stejná simulace)',
+  'settings.shake': 'Chvění obrazovky při zásazích',
+  'settings.pauseOnSelect': 'Pozastavit boj při každém výběru (doporučeno pro dotyk)',
+  'map.threat': 'Hrozba střetu',
+  'map.threat.low': 'nízká',
+  'map.threat.mid': 'střední',
+  'map.threat.high': 'vysoká',
+  'map.routeThreat': 'Šance střetu na trase',
 
   /* encounters */
   'enc.pirate.title': 'Piráti!',

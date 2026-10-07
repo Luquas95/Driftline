@@ -19,6 +19,7 @@ export const T = {
   fuelPrice: 8,
   suppliesPrice: 6,
   probePrice: 55,
+  missilePrice: 26,
   /** Sublight: days per AU at mass/thrust = 1 */
   sublightK: 0.08,
   jumpOverhead: 0.35,
