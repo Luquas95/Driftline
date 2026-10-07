@@ -108,7 +108,7 @@ export function SystemScreen() {
         window.innerWidth >= 900 ? 350 : 0,
         0,
         0,
-        window.innerWidth >= 900 ? 0 : Math.round(window.innerHeight * 0.4),
+        window.innerWidth >= 900 ? 0 : Math.round(window.innerHeight * 0.46),
       );
     fit();
     window.addEventListener('resize', fit);

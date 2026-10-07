@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'preact/hooks';
+import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { createBackdropScene } from '../../render/backdrop';
 import { hullThumb } from '../../render/hullThumb';
 import { HULLS_BY_ID } from '../../content/hulls';
@@ -116,11 +116,11 @@ export function FirstShipScreen() {
   );
   const offer = offers.find((o) => o.id === sel) ?? offers[0];
   const [name, setName] = useState(() => suggestShipName(s.seed, offer.hullId));
-  const [nameTouched, setNameTouched] = useState(false);
+  const nameTouched = useRef(false);
   const prev = previewOffer(s, offer);
   const thumb = useThumb(offer.hullId);
   useEffect(() => {
-    if (!nameTouched) setName(suggestShipName(s.seed, offer.hullId));
+    if (!nameTouched.current) setName(suggestShipName(s.seed, offer.hullId));
   }, [sel]);
   useScene(
     () =>
@@ -205,7 +205,7 @@ export function FirstShipScreen() {
                 data-testid="first-name"
                 onInput={(e) => {
                   setName((e.target as HTMLInputElement).value);
-                  setNameTouched(true);
+                  nameTouched.current = true;
                 }}
               />
             </label>

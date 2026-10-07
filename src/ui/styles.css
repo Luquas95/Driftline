@@ -1678,6 +1678,30 @@ kbd {
 @media (max-width: 899px) {
   .sys-actions {
     bottom: 8px;
+    left: 8px;
+    right: 8px;
+    transform: none;
+    max-width: none;
+  }
+  .sys-dock {
+    flex: 1;
+    min-width: 0;
+  }
+  .sys-dock .btn {
+    flex: 1;
+    min-width: 0;
+    font-size: 12px;
+    padding-inline: 6px;
+  }
+  .sys-zoom {
+    position: fixed;
+    top: 86px;
+    right: 8px;
+    flex-direction: column;
+  }
+  .side-panel.sys-side {
+    bottom: 64px;
+    max-height: 40%;
   }
 }
 
