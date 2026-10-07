@@ -188,6 +188,10 @@ export const csV2: Record<string, string> = {
   'combat.demandTitle': 'Požadavek na výkupné',
   'combat.demandText':
     'Protivník požaduje {pct} % tvého nákladu (celkem asi {value}), jinak tě dorazí. Platba [Y], odmítnutí [N].',
+  'combat.error': 'Boj skončil chybou a byl přerušen. Hra pokračuje.',
+  'err.crashTitle': 'Něco se pokazilo',
+  'err.crashText': 'Obrazovku se nepodařilo vykreslit. Hra je uložená; vrať se do menu a pokračuj z uložení.',
+  'err.crashBack': 'Zpět do menu',
   'combat.lowPower': 'nedostatek energie',
   'combat.demandPay': 'Zaplatit nákladem',
   'combat.demandRefuse': 'Odmítnout',

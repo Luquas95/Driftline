@@ -6,7 +6,7 @@ import type { CombatEvent, EncounterOption } from '../core/combat/types';
 import { sfx } from '../audio/audio';
 import { t } from '../i18n';
 import { settings } from './settings';
-import { act, game, report, toast } from './store';
+import { act, game, report, rev, scheduleAutosave, toast } from './store';
 
 /** Bumped ~10 times per second while a fight runs so the HUD re-renders. */
 export const combatRev = signal(0);
@@ -17,6 +17,8 @@ export const combatSummary = signal<CombatSummary | null>(null);
 
 let acc = 0;
 let uiAcc = 0;
+let outcomeSeen = false;
+let lastSaveSlot = 0;
 
 export function resetCombatUi(): void {
   selWeapon.value = null;
@@ -24,6 +26,7 @@ export function resetCombatUi(): void {
   combatSpeed.value = 1;
   acc = 0;
   uiAcc = 0;
+  outcomeSeen = false;
 }
 
 function sounds(events: CombatEvent[]): void {
@@ -50,11 +53,34 @@ export function finishCombat(): void {
 
 /** Called every frame by the combat scene. Steps the simulation at a fixed rate and returns the visual events. */
 export function driveCombat(dt: number): CombatEvent[] {
+  try {
+    return driveCombatInner(dt);
+  } catch (err) {
+    // a broken fight must never freeze the render loop: abandon it and keep the game playable
+    console.error('combat aborted', err);
+    const s = game.value;
+    if (s) {
+      s.combat = null;
+      s.encounter = null;
+      resetCombatUi();
+      toast(t('combat.error'), 'bad');
+      rev.value++;
+    }
+    return [];
+  }
+}
+
+function driveCombatInner(dt: number): CombatEvent[] {
   const s = game.value;
   const c = s?.combat;
   if (!c) return [];
   if (c.outcome) {
     // let the last explosion play for a moment, then close the fight
+    if (!outcomeSeen) {
+      outcomeSeen = true;
+      uiAcc = 0;
+      combatRev.value++;
+    }
     uiAcc += dt;
     if (uiAcc > 1.4) {
       uiAcc = 0;
@@ -76,9 +102,14 @@ export function driveCombat(dt: number): CombatEvent[] {
     if (out.length) sounds(out);
   }
   uiAcc += dt;
-  if (uiAcc > 0.1 || out.length) {
+  if (out.length || (!c.paused && uiAcc > 0.1)) {
     if (!c.outcome) uiAcc = 0;
     combatRev.value++;
+  }
+  // keep a mid-fight autosave (the fight state mutates outside `act`)
+  if (Math.floor(c.time / 5) !== lastSaveSlot) {
+    lastSaveSlot = Math.floor(c.time / 5);
+    scheduleAutosave(s!, 200);
   }
   return out;
 }
@@ -97,6 +128,7 @@ export function togglePause(): void {
   if (c.demand !== null) return;
   c.paused = !c.paused;
   combatRev.value++;
+  scheduleAutosave(game.value!, 200);
 }
 
 /** Choose an option in the encounter dialogue. Starts a fight, or resolves it without one. */

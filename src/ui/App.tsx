@@ -4,7 +4,7 @@ import { stage, stageFailed, stageReady } from '../render/instance';
 import { unlockAudio, sfx } from '../audio/audio';
 import { t, fmt, money, plural } from '../i18n';
 import { Icon } from './Icon';
-import { Modal, Btn } from './components';
+import { Modal, Btn, ErrorBoundary } from './components';
 import {
   act,
   analysis,
@@ -254,7 +254,7 @@ function useShortcuts() {
   }, []);
 }
 
-export function App() {
+function AppInner() {
   useShortcuts();
   useEffect(() => {
     const unlock = () => unlockAudio();
@@ -308,6 +308,24 @@ export function App() {
       {menuOpen.value && <MenuScreen />}
       <Toasts />
     </>
+  );
+}
+
+export function App() {
+  return (
+    <ErrorBoundary
+      onReset={() => {
+        const g = game.value;
+        if (g) {
+          g.combat = null;
+          g.encounter = null;
+        }
+        menuOpen.value = true;
+        rev.value++;
+      }}
+    >
+      <AppInner />
+    </ErrorBoundary>
   );
 }
 

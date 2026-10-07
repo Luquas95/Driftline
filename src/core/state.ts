@@ -175,6 +175,8 @@ export function destroyShip(state: GameState): void {
     m.morale = Math.max(0, m.morale - 15);
     m.hp = Math.max(1, Math.round(m.hp * 0.6));
   }
+  if (!state.crew.length)
+    state.crew = defaultCrew(state.seed, state.ship.hullId, state.day, () => newUid(state, 'w'));
   if (state.difficulty.permadeath) {
     state.dead = true;
     msg(state, 'msg.permadeath', undefined, 'bad');

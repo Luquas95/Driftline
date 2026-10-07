@@ -44,7 +44,13 @@ export class Stage {
       const dt = tk.deltaMS / 1000;
       this.watchPerformance(tk.deltaMS);
       this.time += dt;
-      this.scene?.update(dt, this.time);
+      try {
+        this.scene?.update(dt, this.time);
+      } catch (err) {
+        // never let one broken scene stop the ticker (and with it the whole canvas)
+        console.error('scene update failed', err);
+        this.setScene(null);
+      }
     });
     app.renderer.on('resize', () => this.scene?.resize(app.screen.width, app.screen.height));
   }

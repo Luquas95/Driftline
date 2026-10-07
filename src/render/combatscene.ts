@@ -70,6 +70,8 @@ export interface CombatScene extends Scene {
   /** Visual effects for the events produced by the simulation. */
   onEvents(events: CombatEvent[]): void;
   setInsets(top: number, bottom: number): void;
+  /** Ask for a redraw while paused (targets or crew changed). */
+  markDirty(): void;
   setEffects(opts: { shake: boolean; reduced: boolean }): void;
   readonly handlers: CombatHandlers;
   /** Screen position of a room (for tests and tutorials). */
@@ -94,6 +96,8 @@ interface ShipView {
   labels: Map<number, Text>;
   letters: Text[];
   o2: Text[];
+  o2Last: number[];
+  built: boolean;
   cols: number;
   rows: number;
   flip: boolean;
@@ -142,6 +146,9 @@ export function createCombatScene(
   let reduced = false;
   let shake = 0;
   let sel: { crewId: string | null; weaponId: string | null } = { crewId: null, weaponId: null };
+  let dirty = true;
+  let lastTime = -1;
+  let lastPaused = false;
   let rnd = seed || 1;
   const rand = () => {
     rnd = (rnd * 16807) % 2147483647;
@@ -167,6 +174,8 @@ export function createCombatScene(
       labels: new Map(),
       letters: [],
       o2: [],
+      o2Last: [],
+      built: false,
       cols,
       rows,
       flip: s.side === 'player',
@@ -219,6 +228,7 @@ export function createCombatScene(
   }
 
   function layout(): void {
+    dirty = true;
     const portrait = H - insetBottom - insetTop > W * 0.9 && W < 700;
     const top = insetTop + 8;
     const bottom = H - insetBottom - 8;
@@ -301,15 +311,9 @@ export function createCombatScene(
         alpha: 0.75,
       });
     }
-    // labels for weapon rooms
-    for (const [room, t] of v.labels) {
-      void room;
-      t.destroy();
-    }
-    v.labels.clear();
-    for (const t of [...v.letters, ...v.o2]) t.destroy();
-    v.letters = [];
-    v.o2 = [];
+    // labels are positioned in ship-local coordinates, so they are built once (not on every layout)
+    if (v.built) return;
+    v.built = true;
     v.ship.rooms.forEach((r, i) => {
       const p = localPos(v, i);
       const letter = r.kind ? KIND_LETTER[r.kind] : undefined;
@@ -349,13 +353,13 @@ export function createCombatScene(
     }
   }
 
-  function drawShip(v: ShipView, time: number): void {
+  function drawShip(v: ShipView, time: number, dt: number): void {
     const s = v.ship;
     const g = v.dyn;
     g.clear();
     const dead = !s.alive;
     const gone = s.out === 'fled';
-    v.fade += (((dead || gone ? 0.0 : 1) - v.fade) * 0.04) as number;
+    v.fade += ((dead || gone ? 0.0 : 1) - v.fade) * Math.min(1, dt * 2.4);
     v.root.alpha = dead ? Math.max(0.18, v.fade) : gone ? Math.max(0, v.fade) : 1;
     s.rooms.forEach((r, i) => {
       const p = localPos(v, i);
@@ -424,7 +428,11 @@ export function createCombatScene(
       if (lab) {
         const low = r.o2 < 50 && s.alive;
         lab.visible = low;
-        if (low) lab.text = `O₂ ${Math.round(r.o2)}%`;
+        const shown = Math.round(r.o2 / 5) * 5;
+        if (low && v.o2Last[i] !== shown) {
+          v.o2Last[i] = shown;
+          lab.text = `O₂ ${shown}%`;
+        }
       }
       let outline = col;
       let ow = 1.5;
@@ -523,8 +531,8 @@ export function createCombatScene(
     }
     // shield bubble: one ring per shield layer
     if (s.shieldMax > 0 && s.alive) {
-      const layers = Math.max(1, Math.ceil(s.shieldMax / 15));
-      const filled = s.shield / 15;
+      const layers = Math.min(8, Math.max(1, Math.ceil(s.shieldMax / 15)));
+      const filled = (s.shield / s.shieldMax) * layers;
       const rx = (v.cols * CELL) / 2 + 52;
       const ry = (v.rows * CELL) / 2 + 40;
       for (let L = 0; L < layers; L++) {
@@ -538,7 +546,7 @@ export function createCombatScene(
     // ripples on the shield
     for (let i = v.ripples.length - 1; i >= 0; i--) {
       const r = v.ripples[i];
-      r.t += 0.03;
+      r.t += dt * 1.8;
       if (r.t >= 1) {
         v.ripples.splice(i, 1);
         continue;
@@ -748,7 +756,11 @@ export function createCombatScene(
     container,
     handlers,
     setSelection(s) {
+      if (s.crewId !== sel.crewId || s.weaponId !== sel.weaponId) dirty = true;
       sel = s;
+    },
+    markDirty() {
+      dirty = true;
     },
     setInsets(top, bottom) {
       insetTop = top;
@@ -767,6 +779,7 @@ export function createCombatScene(
       W = w;
       H = h;
       container.hitArea = { contains: () => true } as never;
+      dirty = true;
       for (const m of [nebula.mesh, stars.mesh]) {
         m.position.set(W / 2, H / 2);
         m.scale.set(W / 2, H / 2);
@@ -839,11 +852,18 @@ export function createCombatScene(
     update(dt, time) {
       const evs = driver(dt);
       if (evs.length) this.onEvents(evs);
-      for (const v of views) {
-        drawShip(v, time);
-        emitRoomEffects(v, dt);
+      // while the fight is paused and nothing changed, the previous frame is still correct
+      const moving = state.time !== lastTime || state.paused !== lastPaused || evs.length > 0;
+      lastTime = state.time;
+      lastPaused = state.paused;
+      if (moving || dirty || !state.paused) {
+        dirty = false;
+        for (const v of views) {
+          drawShip(v, time, dt);
+          if (!state.paused) emitRoomEffects(v, dt);
+        }
+        drawProjectiles();
       }
-      drawProjectiles();
       for (let i = particles.length - 1; i >= 0; i--) {
         const p = particles[i];
         p.life -= dt;

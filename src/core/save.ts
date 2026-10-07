@@ -6,7 +6,9 @@ import { HULLS_BY_ID } from '../content/hulls';
 import { MODULES_BY_ID } from '../content/modules';
 import { hullSlots } from './ship';
 import { defaultCrew } from './crew';
-import { RACES_BY_ID, ROLE_SKILL } from '../content/crew';
+import { OFFICERS_BY_ID, RACES_BY_ID, ROLE_SKILL, SKILLS } from '../content/crew';
+import { ENEMIES_BY_ID } from '../content/enemies';
+import { POWER_GROUPS, WEAPON_KINDS, type CShip, type CombatOutcome, type CombatState } from './combat/types';
 import { QUALITIES } from './types';
 
 /**
@@ -91,6 +93,7 @@ export function migrateState(raw: Raw): GameState {
 }
 
 const MAX_ARRAY = 5000;
+const COMBAT_OUTCOMES: CombatOutcome[] = ['victory', 'defeat', 'fled', 'surrender', 'tribute', 'enemy-fled'];
 
 function finite(n: unknown, min = -Infinity, max = Infinity): n is number {
   return typeof n === 'number' && Number.isFinite(n) && n >= min && n <= max;
@@ -154,6 +157,7 @@ function validate(s: GameState): void {
   ] as const) {
     if (!Array.isArray(s[k]) || (s[k] as unknown[]).length > MAX_ARRAY) bad(k);
   }
+  if (!Array.isArray(s.crew) || s.crew.length > 200) bad('crew');
   for (const c of s.crew) {
     if (
       !c ||
@@ -173,7 +177,120 @@ function validate(s: GameState): void {
  * Make a validated save consistent with the current content: pad or trim stock arrays (goods are append-only),
  * drop events and goods that no longer exist, clamp resources. Never throws.
  */
+function validCombat(c: unknown): boolean {
+  try {
+    const cs = c as CombatState;
+    if (!cs || cs.v !== 1 || typeof cs.seed !== 'string' || !finite(cs.time, 0, 1e6)) return false;
+    if (
+      !Array.isArray(cs.rng) ||
+      cs.rng.length !== 4 ||
+      !cs.rng.every(Number.isInteger) ||
+      cs.rng.every((n) => n === 0)
+    )
+      return false;
+    if (!Array.isArray(cs.enemies) || cs.enemies.length < 1 || cs.enemies.length > 4) return false;
+    if (cs.outcome !== null && !COMBAT_OUTCOMES.includes(cs.outcome)) return false;
+    if (!Array.isArray(cs.projectiles) || cs.projectiles.length > 300) return false;
+    if (!Array.isArray(cs.enemyDefs) || !finite(cs.tier, 1, 3) || !finite(cs.difficultyRisk, 0.1, 10))
+      return false;
+    const idx = (n: unknown, len: number): boolean =>
+      Number.isInteger(n) && (n as number) >= 0 && (n as number) < len;
+    for (const sh of [cs.player, ...cs.enemies]) {
+      if (!sh || !HULLS_BY_ID[sh.hullId]) return false;
+      const nr = sh.rooms?.length;
+      if (!Array.isArray(sh.rooms) || nr !== hullSlots(sh.hullId).length) return false;
+      if (
+        !finite(sh.hull, 0, 1e6) ||
+        !finite(sh.hullMax, 1, 1e6) ||
+        !finite(sh.shield, 0, 1e6) ||
+        !finite(sh.shieldMax, 0, 1e6)
+      )
+        return false;
+      if (!finite(sh.heat, 0, 1000) || !finite(sh.powerOut, 0, 1e4) || !finite(sh.jumpCharge, 0, 1e3))
+        return false;
+      if (
+        !sh.need ||
+        !sh.weights ||
+        !POWER_GROUPS.every((g) => finite(sh.need[g], 0, 1e4) && finite(sh.weights[g], 0, 1e4))
+      )
+        return false;
+      for (const r of sh.rooms) {
+        if (!r || !Array.isArray(r.adj) || r.adj.length > 4 || !r.adj.every((a) => idx(a, nr))) return false;
+        if (
+          !finite(r.sys, 0, 100) ||
+          !finite(r.o2, 0, 100) ||
+          !finite(r.fire, 0, 100) ||
+          !finite(r.breach, 0, 100) ||
+          !finite(r.ion, 0, 1e4)
+        )
+          return false;
+      }
+      if (
+        !Array.isArray(sh.weapons) ||
+        sh.weapons.length > 16 ||
+        !Array.isArray(sh.drones) ||
+        sh.drones.length > 40
+      )
+        return false;
+      for (const w of sh.weapons) {
+        if (!WEAPON_KINDS.includes(w.kind) || !idx(w.room, nr) || !finite(w.charge, 0, 10)) return false;
+        if (w.target && (!idx(w.target.ship, cs.enemies.length) || !idx(w.target.room, 64))) return false;
+      }
+      if (!Array.isArray(sh.crew) || sh.crew.length > 60) return false;
+      for (const m of sh.crew) {
+        if (
+          !RACES_BY_ID[m.race] ||
+          !ROLE_SKILL[m.role] ||
+          !finite(m.hp, -1e4, 1e4) ||
+          !finite(m.stepT, -10, 10)
+        )
+          return false;
+        if (
+          !idx(m.room, 64) ||
+          !Array.isArray(m.path) ||
+          m.path.length > 64 ||
+          !m.path.every((a) => idx(a, 64))
+        )
+          return false;
+        if (!m.skills || !SKILLS.every((k) => finite(m.skills[k], 0, 10)) || !m.xp) return false;
+      }
+    }
+    for (const p of cs.projectiles)
+      if (!p || !idx(p.toShip, 8) || !idx(p.toRoom, 64) || !finite(p.t, -10, 100)) return false;
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 function repair(state: GameState): void {
+  // v2: a fight or encounter that refers to removed content or is malformed is dropped instead of crashing later
+  if (state.combat && !validCombat(state.combat)) state.combat = null;
+  if (state.combat) {
+    const nRooms = (sh: CShip) => sh.rooms.length;
+    for (const sh of [state.combat.player, ...state.combat.enemies])
+      for (const m of sh.crew) m.room = Math.min(m.room, nRooms(sh) - 1);
+  }
+  const enc = state.encounter;
+  if (
+    enc &&
+    (!Array.isArray(enc.enemyDefs) ||
+      enc.enemyDefs.length < 1 ||
+      !enc.enemyDefs.every((id) => ENEMIES_BY_ID[id]) ||
+      !Array.isArray(enc.options))
+  )
+    state.encounter = null;
+  for (const c of state.crew) {
+    for (const k of SKILLS) if (!finite(c.skills[k], 0, 10)) c.skills[k] = 0;
+    if (!finite(c.wage, 0, 1e6)) c.wage = 5;
+    if (!finite(c.fatigue, 0, 100)) c.fatigue = 0;
+    if (c.officer && !OFFICERS_BY_ID[c.officer]) delete c.officer;
+  }
+  state.crew = state.crew.slice(0, 40);
+  state.officersMet = Array.isArray(state.officersMet)
+    ? state.officersMet.filter((o) => (OFFICERS_BY_ID as Record<string, unknown>)[o])
+    : [];
+  if (!finite(state.wagesDue, 0, 1e9)) state.wagesDue = 0;
   const n = GOODS.length;
   for (const dyn of Object.values(state.stations)) {
     if (!Array.isArray(dyn.stock)) dyn.stock = [];

@@ -122,6 +122,7 @@ export function CombatScreen() {
     scene = sc;
     sc.setEffects({ shake: settings.value.shake, reduced });
     sc.handlers.room = (side, ship, room) => {
+      sc.markDirty();
       const cc = game.value?.combat;
       if (!cc || cc.outcome) return;
       if (side === 'player') {
@@ -160,6 +161,7 @@ export function CombatScreen() {
       pauseForSelection();
     };
     sc.handlers.move = (id, room) => {
+      sc.markDirty();
       const cc = game.value?.combat;
       if (!cc) return;
       const m = cc.player.crew.find((x) => x.id === id);
