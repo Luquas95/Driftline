@@ -32,7 +32,7 @@ export function mainSkill(c: Pick<CrewMember, 'role' | 'skills'>): number {
 
 export function wageOf(c: Pick<CrewMember, 'role' | 'skills' | 'officer'>): number {
   const mult = c.officer ? OFFICERS_BY_ID[c.officer].wageMult : 1;
-  return Math.round((4 + 3 * mainSkill(c)) * mult);
+  return Math.round((2 + 2 * mainSkill(c)) * mult);
 }
 
 /** Builds a crew member from a deterministic RNG. `level` is the main-skill level (0..10). */

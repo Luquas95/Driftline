@@ -166,7 +166,7 @@ Stav je čisté JSON s `v: SAVE_VERSION`. Migrace jsou v `MIGRATIONS` v `src/cor
 **Role a dovednosti.** pilot (pilotáž: úhyb a nabití skoku), inženýr (opravy, hašení, utěsnění), střelec (nabíjení), lékař (léčení), obchodník (poplatky, vyjednávání), vědec. Dovednost 0–10 roste používáním: `skill += xp / (1 + 0,9 · skill)`, takže vyšší úrovně rostou pomaleji. Při morálce pod 20 platí dovednost jen na 70 %.
 
 ```
-mzda/den   = (4 + 3 · hlavní dovednost) · (důstojník ×3)
+mzda/den   = (2 + 2 · hlavní dovednost) · (důstojník ×3)
 poplatek   = 5 · mzda (důstojník 8 ·)
 zásoby/den = 0,35 · násobek rasy (celá posádka)
 kapacita   = lůžka trupu + lůžka ubikací    (měkký limit, hirování nad +3 nejde)
@@ -213,7 +213,7 @@ Boj je **čistá simulace s pevným krokem** `DT = 0,1 s`. Stav (`CombatState`) 
 
 **AI nepřátel** (`combat/ai.ts`): dvakrát za sekundu rozdělí energii podle osobnosti (agresivní zbraně, opatrný štíty a motory), vybere cíl (nejslabší loď) a místnost podle druhu zbraně (zbraně a štíty první, iont na zbraně a štíty, energie na štíty, rakety na reaktor), posílá posádku hasit a opravovat, a utíká při ztrátách (opatrný pod 45 % trupu, chamtivý 35 %, ostatní 22 %). **Chamtivý** protivník po zničení motorů nebo pod 45 % trupu požaduje 40 % nákladu: boj se zastaví a hráč platí nebo odmítne. Zvířata a věže neutíkají.
 
-**Střety** (`combat/encounter.ts`). Šance na střet po skoku = `0,07 · (0,35 + 1,3 · nebezpečnost) · riziko · (1 + min(1, hodnota nákladu/6000))`, prvé 4 dny ×0,25, +3 % s nelegálním nákladem, +5 % při vyhlášení (pověst −4 a méně), nejvýše 50 %. Druh: pirát (váha 3, na okraji častěji), fauna (okraj), celnice (nelegální náklad), lovec odměn (při vyhlášení). Hrozba systému a trasy se ukazuje na mapě. Možnosti v dialogu: bojovat, utéct (šance podle pilota), zaplatit, vyjednávat (obchodník), vyhnout se (vraky, fauna). Událost může boj spustit (`fight`).
+**Střety** (`combat/encounter.ts`). Šance na střet po skoku = `0,055 · (0,35 + 1,3 · nebezpečnost) · riziko · (1 + min(1, hodnota nákladu/6000))`, prvé 4 dny ×0,25, +3 % s nelegálním nákladem, +5 % při vyhlášení (pověst −4 a méně), nejvýše 50 %. Druh: pirát (váha 3, na okraji častěji), fauna (okraj), celnice (nelegální náklad), lovec odměn (při vyhlášení). Hrozba systému a trasy se ukazuje na mapě. Možnosti v dialogu: bojovat, utéct (šance podle pilota), zaplatit, vyjednávat (obchodník), vyhnout se (vraky, fauna). Událost může boj spustit (`fight`).
 
 **Kořist** (`combat/resolve.ts`): kredity z tabulky nepřítele `· (0,7 + 0,4 · úroveň) · (0,85 / 1 / 1,15 podle rizika) · (0,85 zničený, 1 vzdaný)`, 1–2 druhy zboží, kov z vraku `trup/18` (loď nelze získat, protože hangár ve hře není, vrak se rozebírá na materiál), moduly z přeživších místností (`moduleChance · stav`), zbytek raket. Reputace: pirát +1, celnice −3 (a vyhlášení). Zničení lodi jde stejnou cestou jako ve v1 (pojištění), posádka přežije jen s pojištěním, jinak se nabere nová.
 
