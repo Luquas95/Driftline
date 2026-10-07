@@ -105,6 +105,7 @@ export function startNewGame(opts: NewGameOptions): void {
 }
 
 export function loadGame(s: GameState): void {
+  if (s.combat) s.combat.paused = true;
   game.value = s;
   msgSeen = s.messages.length;
   menuOpen.value = false;

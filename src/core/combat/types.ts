@@ -134,6 +134,7 @@ export interface Projectile {
   id: number;
   from: Side;
   fromShip: number;
+  fromRoom: number;
   toShip: number;
   toRoom: number;
   kind: WeaponKind | 'drone';

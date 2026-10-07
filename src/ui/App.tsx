@@ -25,6 +25,9 @@ import { SystemScreen } from './screens/SystemScreen';
 import { StationScreen } from './screens/StationScreen';
 import { ShipScreen } from './screens/ShipScreen';
 import { CargoScreen } from './screens/CargoScreen';
+import { CombatScreen } from './screens/CombatScreen';
+import { CombatResultModal, EncounterModal } from './CombatModals';
+import { combatSummary } from './combatCtl';
 import { CrewScreen } from './screens/CrewScreen';
 import { JournalScreen } from './screens/JournalScreen';
 import { SettingsScreen } from './screens/SettingsScreen';
@@ -131,7 +134,7 @@ function Nav() {
   return (
     <nav class="nav" aria-label={t('nav.label')}>
       {NAV.map((n) => {
-        const disabled = n.id === 'station' && !docked;
+        const disabled = (n.id === 'station' && !docked) || !!s.combat;
         return (
           <button
             key={n.id}
@@ -238,7 +241,7 @@ function useShortcuts() {
         else if (screen.value !== 'map') go(s.location.stationId ? 'station' : 'map');
         return;
       }
-      if (s.pendingEvent) return;
+      if (s.pendingEvent || s.combat || s.encounter) return;
       const nav = NAV.find((n) => n.key.toLowerCase() === k.toLowerCase());
       if (nav) {
         if (nav.id === 'station' && !s.location.stationId) return;
@@ -273,27 +276,32 @@ export function App() {
         </div>
       )}
       {s && !menuOpen.value && (
-        <div class="shell">
+        <div class={`shell ${s.combat ? 'in-combat' : ''}`}>
           <TopBar />
           <div class="main">
             <Nav />
-            <div class="content" data-screen={scr}>
-              {scr === 'map' && <MapScreen />}
-              {scr === 'system' && <SystemScreen />}
-              {scr === 'station' && <StationScreen />}
-              {scr === 'ship' && <ShipScreen />}
-              {scr === 'cargo' && <CargoScreen />}
-              {scr === 'crew' && <CrewScreen />}
-              {scr === 'journal' && <JournalScreen />}
-              {scr === 'settings' && <SettingsScreen />}
-              {!s.tutorial.done && settings.value.tutorial && !s.pendingEvent && !eventResult.value && (
-                <Tutorial />
-              )}
+            <div class="content" data-screen={s.combat ? 'combat' : scr}>
+              {s.combat && <CombatScreen />}
+              {!s.combat && scr === 'map' && <MapScreen />}
+              {!s.combat && scr === 'system' && <SystemScreen />}
+              {!s.combat && scr === 'station' && <StationScreen />}
+              {!s.combat && scr === 'ship' && <ShipScreen />}
+              {!s.combat && scr === 'cargo' && <CargoScreen />}
+              {!s.combat && scr === 'crew' && <CrewScreen />}
+              {!s.combat && scr === 'journal' && <JournalScreen />}
+              {!s.combat && scr === 'settings' && <SettingsScreen />}
+              {!s.combat &&
+                !s.tutorial.done &&
+                settings.value.tutorial &&
+                !s.pendingEvent &&
+                !eventResult.value && <Tutorial />}
             </div>
           </div>
+          {s.encounter && !s.combat && !s.pendingEvent && <EncounterModal />}
+          {combatSummary.value && <CombatResultModal />}
           {(s.pendingEvent || eventResult.value) && <EventModal />}
-          {!s.pendingEvent && !eventResult.value && <DockReportModal />}
-          {!s.pendingEvent && !eventResult.value && <DeathModal />}
+          {!s.pendingEvent && !eventResult.value && !s.encounter && !s.combat && <DockReportModal />}
+          {!s.pendingEvent && !eventResult.value && !combatSummary.value && !s.combat && <DeathModal />}
           {showHelp.value && <HelpModal />}
         </div>
       )}
