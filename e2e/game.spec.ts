@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { clearModals, openScreen, startGame, state } from './helpers';
+import { closeTrade, clearModals, openScreen, startGame, state } from './helpers';
 
 test.describe('core game flow', () => {
   test('new game starts at a station with credits and a ship', async ({ page }) => {
@@ -23,6 +23,7 @@ test.describe('core game flow', () => {
     await row.click();
     await page.getByTestId('trade-max-buy').click();
     await page.getByTestId('btn-buy').click();
+    await closeTrade(page);
     await expect(tut).toContainText('2/5');
     await page.getByTestId('tutorial-skip').click();
     await expect(tut).toBeHidden();
@@ -40,6 +41,7 @@ test.describe('core game flow', () => {
     await row.click();
     await page.getByTestId('trade-qty').fill('30');
     await page.getByTestId('btn-buy').click();
+    await closeTrade(page);
     const afterBuy = await state(page);
     expect(afterBuy.credits).toBeLessThan(before.credits);
     expect(afterBuy.cargo.reduce((a: number, c: { qty: number }) => a + c.qty, 0)).toBeGreaterThan(0);
@@ -68,6 +70,7 @@ test.describe('core game flow', () => {
       await sellRow.click();
       await page.getByTestId('trade-qty').fill('30');
       await page.getByTestId('btn-sell').click();
+      await closeTrade(page);
       expect((await state(page)).credits).toBeGreaterThan(credits);
     } else {
       await expect(page.getByTestId('goods-table')).toBeVisible();
@@ -128,6 +131,7 @@ test.describe('core game flow', () => {
     await row.click();
     await page.getByTestId('trade-qty').fill('40');
     await page.getByTestId('btn-buy').click();
+    await closeTrade(page);
     await openScreen(page, 'cargo');
     const item = page.locator('[data-testid^="cargo-item-"]').first();
     const box = await item.boundingBox();

@@ -66,3 +66,9 @@ export async function openScreen(page: Page, id: string) {
   await page.getByTestId(`nav-${id}`).click();
   await expect(page.getByTestId(`screen-${id}`)).toBeVisible();
 }
+
+/** On narrow screens the trade panel is a modal: close it so navigation is reachable. */
+export async function closeTrade(page: Page) {
+  const m = page.getByTestId('modal-trade');
+  if (await m.isVisible().catch(() => false)) await page.keyboard.press('Escape');
+}
