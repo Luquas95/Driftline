@@ -1977,3 +1977,11 @@ html[data-anim='off'] *::after {
     transform: translateY(-14px) scale(0.92);
   }
 }
+
+@media (min-width: 900px) {
+  .side-panel.sys-side {
+    left: 10px;
+    right: auto;
+    width: 330px;
+  }
+}

@@ -104,7 +104,12 @@ export function SystemScreen() {
   useEffect(() => {
     // keep the picture clear of the side panel on wide screens
     const fit = () =>
-      sceneRef?.setInsets(window.innerWidth >= 900 ? 350 : 0, 0, 0, window.innerWidth >= 900 ? 0 : 70);
+      sceneRef?.setInsets(
+        window.innerWidth >= 900 ? 350 : 0,
+        0,
+        0,
+        window.innerWidth >= 900 ? 0 : Math.round(window.innerHeight * 0.4),
+      );
     fit();
     window.addEventListener('resize', fit);
     return () => window.removeEventListener('resize', fit);
@@ -156,11 +161,7 @@ export function SystemScreen() {
   return (
     <div class="screen overlay" data-testid="screen-system">
       <div class="map-overlay">
-        <aside
-          class="side-panel panel"
-          style={{ left: 10, right: 'auto', width: 330 }}
-          data-testid="system-bodies"
-        >
+        <aside class="side-panel panel sys-side" data-testid="system-bodies">
           <header class="panel-head">
             <h2>
               <Icon name="system" /> {sys.name}
