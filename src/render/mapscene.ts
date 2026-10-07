@@ -33,6 +33,8 @@ export interface MapScene extends Scene {
   ): void;
   isJumping(): boolean;
   skipJump(): void;
+  /** Test hook: put the running jump animation at progress u (0..1) without finishing it. */
+  seekJump(u: number): void;
   getZoom(): number;
   getCam(): { x: number; y: number; zoom: number };
   /** Screen position of a system (tests and tutorials). */
@@ -680,6 +682,12 @@ export function createMapScene(opts: MapOptions): MapScene {
     isJumping: () => !!jumpAnim,
     skipJump() {
       if (jumpAnim) jumpAnim.t = jumpAnim.dur;
+    },
+    seekJump(u) {
+      if (jumpAnim) {
+        jumpAnim.t = Math.min(0.98, Math.max(0, u)) * jumpAnim.dur;
+        dirty = true;
+      }
     },
     setMarker(from, to, p) {
       shipMarker = from !== null && to !== null ? { from, to, p } : null;

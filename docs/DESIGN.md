@@ -240,7 +240,7 @@ Nová hra začíná **v doku startovní stanice bez lodi** (`GameState.noShip`) 
 | Poštolka (`kestrel`) | lehký průzkumník | 12 500 | 4 | 55 | 60 | S2 M1 L0 | 1 | 1.35 |
 | Mula (`mule`) | nákladní | 14 500 | 16 | 50 | 90 | S2 M2 L0 | 2 | 0.8 |
 | Šipka (`swift`) | kurýr | 15 500 | 3 | 40 | 45 | S2 M1 L0 | 1 | 1.7 |
-| Prospektor (`prospector`) | těžební | 18 500 | 8 | 70 | 110 | S1 M3 L0 | 2 | 0.9 |
+| Prospektor (`prospector`) | těžební | 15 000 | 8 | 70 | 110 | S1 M3 L0 | 2 | 0.9 |
 | Obchodník (`merchant`) | obchodní | 31 000 | 24 | 60 | 100 | S2 M4 L0 | 2 | 0.95 |
 | Vrták (`borer`) | těžební | 46 000 | 18 | 90 | 150 | S4 M2 L1 | 3 | 0.7 |
 | Pancéřník (`armored`) | pancéřovaná | 58 000 | 26 | 80 | 260 | S1 M4 L1 | 3 | 0.5 |

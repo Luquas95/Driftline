@@ -23,6 +23,7 @@ export interface DL {
   map: () => {
     cam: { x: number; y: number; zoom: number };
     jumping: boolean;
+    seek: (u: number) => void;
     pos: (id: number) => { x: number; y: number };
   } | null;
   roomPos: (side: 'player' | 'enemy', ship: number, room: number) => { x: number; y: number } | null;
