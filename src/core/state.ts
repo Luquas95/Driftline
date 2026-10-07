@@ -3,6 +3,7 @@ import { MODULES_BY_ID } from '../content/modules';
 import { cargoMass, gridDims, overloadCells, syncCargoUid, type GridDims } from './cargo';
 import { snapshotPrice } from './economy';
 import { crewHasOfficer, crewSupplyPerDay } from './crewBase';
+import { defaultCrew } from './crew';
 import { getGalaxy } from './galaxy';
 import { Rng } from './rng';
 import { buildStarterShip, computeShipStats, insuredValue, type ShipStats } from './ship';
@@ -157,6 +158,8 @@ export function destroyShip(state: GameState): void {
   const g = galaxyOf(state);
   state.stats.deaths++;
   state.pendingEvent = null;
+  state.combat = null;
+  state.encounter = null;
   // contracts depending on cargo are void (no penalty: the ship was lost)
   for (const c of state.contracts) {
     if (c.state !== 'active') continue;
@@ -167,6 +170,11 @@ export function destroyShip(state: GameState): void {
   }
   state.contracts = [];
   state.cargo = [];
+  // the crew goes through it too: shaken and bruised (the insured keep their people, otherwise a new crew signs on)
+  for (const m of state.crew) {
+    m.morale = Math.max(0, m.morale - 15);
+    m.hp = Math.max(1, Math.round(m.hp * 0.6));
+  }
   if (state.difficulty.permadeath) {
     state.dead = true;
     msg(state, 'msg.permadeath', undefined, 'bad');
@@ -196,6 +204,8 @@ export function destroyShip(state: GameState): void {
   } else {
     state.credits = Math.floor(state.credits * 0.5);
     state.ship = buildStarterShip(T.startHull, state.ship.name, () => newUid(state, 'm'));
+    state.crew = defaultCrew(state.seed, T.startHull, state.day, () => newUid(state, 'w'));
+    state.wagesDue = 0;
     state.inventory = [];
     const home = nearestStation(state, g) ?? firstStation(g);
     state.location = { systemId: home.systemId, stationId: home.id, body: home.bodyIndex };

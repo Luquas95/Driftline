@@ -2,6 +2,9 @@ import { stage } from '../render/instance';
 import { galaxyOf } from '../core/state';
 import { game, rev, screen, selectedSystem, toasts } from './store';
 import { updateSettings } from './settings';
+import { combatRoomPos } from './screens/CombatScreen';
+import { DT, drainEvents, stepCombat } from '../core/combat/sim';
+import { combatRev } from './combatCtl';
 import { spawnEncounter } from '../core/combat/encounter';
 import { MODULES_BY_ID } from '../content/modules';
 import { hullSlots, moduleFits, newModule } from '../core/ship';
@@ -68,6 +71,19 @@ export function installE2eHooks(): void {
       spawnEncounter(s, enemy, tier);
       rev.value++;
     },
+    /** Advance the running fight by `seconds` of game time without waiting for real time. */
+    fightStep: (seconds: number) => {
+      const c = game.value?.combat;
+      if (!c) return;
+      for (let t = 0; t < seconds && !c.outcome && c.demand === null; t += DT) stepCombat(c, DT);
+      drainEvents(c);
+      combatRev.value++;
+    },
+    fightAuto: () => {
+      const c = game.value?.combat;
+      if (c) c.auto = true;
+    },
+    roomPos: (side: 'player' | 'enemy', ship: number, room: number) => combatRoomPos(side, ship, room),
     toasts: () => toasts.value.map((x) => x.text),
     /** Let a headless bot play for a while (used to produce realistic README screenshots). */
     autoplay: async (strategy: 'trader' | 'explorer' | 'miner' | 'hauler', days: number) => {

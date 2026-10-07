@@ -6,6 +6,9 @@ Obchodně-průzkumná hra v prohlížeči (TypeScript strict, Vite, Preact + Sig
 
 ```
 src/core/       čistá simulace (bez DOM a Pixi), deterministická podle semínka
+  crew.ts       posádka: najímání, mzdy, morálka, dovednosti, důstojníci (crewBase.ts: sdílené drobnosti)
+  combat/       boj (v2): types, build (loď → místnosti), sim (krok simulace), ai, encounter (střety, hrozba),
+                resolve (výsledek → GameState), duel (hlavolamy pro balanc a testy)
   game.ts       veřejné akce (dock, jump, buy/sell, služby, opravy, odtah, pojištění)
   state.ts      GameState helpery, analyze(), damageHull(), destroyShip(), withRng()
   start.ts      newGame()
@@ -20,9 +23,9 @@ src/core/       čistá simulace (bez DOM a Pixi), deterministická podle semín
   shop.ts       loděnice (nabídka, nákup, instalace, výměna trupu)
   advisor.ts    plánovač trasy a doporučení obchodů (jen čtení)
   save.ts       serializace, migrace, export/import
-src/content/    data: goods, hulls, modules, stations, events, chains, marketEvents
-src/render/     Pixi: glsl.ts (shadery), materials.ts, mapscene/systemscene/shipscene/backdrop, shipgen.ts
-src/ui/         Preact: App, screens/*, components, store.ts (signály), settings.ts
+src/content/    data: goods, hulls, modules, stations, events, chains, marketEvents, crew (rasy, role, důstojníci), weapons, enemies
+src/render/     Pixi: glsl.ts (shadery), materials.ts, mapscene/systemscene/shipscene/backdrop, shipgen.ts, combatscene.ts (boj)
+src/ui/         Preact: App, screens/* (CrewScreen, CombatScreen), components, Portrait.tsx, combatCtl.ts (řízení boje), store.ts (signály), settings.ts
 src/i18n/       t(), cs.ts (slovník); texty událostí jsou v content/events.ts
 src/sim/        boti (bots.ts) a balanční simulátor (balance.ts)
 src/persist/    IndexedDB ukládání
@@ -58,6 +61,20 @@ docs/           DESIGN.md, DECISIONS.md, balance.md, REVIEW-v1.md, screenshots/
 
 **Překlad:** `addLanguage('en', {...})` z `src/i18n/index.ts`; chybějící klíče padají zpět na češtinu.
 
+## Jak přidat… (v2: posádka a boj)
+
+**Zbraň:** rodina v `WEAPON_SPECS` (`src/content/weapons.ts`: poškození, nabíjení, teplo, násobky proti štítu a trupu, šance na průraz a požár, ion, munice, spotřeba, cena). Moduly `<druh>_<s|m|l>` vzniknou samy z `WEAPON_SIZES` (a jsou v `MODULES`). Nový *druh* zbraně: přidej do `WeaponKind` a `WEAPON_KINDS` (`combat/types.ts`), `case` ve `fire()` a `resolveHit()` v `combat/sim.ts`, barvu v `render/combatscene.ts` (`KIND_COLOR`, `PROJ_COLOR`) a `mod.<druh>` v `cs-v2.ts`. Po změně spusť `npx tsx scripts/combat-balance.ts` a `npm run balance`; míra výher žádné zbraně proti vyrovnanému protivníkovi nesmí dlouhodobě přesahovat 40–60 %. Globální škálu poškození drží `DMG_SCALE`.
+
+**Rasu:** objekt v `RACES` (`src/content/crew.ts`): násobky dýchání, ohně, oprav, boje zblízka, zásob, společenského vlivu, zdraví, výchozí dovednost, odstín a tvary hlavy pro portrét. Přidej `race.<id>` do `cs-v2.ts` a ověř do `RACE_WEIGHT` v `core/crew.ts`, v jakých oblastech se najímá. Portrét (`ui/Portrait.tsx`) se generuje ze semínka `look`, nic dalšího kreslit nemusíš.
+
+**Důstojníka:** položka v `OFFICERS` (role, rasa, pevný portrét, událost při najmutí) + `officer.<id>.desc` a událost `officer_<id>` v `content/events.ts`. Schopnost se implementuje tam, kde se použije, přes `crewHasOfficer(state, id)` (obchod v `tradeBonus`, palivo v `analyze`, útěk v `startCombat`, léčení a přesnost v `combat/sim.ts`).
+
+**Nepřítele:** položka v `ENEMIES` (`src/content/enemies.ts`): trup (i `NPC_HULLS` pro zvířata a věže), osobnost AI, výzbroj po slotech v pořadí rozložení, úrovně hrozby, posádka, kredity, zboží z vraku, váhy výskytu podle oblasti. Přidej `enemy.<id>` do `cs-v2.ts`. Střet vybírá `makeEncounter` podle druhu (`pirate`, `hunter`, `customs`, `wreck`, `fauna`).
+
+**Osobnost AI:** hodnota v `Personality` (`combat/types.ts`), rozdělení energie v `lean` a prahy útěku v `aiControl` (`combat/ai.ts`), případně zvláštní chování (výkupné chamtivých je ve `stepCombat`). Text `combat.pers.<id>` do `cs-v2.ts`.
+
+**Událost s posádkou:** v `content/events.ts` použij podmínky `hasRole`, `hasRace`, `skillMin`, `hasOfficer` a efekty `hurt`, `xp`, `morale`, `leave`, `join`, `fight` (spustí střet). Boj spouštěný událostí jde stejnou cestou jako náhodný střet.
+
 ## Příkazy
 
 | Příkaz | Co dělá |
@@ -67,7 +84,8 @@ docs/           DESIGN.md, DECISIONS.md, balance.md, REVIEW-v1.md, screenshots/
 | `npm test` / `npm run test:cov` | Vitest (jádro), pokrytí |
 | `npm run test:e2e` | Playwright (desktop 1440×900, mobil 390×844); v sandboxu je Chromium předinstalovaný, **nespouštěj `playwright install`** |
 | `npx playwright test e2e/visual.spec.ts --update-snapshots` | přegeneruje referenční snímky |
-| `npm run balance -- --seeds 10 --days 120` | balanční simulátor, zapíše `docs/balance.md` |
+| `npm run balance -- --seeds 10 --days 120` | balanční simulátor (obchod i boj), zapíše `docs/balance.md` |
+| `npx tsx scripts/combat-balance.ts` | rychlá matice výher zbraní (AI proti AI) |
 | `npm run lint` / `npm run format` | ESLint + Prettier |
 | `node scripts/make-icons.mjs` | znovu vytvoří PNG ikony PWA |
 | `npx tsx scripts/i18n-missing.ts` | vypíše chybějící překladové klíče |

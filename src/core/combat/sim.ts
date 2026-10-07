@@ -503,14 +503,9 @@ function finish(c: CombatState): void {
   }
   const open = c.enemies.filter((e) => e.out === null);
   if (open.length === 0) {
-    const killed = c.enemies.some((e) => e.out === 'destroyed' || e.out === 'surrendered');
-    c.outcome = killed
-      ? c.enemies.every((e) => e.out === 'surrendered' || e.out === 'destroyed')
-        ? c.enemies.some((e) => e.out === 'surrendered')
-          ? 'surrender'
-          : 'victory'
-        : 'victory'
-      : 'enemy-fled';
+    const down = (e: CShip) => e.out === 'destroyed' || e.out === 'surrendered';
+    const yielded = c.enemies.every(down) && c.enemies.some((e) => e.out === 'surrendered');
+    c.outcome = c.enemies.some(down) ? (yielded ? 'surrender' : 'victory') : 'enemy-fled';
   }
 }
 

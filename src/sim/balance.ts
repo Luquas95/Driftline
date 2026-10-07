@@ -5,6 +5,7 @@
 import { writeFileSync } from 'node:fs';
 import { newGame } from '../core/start';
 import { Bot, type BotRun, type Strategy } from './bots';
+import { combatReport } from './combatBalance';
 
 interface Agg {
   strategy: Strategy;
@@ -116,6 +117,32 @@ function main(): void {
     ...top.map(([k, v]) => `| ${k} | ${v.toFixed(0)} |`),
     '',
   );
+  // trade-only play with encounters (the bots are unarmed: they evade, pay, bribe or run)
+  lines.push('## Čistě obchodní hra bez zbraní (střety se řeší únikem, úplatkem, vyhnutím)', '');
+  lines.push(
+    'Boti nemají zbraně a střetům se vyhýbají (vyhnout se > zaplatit > úplatek > útěk > vyjednávání > boj). Tabulka ukazuje, kolik střetů potkají a co je stojí.',
+    '',
+    '| Strategie | Střety/100 dní | Boje/100 dní | Úplatky (kr/100 dní) | Zničení lodi | Příjem/den (medián) |',
+    '|---|---:|---:|---:|---:|---:|',
+  );
+  for (const { strategy, runs } of results) {
+    const per100 = (f: (r: BotRun) => number) =>
+      mean(runs.map((r) => (f(r) / Math.max(1, r.daysPlayed)) * 100));
+    lines.push(
+      `| ${strategy} | ${per100((r) => r.encounters).toFixed(1)} | ${per100((r) => r.fights).toFixed(1)} | ${per100((r) => r.tolls).toFixed(0)} | ${runs.reduce((a, r) => a + r.deaths, 0)} | ${median(runs.map((r) => r.income)).toFixed(0)} |`,
+    );
+  }
+  lines.push('');
+  if (!process.argv.includes('--no-combat')) {
+    lines.push(
+      ...combatReport({
+        duelsPer: Number(arg('duels', '12')),
+        lootFights: Number(arg('loot', '10')),
+        tradeSeeds: seeds,
+        tradeDays: days,
+      }),
+    );
+  }
   lines.push(`Doba běhu simulace: ${((Date.now() - t0) / 1000).toFixed(0)} s.`, '');
   writeFileSync(out, lines.join('\n'));
   console.log(`Report written to ${out}`);

@@ -46,6 +46,15 @@ const GROUP_KEYS: Record<PowerGroup, string> = {
 
 let scene: CombatScene | null = null;
 
+/** Screen position of a room (used by the test hooks to click on the canvas). */
+export function combatRoomPos(
+  side: 'player' | 'enemy',
+  ship: number,
+  room: number,
+): { x: number; y: number } | null {
+  return scene?.roomScreenPos(side, ship, room) ?? null;
+}
+
 function logParams(p?: Record<string, string | number>): Record<string, string | number> | undefined {
   if (p && typeof p.ship === 'string' && ENEMIES_BY_ID[p.ship]) return { ...p, ship: t(`enemy.${p.ship}`) };
   return p;

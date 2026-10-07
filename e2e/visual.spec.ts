@@ -14,6 +14,7 @@ test.describe('visual snapshots', () => {
     { id: 'ship', ready: 'screen-ship' },
     { id: 'cargo', ready: 'screen-cargo' },
     { id: 'journal', ready: 'screen-journal' },
+    { id: 'crew', ready: 'screen-crew' },
   ];
   for (const sh of shots) {
     test(`screen ${sh.id}`, async ({ page }) => {
@@ -30,4 +31,22 @@ test.describe('visual snapshots', () => {
       });
     });
   }
+
+  test('screen combat (paused, fixed seed)', async ({ page }) => {
+    await page.evaluate(() => window.__dl.loadout(['energy_s', 'kinetic_m', 'shield_s', 'missile_m'], 4));
+    await page.evaluate(() => window.__dl.encounter('raider', 2));
+    await page.getByTestId('enc-fight').click();
+    await expect(page.getByTestId('screen-combat')).toBeVisible();
+    await page.evaluate(() => {
+      window.__dl.state().combat.paused = true;
+    });
+    await page.waitForTimeout(500);
+    await page.evaluate(() => window.__dl.freeze(3));
+    await page.waitForTimeout(250);
+    await expect(page).toHaveScreenshot('combat.png', {
+      animations: 'disabled',
+      maxDiffPixelRatio: 0.04,
+      timeout: 60_000,
+    });
+  });
 });
