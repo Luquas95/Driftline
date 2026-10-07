@@ -7,6 +7,7 @@ import { GOODS_BY_ID } from '../content/goods';
 import { defaultCrew } from '../core/crew';
 import { MODULES_BY_ID } from '../content/modules';
 import { WEAPON_SIZES } from '../content/weapons';
+import { addGoods } from '../core/cargo';
 import { autoResolve, makeEncounter, startCombat } from '../core/combat/encounter';
 import { makeDuel, type DuelSide } from '../core/combat/duel';
 import { resolveCombat } from '../core/combat/resolve';
@@ -84,10 +85,11 @@ export function duels(a: DuelSide, b: DuelSide[], n: number, tag: string): DuelR
   for (let i = 0; i < n; i++) {
     const c = makeDuel(`${tag}:${i}`, a, b);
     autoResolve(c);
-    if (c.outcome === 'victory' || c.outcome === 'surrender') {
+    // running away from a lost fight counts as a loss, an enemy that runs counts as a win
+    if (c.outcome === 'victory' || c.outcome === 'surrender' || c.outcome === 'enemy-fled') {
       r.win++;
       r.meanHullLeft += c.player.hull / c.player.hullMax;
-    } else if (c.outcome === 'defeat') r.loss++;
+    } else if (c.outcome === 'defeat' || c.outcome === 'fled') r.loss++;
     else r.draw++;
     r.meanTime += c.time;
   }
@@ -132,6 +134,16 @@ function armedGame(seed: string, arch: Archetype, risk: 'low' | 'normal' | 'high
   }
   s.ship.hp = analyze(s).stats.hpMax;
   s.crew = defaultCrew(seed, 'mule', 0, () => newUid(s, 'w'));
+  const { dims, stats } = analyze(s);
+  addGoods(
+    s.cargo,
+    dims,
+    { chilledCells: stats.chilledCells, secureCells: stats.secureCells },
+    'missiles',
+    10,
+    0,
+    0,
+  );
   return s;
 }
 

@@ -88,7 +88,8 @@ test.describe('combat', () => {
     await page.evaluate(() => {
       window.__dl.state().combat.paused = false;
       window.__dl.state().combat.enemies.forEach((e: { weapons: unknown[] }) => (e.weapons = []));
-      window.__dl.fightStep(80);
+      window.__dl.state().combat.enemies.forEach((e: { demanded: boolean }) => (e.demanded = true));
+      window.__dl.fightStep(150);
     });
     await expect(page.getByTestId('modal-combat-result')).toBeVisible({ timeout: 20_000 });
     expect((await state(page)).stats.fled).toBe(1);

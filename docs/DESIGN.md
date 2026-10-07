@@ -1,4 +1,4 @@
-# Herní design a vzorce (v1)
+# Herní design a vzorce (v1 + v2)
 
 Dokument popisuje herní systémy tak, jak jsou implementované, včetně vzorců a ladicích konstant. Konstanty žijí v `src/core/tuning.ts` a v definicích obsahu `src/content/`. Čísla v tabulkách jsou výchozí hodnoty.
 
@@ -158,3 +158,67 @@ Druhy: únik paliva, poškození modulu, zásah do trupu, ztráta nákladu, úni
 ## 10. Ukládání
 
 Stav je čisté JSON s `v: SAVE_VERSION`. Migrace jsou v `MIGRATIONS` v `src/core/save.ts` (klíč = verze, ze které se upgraduje). Ukládá se do IndexedDB (sloty, automatické uložení po každé akci s odkladem 1,5 s), export a import jsou soubory `driftline-save` s obálkou `{magic, version, savedAt, state}`.
+
+## 11. Posádka (`src/core/crew.ts`, `src/content/crew.ts`)
+
+**Rasy** (6, vlastní): Orrin, Sylk, Brakh, Tessar, Nyxul, Veth. Každá má násobky `breath` (poškození nedostatkem kyslíku), `fire`, `repair`, `melee`, `supply` (spotřeba zásob), `social` (obchod), `hp`, výchozí dovednost (+1) a odstín portrétu. Portrét je SVG generované z `race` a `look` (tvar hlavy, barvy, oči, doplněk), proto je stejný na všech obrazovkách (`ui/Portrait.tsx`).
+
+**Role a dovednosti.** pilot (pilotáž: úhyb a nabití skoku), inženýr (opravy, hašení, utěsnění), střelec (nabíjení), lékař (léčení), obchodník (poplatky, vyjednávání), vědec. Dovednost 0–10 roste používáním: `skill += xp / (1 + 0,9 · skill)`, takže vyšší úrovně rostou pomaleji. Při morálce pod 20 platí dovednost jen na 70 %.
+
+```
+mzda/den   = (4 + 3 · hlavní dovednost) · (důstojník ×3)
+poplatek   = 5 · mzda (důstojník 8 ·)
+zásoby/den = 0,35 · násobek rasy (celá posádka)
+kapacita   = lůžka trupu + lůžka ubikací    (měkký limit, hirování nad +3 nejde)
+```
+
+**Morálka** (0–100, denní změna): +0,4 základ; −3,2 při nevyplacené mzdě (−2 navíc při dluhu nad 6 mezd); −5 při hladu; −1,2 za každého člena nad kapacitou; −1 při únavě nad 70; +1,2 s důstojníkem Brom Tark. Pod 15 odchází člen posádky ve stanici (25 % denně), pod 8 na cestě vznikne událost **Vzpoura** (30 % denně). Boj morálku mění: vítězství +6, porážka −12, ostatní −2; zničení lodi −15.
+
+**Náborová nabídka** se mění týdně (`recruitEpoch`), závisí na oblasti (váhy ras), velikosti a typu stanice a reputaci (úroveň). **Důstojníci** (6, jeden od každého na hru) se objevují s pravděpodobností 5 % + 1 % za bod pověsti; každý má pevné jméno, portrét, příběhovou událost při najmutí a schopnost: obchodník −15 % skluzu cen, pilot jednou za cestu útěk bez paliva, předák +morálka, střelec přesnější zbraně, lékařka rychlejší léčení, navigátor −8 % paliva na skok.
+
+**Události s posádkou.** Podmínky `crewRole`, `crewRace`, `crewSkill`, `crewMoraleBelow`, `officer`; efekty `crewHurt`, `crewXp`, `crewMorale`, `crewLeave`, `crewJoin`, `fight` (spustí střet).
+
+## 12. Boj (`src/core/combat/*`)
+
+Boj je **čistá simulace s pevným krokem** `DT = 0,1 s`. Stav (`CombatState`) je JSON včetně vlastního stavu PRNG, takže se ukládá uprostřed boje a stejné semínko dá stejný průběh. Pauza jen zastaví volání `stepCombat`.
+
+**Interiér.** Každý slot trupu je místnost (`CRoom`) se stejnými souřadnicemi jako rozložení slotů; sousedí místnosti sdílející hranu (BFS cesty posádky, 1,1 s na místnost). Místnost nese kyslík, požár, průraz, ion a „zdraví systému“ = stav modulu.
+
+**Energie.** Reaktor (`powerOut`, kondice reaktoru) se dělí podle vah skupin zbraně, štíty, motory, podpora života, ostatní: `účinnost(g) = min(1, powerOut · w(g) / Σw / potřeba(g))`. Hráč váhy mění po čtvrtinách potřeby (0–200 %).
+
+**Zbraně** (`content/weapons.ts`): poškození = `dmg · velikost · kvalita · DMG_SCALE`, nabíjení `charge · velikost / (0,9 + 0,1 · kvalita)` při plné energii; rychlost nabíjení = `účinnost · výkon místnosti · (0,82 + obsluha)`, obsluha střelcem `0,2 + 0,05 · střelba`.
+
+| Druh | Štít | Trup | Zvláštnost |
+|---|---|---|---|
+| energetická | silná | střední | zapaluje (šance požáru) |
+| kinetická | slabá | silná | průrazy trupu |
+| raketa | **ignoruje** | střední | spotřebuje munici z nákladu (`missiles`), silný zásah do systému |
+| iontová | silná | žádné | vyřadí systém místnosti na několik sekund |
+| dronový hangár | | | vypustí útočné a obranné drony (obranné sestřelují střely) |
+| teleportér | | | převoz posádky na nepřátelskou loď (abordáž), jen proti slabšímu štítu |
+
+**Štíty** jsou zásobník `kapacita · 2,5` s dobíjením 4 % za sekundu při plné energii; zásah odečte `škoda · násobek štítu` a pohlcený zásah trupu neublíží. Vrstvy se kreslí po 15 bodech.
+
+**Úhyb** `= 0,1 · obratnost trupu · energie motorů · výkon motorů · (1 + 0,06 · pilotáž)`, nejvýše 55 % (rakety ×0,6, ion ×0,8).
+
+**Teplo.** Výstřel přidá `teplo · √velikost`, chlazení `3,2 + 2,2 · radiátor + 0,6 · chladič` za sekundu (· (1 + 0,04 · inženýr)). Při 100 se vypnou zbraně a štíty, zapnou se zpět pod 55.
+
+**Požár.** Šance při zásahu = `fire` zbraně; oheň roste 1,8/s do 100, ubírá systému `0,035 · síla/s`, členům posádky `0,04 · síla · násobek rasy/s` a šíří se na sousedy (`síla/100 · 0,07` za sekundu). Zhasne bez kyslíku (pod 12 %), při průrazu, nebo ho hasí posádka (`9 · (0,6 + 0,1 · inženýrství)/s`, inženýr plně, ostatní poloviční).
+
+**Průraz a kyslík.** Zásah může prorazit trup (`breach`): místnost ztrácí 15 % kyslíku za sekundu, sousedé s ní vyrovnávají 0,35/s, podpora života doplňuje `6 · energie · výkon`. Pod 25 % kyslíku bere posádce zdraví podle rasy. Průraz utěsní posádka.
+
+**Posádka.** Oprava systému `+4,2 · (1 + 0,18 · inženýrství) · rasa/s`, léčení `3 · (1 + 0,2 · medicína)/s` (lékař plně, ostatní 30 %). Hráč posádku přesouvá klepnutím nebo tažením; volní členové hasí a opravují sami (AI `assignCrew`). Abordáž: boj v místnosti `(2,4 + 0,25 · střelba) · melee rasy`/s.
+
+**Útěk.** Nabití skoku trvá `14 s / (energie motorů · výkon skoku · (1 + 0,06 · pilotáž))` (nejvýše 60 s) a stojí 10 % nádrže paliva (nejméně 2); důstojník Kesh Oru jednou za cestu bez paliva.
+
+**AI nepřátel** (`combat/ai.ts`): dvakrát za sekundu rozdělí energii podle osobnosti (agresivní zbraně, opatrný štíty a motory), vybere cíl (nejslabší loď) a místnost podle druhu zbraně (zbraně a štíty první, iont na zbraně a štíty, energie na štíty, rakety na reaktor), posílá posádku hasit a opravovat, a utíká při ztrátách (opatrný pod 45 % trupu, chamtivý 35 %, ostatní 22 %). **Chamtivý** protivník po zničení motorů nebo pod 45 % trupu požaduje 40 % nákladu: boj se zastaví a hráč platí nebo odmítne. Zvířata a věže neutíkají.
+
+**Střety** (`combat/encounter.ts`). Šance na střet po skoku = `0,07 · (0,35 + 1,3 · nebezpečnost) · riziko · (1 + min(1, hodnota nákladu/6000))`, prvé 4 dny ×0,25, +3 % s nelegálním nákladem, +5 % při vyhlášení (pověst −4 a méně), nejvýše 50 %. Druh: pirát (váha 3, na okraji častěji), fauna (okraj), celnice (nelegální náklad), lovec odměn (při vyhlášení). Hrozba systému a trasy se ukazuje na mapě. Možnosti v dialogu: bojovat, utéct (šance podle pilota), zaplatit, vyjednávat (obchodník), vyhnout se (vraky, fauna). Událost může boj spustit (`fight`).
+
+**Kořist** (`combat/resolve.ts`): kredity z tabulky nepřítele `· (0,7 + 0,4 · úroveň) · (0,85 / 1 / 1,15 podle rizika) · (0,85 zničený, 1 vzdaný)`, 1–2 druhy zboží, kov z vraku `trup/18` (loď nelze získat, protože hangár ve hře není, vrak se rozebírá na materiál), moduly z přeživších místností (`moduleChance · stav`), zbytek raket. Reputace: pirát +1, celnice −3 (a vyhlášení). Zničení lodi jde stejnou cestou jako ve v1 (pojištění), posádka přežije jen s pojištěním, jinak se nabere nová.
+
+**Auto-boj.** Nastavení rozhoduje, zda se střety s jednou slabou lodí (úroveň 1) vyřeší bez zásahu hráče. Počítá je tatáž simulace (`autoResolve`), jen AI řídí i hráčovu loď.
+
+## 13. Vizuál a ovládání boje
+
+`render/combatscene.ts` kreslí loď shora z místností (barva podle druhu modulu, tmavnutí při ztrátě kyslíku, oheň, praskliny, zásah iontem), vrstvy štítu jako bubliny s vlnami při zásahu, projektily s glow (částicové sprity s aditivním mícháním, nejvýše 360), výbuchy, kouř a jiskry v poškozených místnostech a chvění obrazovky (vypínatelné, vypnuté i při `prefers-reduced-motion`). Zvuk je procedurální (Web Audio). Ovládání: mezerník pauza, `1–9` zbraň, klik/klepnutí na cílovou místnost, přetažení posádky, `Q W E R T` energie (s Shift ubrat), `F` útěk, `A` auto. Na dotyku jsou prvky větší a boj se při každém výběru pozastaví (nastavení).

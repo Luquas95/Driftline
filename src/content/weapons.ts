@@ -37,11 +37,11 @@ export interface WeaponSpec {
 }
 
 /** Global damage scale: keeps a fight at roughly one to two minutes without touching module stat tables. */
-export const DMG_SCALE = 0.32;
+export const DMG_SCALE = 0.45;
 
 export const WEAPON_SPECS: Record<WeaponKind, WeaponSpec> = {
   energy: {
-    dmg: 16,
+    dmg: 9.27,
     charge: 5,
     heat: 6,
     speed: 0.45,
@@ -73,7 +73,7 @@ export const WEAPON_SPECS: Record<WeaponKind, WeaponSpec> = {
     mass: 3.5,
   },
   missile: {
-    dmg: 22,
+    dmg: 18.33,
     charge: 10,
     heat: 2,
     speed: 1.5,
@@ -89,7 +89,7 @@ export const WEAPON_SPECS: Record<WeaponKind, WeaponSpec> = {
     mass: 4,
   },
   ion: {
-    dmg: 6,
+    dmg: 9.24,
     charge: 6,
     heat: 4,
     speed: 0.5,
@@ -105,7 +105,7 @@ export const WEAPON_SPECS: Record<WeaponKind, WeaponSpec> = {
     mass: 3,
   },
   drones: {
-    dmg: 4.5,
+    dmg: 4.3,
     charge: 19,
     heat: 1,
     speed: 0.6,
