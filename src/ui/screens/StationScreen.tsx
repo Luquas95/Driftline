@@ -372,6 +372,15 @@ function GoodsTable({
               key={id}
               class={`click ${sel === id ? 'sel' : ''}`}
               onClick={() => onSel(sel === id ? null : id)}
+              tabIndex={0}
+              role="button"
+              aria-selected={sel === id}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  onSel(sel === id ? null : id);
+                }
+              }}
               data-testid={`good-${id}`}
             >
               <td>
@@ -505,7 +514,16 @@ function TradePanel({
                   {n}
                 </Btn>
               ))}
-              <Btn small onClick={() => setQty(Math.max(maxB, 1))} testid="trade-max-buy">
+              <Btn
+                small
+                onClick={() => {
+                  // keep ~30 % of the wallet for fuel and supplies
+                  const full = quoteFor(s, st.id, goodId, 'buy', Math.max(maxB, 1)).total;
+                  const k = full > 0 ? Math.min(1, (s.credits * 0.7) / full) : 1;
+                  setQty(Math.max(1, Math.floor(maxB * k)));
+                }}
+                testid="trade-max-buy"
+              >
                 {t('market.maxBuy')}
               </Btn>
               <Btn small onClick={() => setQty(Math.max(owned, 1))}>

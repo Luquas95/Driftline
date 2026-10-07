@@ -196,4 +196,15 @@ test.describe('core game flow', () => {
     await expect(page.getByTestId('seed-display')).toBeVisible();
     expect((await state(page)).difficulty.permadeath).toBe(true);
   });
+
+  test('map accepts real pointer input: clicking a star selects it', async ({ page }) => {
+    await startGame(page);
+    await openScreen(page, 'map');
+    await page.waitForTimeout(1500);
+    const target = await page.evaluate(() => window.__dl.neighborWithStation());
+    const d = await page.evaluate((id) => window.__dl.delta(id as number), target);
+    const vp = page.viewportSize()!;
+    await page.mouse.click(vp.width / 2 + d.dx * 11, vp.height / 2 + d.dy * 11);
+    await expect(page.getByTestId('route-plan')).toBeVisible();
+  });
 });

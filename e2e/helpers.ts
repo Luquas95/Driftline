@@ -6,6 +6,7 @@ export interface DL {
   select: (id: number | null) => void;
   freeze: (t?: number) => void;
   neighborWithStation: () => number | null;
+  delta: (id: number) => { dx: number; dy: number };
 }
 
 declare global {

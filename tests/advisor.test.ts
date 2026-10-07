@@ -63,7 +63,6 @@ describe('trade recommendations', () => {
 
   it('returns nothing without a known station and nothing for unknown goods', () => {
     const s = mk('ADV4', 100);
-    expect(bestKnownPrice(s, 'iron_ore', 'buy')).toBeNull();
     s.prices = {};
     s.location = { systemId: 0, stationId: null, body: -1 };
     const g = galaxyOf(s);

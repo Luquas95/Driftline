@@ -25,6 +25,14 @@ export function installE2eHooks(): void {
     bump: () => {
       rev.value++;
     },
+    /** Offset in light-years from the current system (for real-pointer map tests). */
+    delta: (id: number) => {
+      const s = game.value!;
+      const g = galaxyOf(s);
+      const a = g.systems[s.location.systemId];
+      const b = g.systems[id];
+      return { dx: b.x - a.x, dy: b.y - a.y };
+    },
     toasts: () => toasts.value.map((x) => x.text),
     /** Let a headless bot play for a while (used to produce realistic README screenshots). */
     autoplay: async (strategy: 'trader' | 'explorer' | 'miner' | 'hauler', days: number) => {

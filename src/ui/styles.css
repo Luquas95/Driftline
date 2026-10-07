@@ -19,7 +19,7 @@
   --line-strong: rgba(130, 170, 255, 0.3);
   --text: #dbe5f5;
   --text-dim: #8fa2c0;
-  --text-faint: #5d6f8d;
+  --text-faint: #8394b3;
   --accent: #4cc9f0;
   --accent-soft: rgba(76, 201, 240, 0.14);
   --accent-strong: #8fe3ff;
@@ -222,6 +222,18 @@ p {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+/* the canvas below must receive map/system pointer input: only real UI re-enables it */
+.shell,
+.main,
+.content {
+  pointer-events: none;
+}
+.topbar,
+.nav,
+.screen:not(.overlay),
+.hint-card {
+  pointer-events: auto;
+}
 .main {
   position: relative;
   z-index: 2;
@@ -283,7 +295,8 @@ p {
   pointer-events: none;
   overflow: hidden;
 }
-.screen.overlay > * {
+.ship-right,
+.ship-title {
   pointer-events: auto;
 }
 .layout-2 {
@@ -1205,4 +1218,43 @@ kbd {
   display: flex;
   flex-direction: column;
   gap: 6px;
+}
+
+@media (max-width: 899px) {
+  .toasts {
+    top: auto;
+    bottom: calc(var(--nav-h) + var(--safe-b) + 8px);
+  }
+  table.data td:first-child,
+  table.data th:first-child {
+    position: sticky;
+    left: 0;
+    background: var(--panel-solid);
+    z-index: 1;
+  }
+  .topbar {
+    gap: 8px;
+    padding: 0 8px;
+  }
+  .top-loc {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+  .top-stats {
+    flex: 0 0 auto;
+    margin-left: 0;
+    gap: 8px;
+  }
+  .top-stat {
+    font-size: 12px;
+  }
+  .top-stat.hull {
+    display: none;
+  }
+}
+@media (pointer: coarse) {
+  .btn.small {
+    min-height: 44px;
+    min-width: 44px;
+  }
 }

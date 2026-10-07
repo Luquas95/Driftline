@@ -99,7 +99,7 @@ function TopBar() {
             <span class="dim">/{fmt(a.stats.fuelCap, 0)}</span>
           </span>
         </span>
-        <span class={`top-stat ${hullPct < 0.4 ? 'neg' : ''}`} title={t('top.hull')}>
+        <span class={`top-stat hull ${hullPct < 0.4 ? 'neg' : ''}`} title={t('top.hull')}>
           <Icon name="shield" />
           <span class="mono">{Math.round(hullPct * 100)}%</span>
         </span>

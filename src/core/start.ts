@@ -84,6 +84,8 @@ export function newGame(opts: NewGameOptions = {}): GameState {
   refreshBoard(g, state, startSt);
   refreshShop(state, startSt);
   learnStation(state, startSt);
+  // dispatch gossip: the player starts knowing prices at stations one jump away
+  for (const n of startSys.neighbors) for (const st of g.systems[n].stations) learnStation(state, st);
   msg(state, 'msg.welcome', { station: startSt.name }, 'info');
   return state;
 }
