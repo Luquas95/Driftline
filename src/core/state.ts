@@ -2,6 +2,7 @@ import { HULLS_BY_ID } from '../content/hulls';
 import { MODULES_BY_ID } from '../content/modules';
 import { cargoMass, gridDims, overloadCells, syncCargoUid, type GridDims } from './cargo';
 import { snapshotPrice } from './economy';
+import { crewHasOfficer, crewSupplyPerDay } from './crewBase';
 import { getGalaxy } from './galaxy';
 import { Rng } from './rng';
 import { buildStarterShip, computeShipStats, insuredValue, type ShipStats } from './ship';
@@ -68,6 +69,13 @@ export function analyze(state: GameState): Analysis {
   const dims = gridDims(s0);
   const overload = overloadCells(dims, state.cargo);
   const stats = overload > 0 ? computeShipStats(state.ship, mass, overload) : s0;
+  // v2: supplies follow the real crew, and a navigator trims fuel use
+  if (state.crew?.length) stats.suppliesPerDay = crewSupplyPerDay(state) * (1 + 0.12 * overload);
+  if (state.crew && crewHasOfficer(state, 'navigator') && isFinite(stats.fuelPerLy)) {
+    stats.fuelPerLy *= 0.9;
+    stats.rangeFull = stats.fuelCap / stats.fuelPerLy;
+    stats.range = state.ship.fuel / stats.fuelPerLy;
+  }
   return { stats, dims, overload };
 }
 

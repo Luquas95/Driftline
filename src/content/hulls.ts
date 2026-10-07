@@ -98,3 +98,53 @@ export const HULLS: HullDef[] = [
 ];
 
 export const HULLS_BY_ID: Record<string, HullDef> = Object.fromEntries(HULLS.map((h) => [h.id, h]));
+
+/** Non-player hulls (creatures, turrets). Never sold in shipyards; they only provide room layouts for enemies. */
+export const NPC_HULLS: HullDef[] = [
+  {
+    id: 'swarmer',
+    layout: ['rSe', 'jln'],
+    mass: 14,
+    cargoCells: 0,
+    cargoCols: 1,
+    fuel: 20,
+    supplies: 20,
+    hp: 40,
+    price: 3000,
+    crew: 0,
+    coreSize: 'S',
+    agility: 1.7,
+    tier: 0,
+  },
+  {
+    id: 'maw',
+    layout: ['rMe', 'jSl', 'nMS'],
+    mass: 90,
+    cargoCells: 0,
+    cargoCols: 1,
+    fuel: 40,
+    supplies: 40,
+    hp: 150,
+    price: 20000,
+    crew: 0,
+    coreSize: 'S',
+    agility: 0.7,
+    tier: 0,
+  },
+  {
+    id: 'turret',
+    layout: ['rSe', 'jln', 'SS.'],
+    mass: 60,
+    cargoCells: 0,
+    cargoCols: 1,
+    fuel: 10,
+    supplies: 10,
+    hp: 90,
+    price: 8000,
+    crew: 0,
+    coreSize: 'S',
+    agility: 0,
+    tier: 0,
+  },
+];
+for (const h of NPC_HULLS) HULLS_BY_ID[h.id] = h;

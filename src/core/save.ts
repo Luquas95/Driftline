@@ -5,6 +5,8 @@ import { GOODS, GOODS_BY_ID } from '../content/goods';
 import { HULLS_BY_ID } from '../content/hulls';
 import { MODULES_BY_ID } from '../content/modules';
 import { hullSlots } from './ship';
+import { defaultCrew } from './crew';
+import { RACES_BY_ID, ROLE_SKILL } from '../content/crew';
 import { QUALITIES } from './types';
 
 /**
@@ -37,6 +39,26 @@ export const MIGRATIONS: Record<number, Migration> = {
     s.pendingEvent ??= null;
     s.dead ??= false;
     s.insurance ??= { active: true, full: false, due: 0, lapsedSince: null };
+    return s;
+  },
+  // v1 -> v2: crew and combat. The default crew is derived from the hull so old saves stay deterministic.
+  1: (s) => {
+    s.v = 2;
+    s.crew ??= [];
+    s.wagesDue ??= 0;
+    s.combat ??= null;
+    s.encounter ??= null;
+    s.officersMet ??= [];
+    const st = (s.stats ??= {}) as Record<string, number>;
+    st.fights ??= 0;
+    st.victories ??= 0;
+    st.fled ??= 0;
+    const ship = s.ship as { hullId?: string } | undefined;
+    if (!(s.crew as unknown[]).length && ship?.hullId) {
+      let n = (typeof s.uidCounter === 'number' ? s.uidCounter : 0) + 1000;
+      s.crew = defaultCrew(String(s.seed), ship.hullId, 0, () => `w${++n}`);
+      s.uidCounter = n;
+    }
     return s;
   },
 };
@@ -131,6 +153,17 @@ function validate(s: GameState): void {
     'events',
   ] as const) {
     if (!Array.isArray(s[k]) || (s[k] as unknown[]).length > MAX_ARRAY) bad(k);
+  }
+  for (const c of s.crew) {
+    if (
+      !c ||
+      !RACES_BY_ID[c.race] ||
+      !ROLE_SKILL[c.role] ||
+      !finite(c.hp, 0, 1e4) ||
+      !finite(c.morale, 0, 100) ||
+      !c.skills
+    )
+      bad('crew');
   }
   if (!s.insurance || typeof s.insurance !== 'object' || !s.stats || !s.difficulty) bad('sections');
   if (!s.flags || typeof s.flags !== 'object') bad('flags');

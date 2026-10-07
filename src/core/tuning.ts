@@ -35,6 +35,8 @@ export const T = {
   fineMult: 1.6,
   survey: { sys: 380, body: 160 },
   firstDiscoveryBonus: 1.8,
+  /** v2: encounter chance per jump before modifiers. */
+  encounter: { base: 0.07 },
 };
 
 export function priceFactor(difficulty: 'easy' | 'normal' | 'hard'): number {

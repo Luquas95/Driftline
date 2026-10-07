@@ -2,6 +2,7 @@
  * Public action API of the simulation. Every function mutates the given GameState and returns a Result.
  * UI, bots (balance simulator) and tests all drive the game through this file.
  */
+import { rollEncounter } from './combat/encounter';
 import { GOODS_BY_ID, GOOD_INDEX, isIllegal } from '../content/goods';
 import { MODULES_BY_ID, QUALITY } from '../content/modules';
 import { STATION_TYPES_BY_ID } from '../content/stations';
@@ -216,7 +217,7 @@ export function jump(state: GameState, toId: number): Result<{ report: JumpRepor
     if (state.dead || state.location.stationId !== null) return ok({ report });
   }
   arrive(state, toId);
-  rollEvent(state, 'jump', 0.42, { systemId: toId });
+  if (!rollEncounter(state, toId)) rollEvent(state, 'jump', 0.42, { systemId: toId });
   if (!state.pendingEvent) rollEvent(state, 'arrival', 0.12, { systemId: toId });
   void stats;
   return ok({ report });

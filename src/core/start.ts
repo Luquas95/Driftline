@@ -1,6 +1,7 @@
 import { HULLS_BY_ID } from '../content/hulls';
 import { STATION_TYPES_BY_ID } from '../content/stations';
 import { refreshBoard } from './contracts';
+import { defaultCrew } from './crew';
 import { createStationDyn } from './economy';
 import { findStartSystem, getGalaxy } from './galaxy';
 import { Rng, randomSeedFrom } from './rng';
@@ -56,6 +57,9 @@ export function newGame(opts: NewGameOptions = {}): GameState {
       daysPlayed: 0,
       accidents: 0,
       fines: 0,
+      fights: 0,
+      victories: 0,
+      fled: 0,
     },
     insurance: { active: difficulty.insurance, full: false, due: 0, lapsedSince: null },
     home: startSt.id,
@@ -66,6 +70,11 @@ export function newGame(opts: NewGameOptions = {}): GameState {
     dead: false,
     tutorial: { step: 0, done: false },
     hints: [],
+    crew: [],
+    wagesDue: 0,
+    combat: null,
+    encounter: null,
+    officersMet: [],
   };
   state.ship = buildStarterShip(T.startHull, opts.shipName ?? 'Poutník', () => newUid(state, 'm'));
   // starter loadout: a cargo pod in the first free medium slot
@@ -79,6 +88,7 @@ export function newGame(opts: NewGameOptions = {}): GameState {
       state.stations[st.id] = createStationDyn(st, Rng.fromSeed(`${seed}:stock:${st.id}`));
     }
   }
+  state.crew = defaultCrew(seed, state.ship.hullId, 0, () => newUid(state, 'w'));
   arrive(state, startSys.id);
   state.location = { systemId: startSys.id, stationId: startSt.id, body: startSt.bodyIndex };
   refreshBoard(g, state, startSt);
