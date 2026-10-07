@@ -49,7 +49,8 @@ test.describe('visual snapshots', () => {
       timeout: 60_000,
     });
   });
-  test('screen system, planet detail after zoom', async ({ page }) => {
+  test('screen system, planet detail after zoom', async ({ page, isMobile }) => {
+    test.skip(isMobile, 'mouse gestures');
     await page.evaluate(() => window.__dl.setAnim('off'));
     await openScreen(page, 'system');
     await expect(page.getByTestId('screen-system')).toBeVisible();
