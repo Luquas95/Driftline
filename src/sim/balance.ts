@@ -69,7 +69,7 @@ function main(): void {
     const first = runs.map((r) => r.firstUpgradeDay).filter((x): x is number => x !== null);
     const accRate = mean(runs.map((r) => (r.accidents / Math.max(1, r.daysPlayed)) * 100));
     lines.push(
-      `| ${strategy} | ${median(runs.map((r) => r.income)).toFixed(0)} | ${mean(runs.map((r) => r.income)).toFixed(0)} | ${median(w30).toFixed(0)} | ${d3k.length ? median(d3k).toFixed(0) : '—'} (${d3k.length}/${runs.length}) | ${first.length ? median(first).toFixed(0) : '—'} | ${accRate.toFixed(1)} | ${runs.reduce((s, r) => s + r.deaths, 0)} | ${runs.filter((r) => r.firstDeathDay !== null && r.firstDeathDay <= 20).length}/${runs.length} | ${runs.filter((r) => r.firstDeathDay !== null && r.firstDeathDay <= 20).length}/${runs.length} | ${mean(runs.map((r) => r.jumps)).toFixed(0)} |`,
+      `| ${strategy} | ${median(runs.map((r) => r.income)).toFixed(0)} | ${mean(runs.map((r) => r.income)).toFixed(0)} | ${median(w30).toFixed(0)} | ${d3k.length ? median(d3k).toFixed(0) : '—'} (${d3k.length}/${runs.length}) | ${first.length ? median(first).toFixed(0) : '—'} | ${accRate.toFixed(1)} | ${runs.reduce((s, r) => s + r.deaths, 0)} | ${runs.filter((r) => r.firstDeathDay !== null && r.firstDeathDay <= 20).length}/${runs.length} | ${mean(runs.map((r) => r.jumps)).toFixed(0)} |`,
     );
   }
   lines.push('');

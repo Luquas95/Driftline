@@ -103,11 +103,11 @@ const FAMILIES: Record<string, Family> = {
   cargo: {
     kind: 'cargo',
     sizes: ['S', 'M', 'L'],
-    value: 4,
+    value: 3,
     power: 0,
     mode: 'always',
     mass: 2,
-    price: 450,
+    price: 700,
     wear: 0,
   },
   fuel: {
@@ -143,7 +143,7 @@ const FAMILIES: Record<string, Family> = {
   laser: {
     kind: 'laser',
     sizes: ['M', 'L'],
-    value: 4.2,
+    value: 2,
     power: 7,
     mode: 'active',
     mass: 5,
@@ -236,7 +236,7 @@ const FAMILIES: Record<string, Family> = {
   scoop: {
     kind: 'scoop',
     sizes: ['M', 'L'],
-    value: 4.5,
+    value: 2.2,
     power: 6,
     mode: 'active',
     mass: 4,

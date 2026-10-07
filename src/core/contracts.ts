@@ -188,9 +188,9 @@ export function makeContract(
         ? GOODS_BY_ID[step.goodId]
         : rng.pick(wanted.length ? wanted : MARKET_GOODS.filter((x) => x.category === 'raw'));
       const qty =
-        step?.qty ?? Math.max(good.unitsPerCell, Math.round((rng.int(2, 8) * good.unitsPerCell) / 2) * 2);
+        step?.qty ?? Math.max(good.unitsPerCell, Math.round((rng.int(2, 4) * good.unitsPerCell) / 2) * 2);
       const len = pathLength(g, origin.systemId, dst.systemId);
-      const reward = qty * good.basePrice * rng.range(1.25, 1.55) + len * 12;
+      const reward = qty * good.basePrice * rng.range(1.1, 1.3) + len * 12;
       return finalize({
         ...base,
         dest: dst.id,

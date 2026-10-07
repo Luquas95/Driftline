@@ -200,8 +200,8 @@ export function exploreAnomaly(state: GameState, bodyIdx: number, anomalyId: str
 
 export const INTENSITY = [
   { mult: 1, fuel: 0.6, risk: 0.5 },
-  { mult: 1.9, fuel: 1.4, risk: 1.4 },
-  { mult: 3.2, fuel: 2.8, risk: 3.2 },
+  { mult: 1.6, fuel: 1.4, risk: 1.4 },
+  { mult: 2.4, fuel: 2.8, risk: 3.2 },
 ];
 
 /** Goods the refinery converts: input -> [output, ratio]. */
@@ -220,8 +220,8 @@ export function mineMethodFor(body: BodyStatic): MineMethod {
 }
 
 export function depositDecay(dyn: BodyDyn, depId: string, day: number): number {
-  const n = Math.max(0, (dyn.mined[depId] ?? 0) - (day - (dyn.minedDay[depId] ?? day)) / 15);
-  return Math.pow(0.82, n);
+  const n = Math.max(0, (dyn.mined[depId] ?? 0) - (day - (dyn.minedDay[depId] ?? day)) / 25);
+  return Math.pow(0.7, n);
 }
 
 export interface MineOutcome {
@@ -287,7 +287,7 @@ export function mine(
   if (stats.refineRate > 0 && REFINE[dep.goodId] && stats.powerMine >= -0.001)
     wearKind(state.ship, 'refinery', 0.8);
   dyn.mined[dep.id] =
-    Math.max(0, (dyn.mined[dep.id] ?? 0) - (state.day - (dyn.minedDay[dep.id] ?? state.day)) / 15) +
+    Math.max(0, (dyn.mined[dep.id] ?? 0) - (state.day - (dyn.minedDay[dep.id] ?? state.day)) / 25) +
     lvl.mult * 0.55;
   dyn.minedDay[dep.id] = state.day;
   // refine?

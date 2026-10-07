@@ -24,6 +24,8 @@ import {
   type StationStatic,
 } from './types';
 
+const SIZE_RANK = { S: 1, M: 2, L: 3 } as const;
+
 export const SHOP_EPOCH_DAYS = 10;
 
 const QUALITY_BY_TIER: Record<number, Quality[]> = {
@@ -205,8 +207,8 @@ export function disassembleModule(
     state.ship.slots[fromSlot] = null;
   }
   const value = modulePrice(MODULES_BY_ID[m.defId], m.quality);
-  const metals = Math.max(2, Math.round(value / 90));
-  const parts = Math.max(1, Math.round(value / 260));
+  const metals = Math.max(2, Math.round(value / 180));
+  const parts = Math.max(1, Math.round(value / 520));
   addGoodsFn('metals', metals);
   addGoodsFn('spare_parts', parts);
   clampShipResources(state);
@@ -255,7 +257,11 @@ function swapCore(state: GameState, hullId: string, cost: number): HullSwapPrevi
       const cur = result.slots[s.index];
       if (
         !cur ||
-        (defaults.has(cur.uid) && def.core && QUALITIES.indexOf(m.quality) >= QUALITIES.indexOf(cur.quality))
+        (defaults.has(cur.uid) &&
+          def.core &&
+          (SIZE_RANK[def.size] > SIZE_RANK[MODULES_BY_ID[cur.defId].size] ||
+            (def.size === MODULES_BY_ID[cur.defId].size &&
+              QUALITIES.indexOf(m.quality) > QUALITIES.indexOf(cur.quality))))
       ) {
         target = s.index;
         break;

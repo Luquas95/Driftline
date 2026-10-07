@@ -150,7 +150,13 @@ export function destroyShip(state: GameState): void {
   state.stats.deaths++;
   state.pendingEvent = null;
   // contracts depending on cargo are void (no penalty: the ship was lost)
-  for (const c of state.contracts) if (c.state === 'active') c.state = 'failed';
+  for (const c of state.contracts) {
+    if (c.state !== 'active') continue;
+    c.state = 'failed';
+    state.stats.contractsFailed++;
+    state.credits = Math.max(0, state.credits - c.deposit - c.penalty);
+    if (c.chainId) delete state.flags[`chain:${c.chainId}`];
+  }
   state.contracts = [];
   state.cargo = [];
   if (state.difficulty.permadeath) {
@@ -160,7 +166,7 @@ export function destroyShip(state: GameState): void {
   }
   const hullDef = HULLS_BY_ID[state.ship.hullId];
   if (state.insurance.active) {
-    const deductible = Math.round(hullDef.price * 0.1);
+    const deductible = Math.round(hullDef.price * 0.25);
     state.credits = Math.max(0, state.credits - deductible);
     const full = state.insurance.full;
     state.ship.slots = state.ship.slots.map((m) => {
