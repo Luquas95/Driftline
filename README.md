@@ -14,6 +14,16 @@ Klidná obchodně-průzkumná hra o malé lodi v procedurálně generované gala
 |---|---|---|
 | ![Náklad](docs/screenshots/desktop-cargo.png) | ![Mobil mapa](docs/screenshots/mobile-map.png) | ![Mobil stanice](docs/screenshots/mobile-station.png) |
 
+**Boj a posádka (v2)**
+
+| Boj (pozastavený) | Dialog střetu | Posádka |
+|---|---|---|
+| ![Boj](docs/screenshots/desktop-combat.png) | ![Střet](docs/screenshots/desktop-encounter.png) | ![Posádka](docs/screenshots/desktop-crew.png) |
+
+| Mobil: boj | Mobil: výsledek | Mobil: nábor |
+|---|---|---|
+| ![Mobil boj](docs/screenshots/mobile-combat.png) | ![Mobil výsledek](docs/screenshots/mobile-combat-result.png) | ![Mobil nábor](docs/screenshots/mobile-crew-hire.png) |
+
 ## Jak hrát
 
 1. **Obchod:** ve stanici otevři *Obchod*, vyber zboží, které je u vás levné, a kup ho. Sloupec „Nejlepší prodej jinde“ ukazuje nejvyšší známou cenu v okolí (a jak je stará).
