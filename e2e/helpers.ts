@@ -52,7 +52,7 @@ export async function startGame(
   await page.getByTestId('menu-new').click();
   await page.getByTestId('new-seed').fill(opts.seed ?? 'E2E1');
   await page.getByTestId('menu-start').click();
-  await expect(page.getByTestId('screen-station')).toBeVisible();
+  await expect(page.getByTestId(opts.quick === false ? 'screen-firstship' : 'screen-station')).toBeVisible();
   await page.waitForFunction(() => !!window.__dl?.state());
 }
 
