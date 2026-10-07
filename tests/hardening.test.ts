@@ -81,8 +81,8 @@ describe('hardening', () => {
 
   it('rejects malicious or broken saves instead of crashing later', () => {
     const base = JSON.parse(serializeState(mk('EVIL', 60)));
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const attempts: ((s: any) => void)[] = [
-      // eslint-disable-line @typescript-eslint/no-explicit-any
       (s) => (s.ship.hullId = 'nope'),
       (s) => (s.ship.slots[0] = { defId: 'x', quality: 'C', condition: 100, enabled: true, uid: 'a' }),
       (s) => (s.galaxySize = 20000),
