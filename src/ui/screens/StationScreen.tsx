@@ -34,7 +34,7 @@ import { sfx } from '../../audio/audio';
 import { fmt, money, t } from '../../i18n';
 import { Bar, Btn, Delta, Empty, Modal, Panel, QualityBadge, Stat, Tabs, Tag } from '../components';
 import { CategoryIcon, Icon } from '../Icon';
-import { act, analysis, galaxy, game, report, rev, screen, flag, toast } from '../store';
+import { act, analysis, galaxy, game, launchFlag, report, rev, screen, flag, toast } from '../store';
 import { useScene } from '../useScene';
 import { ShipyardTab } from './ShipyardTab';
 import { ContractsTab } from './ContractsTab';
@@ -116,6 +116,7 @@ export function StationScreen() {
               <Btn
                 icon="jump"
                 onClick={() => {
+                  launchFlag.pending = true;
                   act((x) => undock(x));
                   screen.value = 'map';
                 }}

@@ -1,6 +1,12 @@
 /** Czech texts for crew and combat (v2). */
 export const csV2: Record<string, string> = {
   'nav.crew': 'Posádka',
+  'sys.zoom': 'Přiblížení',
+  'sys.zoomIn': 'Přiblížit (+)',
+  'sys.zoomOut': 'Oddálit (−)',
+  'sys.zoomReset': 'Vycentrovat celý systém (0)',
+  'sys.dockShort': 'Přistát: {name}',
+  'sys.enterShort': 'Vstoupit: {name}',
   'first.title': 'Loděnice: tvoje první loď',
   'first.sub':
     'Kapitáne {captain}, vítej ve stanici {station} ({type}). Vyber si loď z nabídky od nejlevnější po nejdražší. Ojeté kusy jsou levnější, ale opotřebené.',

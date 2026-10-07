@@ -183,6 +183,7 @@ uniform float uAtmoAmt;
 uniform vec3 uLight;
 uniform float uCloud;
 uniform float uSpin;
+uniform float uDetail;
 ${COMMON}
 ${SURFACES[kind]}
 void main() {
@@ -195,6 +196,12 @@ void main() {
   vec3 p = rotY(uTime * uSpin) * n;
   float spec; float emit; float cloudAmt;
   vec3 albedo = surface(p, spec, emit, cloudAmt);
+  // close-up detail: extra octaves fade in when the planet is large on screen
+  if (uDetail > 0.0) {
+    float d1 = fbm3(p * 22.0 + uSeed) - 0.5;
+    float d2 = fbm3(p * 58.0 + uSeed * 1.3) - 0.5;
+    albedo *= 1.0 + (d1 * 0.5 + d2 * 0.38) * uDetail;
+  }
   // clouds
   float c = 0.0;
   if (uCloud > 0.0) {

@@ -9,6 +9,8 @@ export interface Settings {
   contrast: 'normal' | 'high';
   tutorial: boolean;
   autosave: boolean;
+  /** v3: how much the world moves: full, reduced (short, simple) or off (no animation at all). */
+  animations: 'full' | 'reduced' | 'off';
   /** v2: screen shake in combat (also off with reduced motion). */
   shake: boolean;
   /** v2: weak enemies are fought by the AI automatically. */
@@ -34,6 +36,7 @@ const DEFAULTS: Settings = {
   contrast: 'normal',
   tutorial: true,
   autosave: true,
+  animations: 'full',
   shake: true,
   autoCombat: false,
   pauseOnSelect: coarse(),
@@ -54,6 +57,16 @@ export const settings = signal<Settings>(load());
 
 export function updateSettings(patch: Partial<Settings>): void {
   settings.value = { ...settings.value, ...patch };
+}
+
+export type AnimLevel = 'full' | 'reduced' | 'off';
+
+/** The effective animation level: the setting, lowered by the accessibility (reduced motion) preference. */
+export function animLevel(): AnimLevel {
+  const a = settings.value.animations;
+  if (a === 'off') return 'off';
+  if (a === 'reduced' || prefersReducedMotion()) return 'reduced';
+  return 'full';
 }
 
 export function prefersReducedMotion(): boolean {

@@ -60,7 +60,7 @@ export function zoomAt(
 }
 
 /** Keep the centre of the view within the system (plus a margin), so the player cannot lose it. */
-export function clampCam(cam: Cam, W: number, H: number, k0: number, extent = 380): Cam {
+export function clampCam(cam: Cam, k0: number, extent = 380): Cam {
   const k = k0 * cam.zoom;
   const lim = extent * k;
   return {

@@ -1650,6 +1650,37 @@ kbd {
   }
 }
 
+/* ---- system view: zoom and quick docking ---- */
+.sys-actions {
+  position: absolute;
+  left: 50%;
+  bottom: 10px;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  max-width: calc(100% - 20px);
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.sys-zoom,
+.sys-dock {
+  display: flex;
+  gap: 6px;
+  padding: 6px;
+  background: color-mix(in srgb, var(--panel) 86%, transparent);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+.sys-dock .btn {
+  min-height: 44px;
+}
+@media (max-width: 899px) {
+  .sys-actions {
+    bottom: 8px;
+  }
+}
+
 /* ---- first ship (new game) ---- */
 .first-ship {
   overflow-y: auto;

@@ -340,6 +340,20 @@ const SHAPES: Record<string, Shape> = {
   }),
 };
 
+/** Plain hull outline (used when a ship is too small on screen for the full drawing). */
+export function drawSilhouette(g: Graphics, hullId: string, fill: number, stroke: number): void {
+  g.clear();
+  const sh = SHAPES[hullId] ?? SHAPES.wayfarer;
+  for (const f of sh.fins) poly(g, f, fill, 0.85);
+  poly(g, sh.body, fill);
+  g.poly(sh.body.flat()).stroke({ width: 8, color: stroke, alpha: 0.95 });
+}
+
+/** Nozzle positions of a hull in drawing units (for exhaust effects on small ships). */
+export function nozzlesOf(hullId: string): P[] {
+  return (SHAPES[hullId] ?? SHAPES.wayfarer).nozzles;
+}
+
 export interface ShipDrawing {
   nozzles: P[];
   slotRects: { index: number; x: number; y: number; w: number; h: number }[];

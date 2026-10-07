@@ -58,7 +58,7 @@ describe('camera', () => {
   it('keeps zoom within limits and the view near the system', () => {
     expect(zoomAt(cam, W, H, k0, 0, 0, 1e6).zoom).toBe(ZOOM_MAX);
     expect(zoomAt(cam, W, H, k0, 0, 0, 1e-6).zoom).toBe(ZOOM_MIN);
-    const far = clampCam({ zoom: 4, x: 1e6, y: -1e6 }, W, H, k0);
+    const far = clampCam({ zoom: 4, x: 1e6, y: -1e6 }, k0);
     expect(Math.abs(far.x)).toBeLessThan(1e4);
   });
   it('a click after zooming picks the body drawn under the pointer', () => {

@@ -112,6 +112,9 @@ export function report(r: Result<object>): boolean {
   return false;
 }
 
+/** Set when the player leaves a station: the system scene shows the ship flying out. */
+export const launchFlag = { pending: false };
+
 /** Test hook: `?e2e=1&quick=1` skips the shipyard (set by e2eHooks, never by the game itself). */
 export const e2eFlags = { quick: false };
 
