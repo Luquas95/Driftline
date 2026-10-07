@@ -7,6 +7,8 @@ import type { CrewMember, ModuleKind, Ship } from '../types';
 import type { CCrew, CRoom, CShip, CWeapon, Personality, PowerGroup, Side } from './types';
 
 export const SHIELD_LAYER = 15;
+/** In combat a shield point is worth less than on the map: the pool is scaled up so shields matter against small weapons. */
+export const SHIELD_SCALE = 2.5;
 
 export function groupOf(kind: ModuleKind): PowerGroup | null {
   if (kind === 'reactor') return null;
@@ -123,10 +125,13 @@ export function buildCombatShip(o: BuildOpts): CShip {
     name: o.name,
     hullId: o.ship.hullId,
     hull: o.ship.hp,
-    hullMax: stats.hpMax,
-    shield: o.ship.shield > 0 ? Math.min(o.ship.shield, stats.shieldCap) : stats.shieldCap,
-    shieldMax: stats.shieldCap,
-    shieldRegen: stats.shieldCap * 0.05,
+    hullMax: Math.max(stats.hpMax, o.ship.hp),
+    shield:
+      o.ship.shield > 0
+        ? Math.min(o.ship.shield, stats.shieldCap) * SHIELD_SCALE
+        : stats.shieldCap * SHIELD_SCALE,
+    shieldMax: stats.shieldCap * SHIELD_SCALE,
+    shieldRegen: stats.shieldCap * SHIELD_SCALE * 0.04,
     rooms,
     weapons,
     crew: o.crew,

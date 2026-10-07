@@ -184,6 +184,8 @@ export interface CombatState {
   demand: number | null;
   /** True when the fight was started with a surprise advantage penalty etc. */
   difficultyRisk: number;
+  /** Enemy tier 1..3 (scales loot). */
+  tier: number;
   /** Systems where the fight happens (for wreck/loot). */
   systemId: number;
 }

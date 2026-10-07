@@ -8,6 +8,7 @@ import { Rng } from '../rng';
 import { newModule } from '../ship';
 import { analyze, destroyShip, msg, newUid } from '../state';
 import type { GameState } from '../types';
+import { SHIELD_SCALE } from './build';
 import type { CShip, CombatOutcome, CombatState } from './types';
 
 export interface CombatSummary {
@@ -98,7 +99,7 @@ export function resolveCombat(state: GameState, c: CombatState): CombatSummary {
 
   // ship wear: hull, module condition from rooms
   state.ship.hp = clamp(Math.round(p.hull), 1, analyze(state).stats.hpMax);
-  state.ship.shield = Math.min(state.ship.shield, p.shield);
+  state.ship.shield = Math.min(state.ship.shield, p.shield / SHIELD_SCALE);
   for (const r of p.rooms) {
     const m = state.ship.slots[r.slot];
     if (m) m.condition = clamp(Math.round(r.sys), m.condition > 0 ? 1 : 0, m.condition);
@@ -111,13 +112,12 @@ export function resolveCombat(state: GameState, c: CombatState): CombatSummary {
       if (e.out !== 'destroyed' && e.out !== 'surrendered') continue;
       const def = ENEMIES_BY_ID[c.enemyDefs[i] ?? e.lootId];
       if (!def) continue;
-      const tier = Math.max(
-        1,
-        Math.min(3, Math.round(e.hullMax / Math.max(1, e.hullMax)) + (c.difficultyRisk > 1 ? 1 : 0)),
-      );
-      void tier;
       const mult = e.out === 'surrendered' ? 1 : 0.85;
-      sum.credits += Math.round(rng.range(def.credits[0], def.credits[1]) * mult);
+      const lootMult = (0.7 + 0.4 * c.tier) * (c.difficultyRisk > 1 ? 1.15 : c.difficultyRisk < 1 ? 0.85 : 1);
+      sum.credits += Math.round(rng.range(def.credits[0], def.credits[1]) * mult * lootMult);
+      // no hangar in this game: a wreck is dismantled for raw materials
+      if (e.out === 'destroyed')
+        sum.goods.push({ goodId: 'metals', qty: Math.max(1, Math.round(e.hullMax / 18)) });
       const nGoods = rng.int(1, 2);
       for (let k = 0; k < nGoods; k++) {
         const goodId = rng.pick(def.goods);

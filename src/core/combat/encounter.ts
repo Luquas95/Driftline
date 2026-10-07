@@ -17,7 +17,7 @@ import { stepCombat, DT } from './sim';
 
 /* ------------------------------ enemies ------------------------------ */
 
-export function buildEnemyShip(def: EnemyDef, tier: number, rng: Rng, index: number): CShip {
+export function buildEnemyShip(def: EnemyDef, tier: number, rng: Rng, index: number, risk = 1): CShip {
   let n = 0;
   const ship: Ship = buildStarterShip(def.hullId, `${def.id}`, () => `e${++n}`);
   const q = TIER_QUALITY[tier] ?? 'C';
@@ -38,11 +38,11 @@ export function buildEnemyShip(def: EnemyDef, tier: number, rng: Rng, index: num
     }
   }
   const hull = HULLS_BY_ID[def.hullId];
-  ship.hp = Math.round(hull.hp * (TIER_HULL[tier] ?? 1));
+  ship.hp = Math.round(hull.hp * (TIER_HULL[tier] ?? 1) * (1 + (risk - 1) * 0.25));
   const crew: CCrew[] = [];
   for (let i = 0; i < def.crew; i++) {
     const race = rng.pick(RACES).id;
-    const level = 1.2 + tier * 1.1 + rng.range(-0.4, 0.5);
+    const level = 1.2 + tier * 1.1 + rng.range(-0.4, 0.5) + (risk - 1) * 1.2;
     const role = (['pilot', 'engineer', 'gunner', 'gunner', 'medic'] as const)[i % 5];
     const skills = { piloting: 0.5, engineering: 0.8, gunnery: 0.8, medicine: 0.5, trade: 0, science: 0 };
     const key =
@@ -108,7 +108,9 @@ export function startCombat(state: GameState, enc: Encounter, extra?: { surprise
   });
   void analysis;
   placeCrew(player);
-  const enemies = enc.enemyDefs.map((id, i) => buildEnemyShip(ENEMIES_BY_ID[id], enc.tier, rng, i));
+  const enemies = enc.enemyDefs.map((id, i) =>
+    buildEnemyShip(ENEMIES_BY_ID[id], enc.tier, rng, i, riskFactor(state.difficulty.risk)),
+  );
   const c: CombatState = {
     v: 1,
     seed: `${state.seed}:f${state.stats.fights}`,
@@ -127,6 +129,7 @@ export function startCombat(state: GameState, enc: Encounter, extra?: { surprise
     enemyDefs: enc.enemyDefs,
     demand: null,
     difficultyRisk: riskFactor(state.difficulty.risk),
+    tier: enc.tier,
     systemId: enc.systemId,
   };
   if (extra?.surprise) player.shield = 0;

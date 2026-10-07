@@ -36,42 +36,45 @@ export interface WeaponSpec {
   mass: number;
 }
 
+/** Global damage scale: keeps a fight at roughly one to two minutes without touching module stat tables. */
+export const DMG_SCALE = 0.32;
+
 export const WEAPON_SPECS: Record<WeaponKind, WeaponSpec> = {
   energy: {
-    dmg: 14,
+    dmg: 16,
     charge: 5,
-    heat: 7,
+    heat: 6,
     speed: 0.45,
-    shieldMult: 1.5,
-    hullMult: 0.8,
+    shieldMult: 1.4,
+    hullMult: 1.0,
     sysMult: 0.9,
     breach: 0.04,
     fire: 0.18,
     ion: 0,
     ammo: 0,
-    power: 6,
+    power: 5,
     price: 1500,
     mass: 3,
   },
   kinetic: {
-    dmg: 10,
+    dmg: 9,
     charge: 3.6,
     heat: 4,
     speed: 0.8,
-    shieldMult: 0.5,
-    hullMult: 1.4,
+    shieldMult: 0.75,
+    hullMult: 1.3,
     sysMult: 1.1,
     breach: 0.18,
     fire: 0.03,
     ion: 0,
     ammo: 0,
-    power: 4,
+    power: 5,
     price: 950,
     mass: 3.5,
   },
   missile: {
-    dmg: 26,
-    charge: 9,
+    dmg: 22,
+    charge: 10,
     heat: 2,
     speed: 1.5,
     shieldMult: 0,
@@ -87,23 +90,23 @@ export const WEAPON_SPECS: Record<WeaponKind, WeaponSpec> = {
   },
   ion: {
     dmg: 6,
-    charge: 7,
+    charge: 6,
     heat: 4,
     speed: 0.5,
-    shieldMult: 1.2,
+    shieldMult: 2,
     hullMult: 0,
     sysMult: 0,
     breach: 0,
     fire: 0,
-    ion: 7,
+    ion: 9,
     ammo: 0,
-    power: 5,
+    power: 4,
     price: 1600,
     mass: 3,
   },
   drones: {
-    dmg: 4,
-    charge: 22,
+    dmg: 4.5,
+    charge: 19,
     heat: 1,
     speed: 0.6,
     shieldMult: 0.8,
@@ -140,8 +143,8 @@ export const WEAPON_SIZE: Record<
   { dmg: number; charge: number; power: number; price: number; mass: number; drones: number }
 > = {
   S: { dmg: 1, charge: 1, power: 1, price: 1, mass: 1, drones: 2 },
-  M: { dmg: 1.75, charge: 1.3, power: 1.9, price: 2.5, mass: 2.2, drones: 3 },
-  L: { dmg: 2.7, charge: 1.6, power: 3.2, price: 5.5, mass: 4, drones: 4 },
+  M: { dmg: 1.75, charge: 1.25, power: 1.6, price: 2.5, mass: 2.2, drones: 3 },
+  L: { dmg: 2.7, charge: 1.5, power: 2.4, price: 5.5, mass: 4, drones: 4 },
 };
 
 export const WEAPON_KIND_SET: ReadonlySet<string> = new Set(Object.keys(WEAPON_SPECS));
@@ -170,7 +173,7 @@ export function weaponStats(kind: WeaponKind, size: Size, quality: Quality): Wea
   const sp = WEAPON_SPECS[kind];
   const sz = WEAPON_SIZE[size];
   const q = QUALITY[quality];
-  const dmg = sp.dmg * sz.dmg * q.value;
+  const dmg = sp.dmg * sz.dmg * q.value * DMG_SCALE;
   return {
     kind,
     dmg,

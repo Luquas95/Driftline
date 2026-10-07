@@ -43,6 +43,8 @@ import { computeShipStats, hullSlots, moduleFits, modulePrice } from '../core/sh
 import { buyModule, installModule } from '../core/shop';
 import { analyze, galaxyOf, stationOf } from '../core/state';
 import { resolveEvent } from '../core/events';
+import { autoResolve, chooseEncounterOption } from '../core/combat/encounter';
+import { resolveCombat } from '../core/combat/resolve';
 import type { GameState, StationStatic } from '../core/types';
 import { unitsOf } from '../core/cargo';
 
@@ -65,6 +67,11 @@ export interface BotRun {
   routeProfit: Record<string, number>;
   loopTrips: number[];
   stuck: number;
+  encounters: number;
+  fights: number;
+  fightsWon: number;
+  /** Credits spent on bribes and tolls. */
+  tolls: number;
 }
 
 export function netWorth(state: GameState): number {
@@ -102,6 +109,10 @@ export class Bot {
       routeProfit: {},
       loopTrips: [],
       stuck: 0,
+      encounters: 0,
+      fights: 0,
+      fightsWon: 0,
+      tolls: 0,
     };
   }
 
@@ -111,7 +122,52 @@ export class Bot {
 
   /* ---------------------------- low-level helpers ---------------------------- */
 
+  /** Armed bots fight when healthy; unarmed ones avoid, pay or run. */
+  armed = false;
+
+  autoEncounter(): void {
+    const s = this.state;
+    let guard = 0;
+    while ((s.encounter || s.combat) && guard++ < 6) {
+      if (s.combat) {
+        this.run.fights++;
+        const c = s.combat;
+        autoResolve(c);
+        const sum = resolveCombat(s, c);
+        if (sum.outcome === 'victory' || sum.outcome === 'surrender') this.run.fightsWon++;
+        continue;
+      }
+      const enc = s.encounter!;
+      if (guard === 1) this.run.encounters++;
+      const has = (id: string) => enc.options.some((o) => o.id === id);
+      const opt = (id: string) => enc.options.find((o) => o.id === id)!;
+      const hp = s.ship.hp / Math.max(1, analyze(s).stats.hpMax);
+      let pick: 'fight' | 'flee' | 'bribe' | 'negotiate' | 'pay' | 'evade' = 'fight';
+      if (this.armed && hp > 0.6 && enc.tier <= 2) pick = 'fight';
+      else if (has('evade')) pick = 'evade';
+      else if (has('pay')) pick = 'pay';
+      else if (has('bribe') && opt('bribe').cost! <= s.credits * 0.5) pick = 'bribe';
+      else if (has('flee')) pick = 'flee';
+      else if (has('negotiate')) pick = 'negotiate';
+      if (pick === 'bribe') this.run.tolls += opt('bribe').cost ?? 0;
+      const r = chooseEncounterOption(s, pick);
+      if (!r.ok) {
+        s.encounter = null;
+        break;
+      }
+    }
+  }
+
   autoEvent(): void {
+    const s = this.state;
+    for (let i = 0; i < 6; i++) {
+      this.autoEncounter();
+      this.autoPending();
+      if (!s.encounter && !s.combat && !s.pendingEvent) break;
+    }
+  }
+
+  private autoPending(): void {
     const s = this.state;
     while (s.pendingEvent) {
       const ev = EVENTS_BY_ID[s.pendingEvent.eventId];

@@ -18,7 +18,11 @@ describe('v1 -> v2 save migration', () => {
     expect(s.combat).toBeNull();
     expect(s.encounter).toBeNull();
     expect(s.stats.fights).toBe(0);
-    expect(s.ship.slots.some((m) => m && ['energy', 'kinetic', 'missile', 'ion', 'drones'].some((k) => m.defId.startsWith(k)))).toBe(false);
+    expect(
+      s.ship.slots.some(
+        (m) => m && ['energy', 'kinetic', 'missile', 'ion', 'drones'].some((k) => m.defId.startsWith(k)),
+      ),
+    ).toBe(false);
   });
 
   it('keeps the galaxy and economy identical and keeps playing', () => {
