@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 
 test('works fully offline after the service worker is installed', async ({ page, context }) => {
-  await page.goto('/?e2e=1');
+  await page.goto('/?e2e=1&quick=1');
   await page.evaluate(async () => {
     await navigator.serviceWorker.ready;
   });
