@@ -14,7 +14,7 @@ import { dist } from './galaxy';
 import { bodyAu, travelToBody } from './exploration';
 import { canJump, jumpDays, jumpFuelCost, sublightDays, wearKind, wearModule } from './ship';
 import { refreshShop } from './shop';
-import { analyze, arrive, damageHull, fail, galaxyOf, learnStation, msg, ok, stationOf, updateSeen, withRng, type Result } from './state';
+import { analyze, arrive, damageHull, fail, galaxyOf, learnStation, msg, ok, premiumPerDay, stationOf, updateSeen, withRng, type Result } from './state';
 import { passTime } from './time';
 import { T, riskFactor } from './tuning';
 import type { Contract, GameState, StationStatic } from './types';
@@ -562,3 +562,27 @@ export function snapshotAt(state: GameState, st: StationStatic, goodId: string) 
   return snapshotPrice(st, stockOf(state, st.id, goodId), goodId, state.difficulty, state.day);
 }
 
+
+/* ------------------------------ insurance ----------------------------- */
+
+
+/** Re-activate a lapsed policy at a station: pays the debt plus a re-activation fee. */
+export function renewInsurance(state: GameState): Result<{ paid: number }> {
+  if (!state.location.stationId) return fail('err.notDocked');
+  if (!state.difficulty.insurance) return fail('err.noInsuranceMode');
+  if (state.insurance.active) return fail('err.alreadyInsured');
+  const fee = Math.round(state.insurance.due + premiumPerDay(state) * 5);
+  if (state.credits < fee) return fail('err.noCredits');
+  state.credits -= fee;
+  state.insurance = { ...state.insurance, active: true, due: 0, lapsedSince: null };
+  msg(state, 'msg.insuranceRenewed', undefined, 'good');
+  return ok({ paid: fee });
+}
+
+/** Full coverage also insures optional modules (higher premium). */
+export function setFullCoverage(state: GameState, full: boolean): Result {
+  if (!state.location.stationId) return fail('err.notDocked');
+  if (!state.insurance.active) return fail('err.notInsured');
+  state.insurance.full = full;
+  return ok();
+}

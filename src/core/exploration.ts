@@ -297,3 +297,38 @@ export function sellDiscoveries(state: GameState, stationId: string): Result<{ t
   msg(state, 'msg.soldData', { total }, 'good');
   return ok({ total, count: items.length });
 }
+
+export interface MineEstimate {
+  method: MineMethod;
+  units: number;
+  fuel: number;
+  /** Probability of damage per day (0..1). */
+  risk: number;
+  refined: boolean;
+  /** Error key when mining is currently impossible. */
+  blocked?: string;
+}
+
+/** Preview for the UI: what mining a deposit at an intensity would yield, cost and risk. Mirrors `mine`. */
+export function estimateMine(state: GameState, bodyIdx: number, depositId: string, intensity: 0 | 1 | 2): MineEstimate | null {
+  const g = galaxyOf(state);
+  const body = g.systems[state.location.systemId].bodies[bodyIdx];
+  const dep = body?.deposits.find((d) => d.id === depositId);
+  if (!body || !dep) return null;
+  const { stats } = analyze(state);
+  const method = mineMethodFor(body);
+  const dyn = bodyDyn(state, body.id);
+  const base = method === 'laser' ? stats.laserYield : method === 'scoop' ? stats.scoopYield : stats.probeValue * 5.5;
+  const lvl = INTENSITY[intensity];
+  const units = Math.max(1, Math.round(base * lvl.mult * (0.4 + dep.richness) * depositDecay(dyn, dep.id, state.day)));
+  const wearAvg = state.ship.slots.reduce((s, m) => s + (m ? 100 - m.condition : 0), 0) / Math.max(1, state.ship.slots.filter(Boolean).length) / 100;
+  const risk = Math.min(0.85, 0.035 * lvl.risk * body.hazard * riskFactor(state.difficulty.risk) * (1 + wearAvg * 1.5));
+  let blocked: string | undefined;
+  if (base <= 0) blocked = method === 'laser' ? 'err.noLaser' : method === 'scoop' ? 'err.noScoop' : 'err.noDrill';
+  else if (method === 'drill' && state.ship.probes < 1) blocked = 'err.noProbes';
+  else if (method !== 'drill' && stats.powerMine < -0.001) blocked = 'err.power';
+  else if (method === 'drill' && stats.powerScan < -0.001) blocked = 'err.power';
+  else if (state.ship.fuel < lvl.fuel) blocked = 'err.noFuel';
+  const refined = !!REFINE[dep.goodId] && stats.refineRate > 0 && stats.powerMine >= -0.001;
+  return { method, units, fuel: lvl.fuel, risk, refined, blocked };
+}
