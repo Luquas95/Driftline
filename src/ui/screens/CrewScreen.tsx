@@ -26,7 +26,11 @@ function SkillRows({ c }: { c: Pick<CrewMember, 'skills' | 'role'> }) {
   return (
     <div class="skill-grid">
       {SKILLS.map((k) => (
-        <div key={k} class={`skill ${ROLE_SKILL[c.role] === k ? 'main' : ''}`} title={t(`skill.${k}.desc`)}>
+        <div
+          key={k}
+          class={`skill ${ROLE_SKILL[c.role] === k ? 'is-main' : ''}`}
+          title={t(`skill.${k}.desc`)}
+        >
           <span>{t(`skill.${k}`)}</span>
           <Bar value={c.skills[k]} max={10} tone="accent" label={t(`skill.${k}`)} />
           <span class="mono">{fmt(c.skills[k], 1)}</span>
@@ -66,6 +70,7 @@ function RaceTraits({ race }: { race: keyof typeof RACES_BY_ID }) {
 }
 
 function CrewCard({ c, docked }: { c: CrewMember; docked: boolean }) {
+  const [confirm, setConfirm] = useState(false);
   const off = c.officer ? OFFICERS_BY_ID[c.officer] : null;
   return (
     <div class="crew-card" data-testid={`crew-${c.id}`}>
@@ -114,10 +119,21 @@ function CrewCard({ c, docked }: { c: CrewMember; docked: boolean }) {
               small
               kind="danger"
               testid={`dismiss-${c.id}`}
-              onClick={() => report(act((s) => dismissCrew(s, c.id)))}
+              onClick={() => {
+                if (!confirm) {
+                  setConfirm(true);
+                  return;
+                }
+                report(act((s) => dismissCrew(s, c.id)));
+              }}
             >
-              {t('crew.dismiss')}
+              {confirm ? t('crew.dismissSure') : t('crew.dismiss')}
             </Btn>
+            {confirm && (
+              <Btn small onClick={() => setConfirm(false)}>
+                {t('ui.cancel')}
+              </Btn>
+            )}
           </div>
         )}
       </div>

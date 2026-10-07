@@ -12,7 +12,8 @@ import {
 import { POWER_GROUPS, type CCrew, type CShip, type CWeapon, type PowerGroup } from '../../core/combat/types';
 import { createCombatScene, type CombatScene } from '../../render/combatscene';
 import { prefersReducedMotion, settings } from '../settings';
-import { fmt, t } from '../../i18n';
+import { GOODS_BY_ID } from '../../content/goods';
+import { fmt, money, t } from '../../i18n';
 import { Bar, Btn, Tabs } from '../components';
 import { Portrait } from '../Portrait';
 import { game, toast } from '../store';
@@ -68,17 +69,39 @@ function powerLevel(s: CShip, g: PowerGroup): number {
   return s.need[g] > 0 ? Math.round((s.weights[g] / s.need[g]) * 2) : 0;
 }
 
+function Meter({
+  label,
+  value,
+  max,
+  tone,
+}: {
+  label: string;
+  value: number;
+  max: number;
+  tone: 'good' | 'bad' | 'accent';
+}) {
+  return (
+    <div class="meter">
+      <span class="meter-l">{label}</span>
+      <Bar value={value} max={max} tone={tone} label={label} />
+      <span class="meter-v mono">
+        {Math.round(value)}/{Math.round(max)}
+      </span>
+    </div>
+  );
+}
+
 function shipBars(s: CShip) {
   return (
     <div class="enemy-bars" data-testid={`enemy-${s.index}`}>
       <b>{t(`enemy.${s.lootId || s.name}`)}</b>
-      <Bar
+      <Meter
+        label={t('combat.hull')}
         value={s.hull}
         max={s.hullMax}
         tone={s.hull / s.hullMax > 0.4 ? 'good' : 'bad'}
-        label={t('combat.hull')}
       />
-      <Bar value={s.shield} max={Math.max(1, s.shieldMax)} tone="accent" label={t('combat.shield')} />
+      <Meter label={t('combat.shield')} value={s.shield} max={Math.max(1, s.shieldMax)} tone="accent" />
       {s.out && <span class="tag">{t(`combat.out.${s.out}`)}</span>}
     </div>
   );
@@ -175,6 +198,13 @@ export function CombatScreen() {
       if (e.ctrlKey || e.metaKey || e.altKey) return;
       const cc = game.value?.combat;
       if (!cc || cc.outcome) return;
+      if (cc.demand !== null) {
+        const k0 = e.key.toLowerCase();
+        if (k0 === 'y') answerDemand(cc, true);
+        else if (k0 === 'n' || k0 === 'escape') answerDemand(cc, false);
+        combatRev.value++;
+        return;
+      }
       const k = e.key.toLowerCase();
       if (e.key === ' ') {
         e.preventDefault();
@@ -219,6 +249,7 @@ export function CombatScreen() {
     combatRev.value++;
   }
 
+  const cargoValue = s.cargo.reduce((a, it) => a + it.qty * (GOODS_BY_ID[it.goodId]?.basePrice ?? 0), 0);
   const pwrUse = POWER_GROUPS.reduce((a, g) => a + (p.need[g] > 0 ? p.weights[g] : 0), 0);
   const crewSel = p.crew.find((m) => m.id === selCrew.value);
   const hasTele = p.weapons.some((w) => w.kind === 'teleporter');
@@ -237,6 +268,7 @@ export function CombatScreen() {
             type="button"
             class={`wbtn ${selWeapon.value === w.id ? 'active' : ''} ${sys.sys <= 0 || sys.ion > 0 ? 'down' : ''}`}
             data-testid={`weapon-${i + 1}`}
+            aria-pressed={selWeapon.value === w.id}
             style={{ '--wc': KIND_ICON_COLOR[w.kind] }}
             onClick={() => {
               selWeapon.value = selWeapon.value === w.id ? null : w.id;
@@ -311,8 +343,9 @@ export function CombatScreen() {
           </div>
         );
       })}
-      <div class="pwr-foot dim small">
+      <div class={`pwr-foot small ${pwrUse > p.powerOut + 0.01 ? 'warn' : 'dim'}`}>
         {t('combat.reactor', { out: fmt(p.powerOut, 1), use: fmt(pwrUse, 1) })}
+        {pwrUse > p.powerOut + 0.01 && ` · ${t('combat.lowPower')}`}
       </div>
       <label class="heat">
         {t('combat.heat')}
@@ -334,6 +367,7 @@ export function CombatScreen() {
           type="button"
           class={`cchip ${selCrew.value === m.id ? 'active' : ''}`}
           data-testid={`crewchip-${m.id}`}
+          aria-pressed={selCrew.value === m.id}
           onClick={() => {
             selCrew.value = selCrew.value === m.id ? null : m.id;
             pauseForSelection();
@@ -408,15 +442,15 @@ export function CombatScreen() {
         <div class="enemy-list">{c.enemies.map((e) => shipBars(e))}</div>
         <div class="combat-self" data-testid="player-bars">
           <b>{p.name}</b>
-          <Bar
+          <Meter
+            label={t('combat.hull')}
             value={p.hull}
             max={p.hullMax}
             tone={p.hull / p.hullMax > 0.4 ? 'good' : 'bad'}
-            label={t('combat.hull')}
           />
-          <Bar value={p.shield} max={Math.max(1, p.shieldMax)} tone="accent" label={t('combat.shield')} />
+          <Meter label={t('combat.shield')} value={p.shield} max={Math.max(1, p.shieldMax)} tone="accent" />
         </div>
-        {c.paused && !c.outcome && (
+        {(c.paused || c.demand !== null) && !c.outcome && (
           <div class="pause-badge" data-testid="paused">
             {t('combat.paused')}
           </div>
@@ -425,13 +459,14 @@ export function CombatScreen() {
       </div>
 
       {c.demand !== null && !c.outcome && (
-        <div class="demand" data-testid="demand" role="alertdialog">
-          <p>{t('combat.demandText', { pct: Math.round(c.demand * 100) })}</p>
+        <div class="demand" data-testid="demand" role="alertdialog" aria-label={t('combat.demandTitle')}>
+          <h3>{t('combat.demandTitle')}</h3>
+          <p>{t('combat.demandText', { pct: Math.round(c.demand * 100), value: money(cargoValue) })}</p>
           <div class="row">
             <Btn kind="danger" testid="demand-pay" onClick={() => answerDemand(c, true)}>
               {t('combat.demandPay')}
             </Btn>
-            <Btn testid="demand-refuse" onClick={() => answerDemand(c, false)}>
+            <Btn kind="primary" testid="demand-refuse" onClick={() => answerDemand(c, false)}>
               {t('combat.demandRefuse')}
             </Btn>
           </div>
@@ -456,6 +491,9 @@ export function CombatScreen() {
           <div class={`hud-sec ${tab === 'power' ? 'show' : ''}`}>{powerSec}</div>
           <div class={`hud-sec ${tab === 'crew' ? 'show' : ''}`}>{crewSec}</div>
           <div class={`hud-sec ${tab === 'actions' ? 'show' : ''}`}>{actionsSec}</div>
+        </div>
+        <div class="log-strip" aria-live="polite">
+          {c.log.length ? t(c.log[c.log.length - 1].key, logParams(c.log[c.log.length - 1].params)) : ''}
         </div>
         <ol class="combat-log" aria-live="polite" data-testid="combat-log">
           {c.log.slice(-3).map((l, i) => (

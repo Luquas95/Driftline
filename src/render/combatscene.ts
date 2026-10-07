@@ -5,6 +5,21 @@ import { createNebula, createStarfield } from './materials';
 import type { Scene } from './stage';
 
 export const CELL = 58;
+
+/** One-letter room markers (Czech initials) so rooms are not told apart by colour alone. */
+const KIND_LETTER: Record<string, string> = {
+  reactor: 'R',
+  engine: 'M',
+  jump: 'S',
+  life: 'P',
+  sensors: 'Z',
+  shield: 'Š',
+  cooler: 'C',
+  radiator: 'D',
+  repair: 'O',
+  cargo: 'N',
+  quarters: 'U',
+};
 const MOVE_TIME = 1.1;
 
 const KIND_COLOR: Record<string, number> = {
@@ -77,6 +92,8 @@ interface ShipView {
   hull: Graphics;
   dyn: Graphics;
   labels: Map<number, Text>;
+  letters: Text[];
+  o2: Text[];
   cols: number;
   rows: number;
   flip: boolean;
@@ -148,6 +165,8 @@ export function createCombatScene(
       hull,
       dyn,
       labels: new Map(),
+      letters: [],
+      o2: [],
       cols,
       rows,
       flip: s.side === 'player',
@@ -288,6 +307,33 @@ export function createCombatScene(
       t.destroy();
     }
     v.labels.clear();
+    for (const t of [...v.letters, ...v.o2]) t.destroy();
+    v.letters = [];
+    v.o2 = [];
+    v.ship.rooms.forEach((r, i) => {
+      const p = localPos(v, i);
+      const letter = r.kind ? KIND_LETTER[r.kind] : undefined;
+      if (letter) {
+        const t = new Text({
+          text: letter,
+          style: { fontFamily: 'system-ui, sans-serif', fontSize: 14, fontWeight: '700', fill: 0xffffff },
+        });
+        t.alpha = 0.8;
+        t.anchor.set(0.5);
+        t.position.set(p.x + CELL / 2 - 11, p.y - CELL / 2 + 11);
+        v.root.addChild(t);
+        v.letters.push(t);
+      }
+      const o = new Text({
+        text: '',
+        style: { fontFamily: 'system-ui, sans-serif', fontSize: 11, fontWeight: '700', fill: 0x9fe8ff },
+      });
+      o.anchor.set(0.5);
+      o.position.set(p.x, p.y - 2);
+      o.visible = false;
+      v.root.addChild(o);
+      v.o2[i] = o;
+    });
     if (v.ship.side === 'player') {
       v.ship.weapons.forEach((w, i) => {
         const t = new Text({
@@ -327,10 +373,10 @@ export function createCombatScene(
           alpha: (1 - r.o2 / 100) * 0.62,
         });
       if (r.fire > 0) {
-        const fl = reduced ? 0.6 : 0.6 + 0.4 * Math.sin(time * 11 + i * 2.1);
+        const fl = reduced ? 1 : 0.6 + 0.4 * Math.sin(time * 11 + i * 2.1);
         g.roundRect(x + 2, y + 2, CELL - 4, CELL - 4, 7).fill({
           color: 0xff7a1a,
-          alpha: Math.min(0.75, r.fire / 130) * fl,
+          alpha: Math.min(0.8, 0.25 + r.fire / 120) * fl,
         });
       }
       if (r.sys <= 0 && r.kind)
@@ -339,6 +385,47 @@ export function createCombatScene(
           .moveTo(x + CELL - 8, y + 8)
           .lineTo(x + 8, y + CELL - 8)
           .stroke({ width: 3, color: 0xff4d4d, alpha: 0.8 });
+      // state glyphs (shape + colour, never colour alone)
+      if (r.fire > 0) {
+        const fx0 = x + CELL - 16;
+        const fy0 = y + 26;
+        g.poly([fx0, fy0 - 9, fx0 + 6, fy0 + 1, fx0 + 3, fy0 + 8, fx0 - 3, fy0 + 8, fx0 - 6, fy0 + 1]).fill({
+          color: 0xff7a1a,
+        });
+        g.poly([fx0, fy0 - 2, fx0 + 3, fy0 + 3, fx0, fy0 + 7, fx0 - 3, fy0 + 3]).fill({ color: 0xffe08a });
+      }
+      if (r.breach > 0) {
+        g.moveTo(x + 6, y + CELL * 0.45)
+          .lineTo(x + 18, y + CELL * 0.6)
+          .lineTo(x + 28, y + CELL * 0.42)
+          .lineTo(x + 40, y + CELL * 0.62)
+          .lineTo(x + CELL - 6, y + CELL * 0.48)
+          .stroke({ width: 3, color: 0xffffff, alpha: 0.95 });
+      }
+      if (r.ion > 0) {
+        const bx = x + 14;
+        const by = y + 28;
+        g.poly([
+          bx + 3,
+          by - 9,
+          bx - 5,
+          by + 2,
+          bx,
+          by + 2,
+          bx - 3,
+          by + 10,
+          bx + 6,
+          by - 2,
+          bx + 1,
+          by - 2,
+        ]).fill({ color: 0xffe14d });
+      }
+      const lab = v.o2[i];
+      if (lab) {
+        const low = r.o2 < 50 && s.alive;
+        lab.visible = low;
+        if (low) lab.text = `O₂ ${Math.round(r.o2)}%`;
+      }
       let outline = col;
       let ow = 1.5;
       if (r.ion > 0) {
@@ -346,7 +433,7 @@ export function createCombatScene(
         ow = 3;
       }
       if (r.breach > 0) {
-        outline = 0x9fe8ff;
+        outline = 0xffffff;
         ow = 2.5;
       }
       g.roundRect(x + 2, y + 2, CELL - 4, CELL - 4, 7).stroke({
@@ -609,7 +696,7 @@ export function createCombatScene(
   function pickCrew(x: number, y: number): CCrew | null {
     const v = views[0];
     let best: CCrew | null = null;
-    let bd = (14 * Math.max(0.8, v.scale)) ** 2;
+    let bd = (22 * Math.max(0.8, v.scale)) ** 2;
     const count = new Map<number, number>();
     for (const m of v.ship.crew) {
       let from = roomXY(v, m.room);
@@ -636,7 +723,7 @@ export function createCombatScene(
   container.eventMode = 'static';
   container.on('pointerdown', (e) => {
     const m = pickCrew(e.global.x, e.global.y);
-    if (m) {
+    if (m && (!sel.crewId || m.id === sel.crewId)) {
       drag = { id: m.id, sx: e.global.x, sy: e.global.y };
       handlers.crew(m.id);
     }
