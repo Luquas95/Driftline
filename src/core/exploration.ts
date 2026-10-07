@@ -42,7 +42,7 @@ function thresholdFor(difficulty: number): number {
 }
 
 export function systemSurveyValue(sys: SystemStatic): number {
-  return Math.round((60 + sys.bodies.length * 35 + sys.richness * 120) * (CHARTED_FACTOR[sys.region] ?? 1) * T.firstDiscoveryBonus * 0.6);
+  return Math.round((90 + sys.bodies.length * 55 + sys.richness * 200) * (CHARTED_FACTOR[sys.region] ?? 1) * T.firstDiscoveryBonus * 0.85);
 }
 
 /** System scan: reveals bodies by sensor power and satisfies survey / rescue contracts. */
@@ -119,7 +119,7 @@ export function scanSurface(state: GameState, bodyIdx: number, useProbe = false)
   wearKind(state.ship, useProbe ? 'probe' : 'surface', 1.2);
   const key = `body:${body.id}`;
   if (!state.discoveries.some((d) => d.id === key)) {
-    const val = Math.round((T.survey.body * 0.35 + dep * 25 + ano * 140) * (CHARTED_FACTOR[sys.region] ?? 1));
+    const val = Math.round((T.survey.body * 0.5 + dep * 45 + ano * 220) * (CHARTED_FACTOR[sys.region] ?? 1) * 1.3);
     state.discoveries.push({ id: key, name: body.name, day: state.day, value: val, sold: false });
     state.stats.discoveries++;
   }

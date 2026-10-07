@@ -111,14 +111,14 @@ export function makeContract(g: Galaxy, state: GameState, origin: StationStatic,
       const cells = rng.int(2, 7);
       const qty = step?.qty ?? cells * good.unitsPerCell;
       const len = pathLength(g, origin.systemId, d.station.systemId);
-      const reward = (len * (9 + 6 * Math.ceil(qty / good.unitsPerCell)) + 60) * rng.range(0.9, 1.25);
+      const reward = (len * (15 + 9 * Math.ceil(qty / good.unitsPerCell)) + 90) * rng.range(0.9, 1.25);
       return finalize({ ...base, dest: d.station.id, destSystem: d.station.systemId, goodId: good.id, qty, reward, deadline: state.day + estDays(len, d.jumps) * rng.range(1.7, 2.8) });
     }
     case 'courier': {
       const d = pickDest(g, origin, rng, Math.max(jumps, 2), types);
       if (!d) return null;
       const len = pathLength(g, origin.systemId, d.station.systemId);
-      const reward = len * 20 + 140 + rng.range(0, 80);
+      const reward = len * 34 + 200 + rng.range(0, 100);
       return finalize({ ...base, dest: d.station.id, destSystem: d.station.systemId, goodId: 'data_core', qty: 1, reward, deadline: state.day + estDays(len, d.jumps) * rng.range(1.15, 1.6) });
     }
     case 'passenger': {
@@ -127,7 +127,7 @@ export function makeContract(g: Galaxy, state: GameState, origin: StationStatic,
       const pax = step?.passengers ?? rng.int(1, 5);
       const comfort = step?.comfort ?? rng.int(1, 3);
       const len = pathLength(g, origin.systemId, d.station.systemId);
-      const reward = pax * len * (7 + 4 * comfort) + 80;
+      const reward = pax * len * (10 + 6 * comfort) + 120;
       return finalize({ ...base, dest: d.station.id, destSystem: d.station.systemId, passengers: pax, comfort, reward, deadline: state.day + estDays(len, d.jumps) * rng.range(1.8, 3) });
     }
     case 'supply': {
