@@ -26,12 +26,12 @@ test.describe('new game: first ship', () => {
     expect(s0.noShip).toBe(true);
     expect(s0.credits).toBe(40000);
     const prices = await page
-      .locator('[data-testid^="offer-"]')
+      .locator('[data-price]')
       .evaluateAll((els) => els.map((e) => Number(e.getAttribute('data-price'))));
     expect(prices.length).toBeGreaterThanOrEqual(10);
     for (let i = 1; i < prices.length; i++) expect(prices[i]).toBeGreaterThanOrEqual(prices[i - 1]);
     // pick the third offer, rename, buy
-    await page.locator('[data-testid^="offer-"]').nth(2).click();
+    await page.locator('[data-price]').nth(2).click();
     await expect(page.getByTestId('first-left')).toContainText('kr');
     await page.getByTestId('first-name').fill('Zkušební');
     await page.getByTestId('btn-buy-ship').click();
@@ -45,7 +45,7 @@ test.describe('new game: first ship', () => {
 
   test('an unaffordable ship cannot be bought', async ({ page }) => {
     await startGame(page, { seed: 'E2E-POOR', quick: false });
-    const last = page.locator('[data-testid^="offer-"]').last();
+    const last = page.locator('[data-price]').last();
     await last.click();
     await expect(page.getByTestId('btn-buy-ship')).toBeDisabled();
     expect((await state(page)).noShip).toBe(true);
@@ -69,7 +69,11 @@ test.describe('system view', () => {
     expect(ship.y).toBeLessThan(v.h);
   });
 
-  test('wheel zoom goes to the cursor and selecting a body works after zooming', async ({ page }) => {
+  test('wheel zoom goes to the cursor and selecting a body works after zooming', async ({
+    page,
+    isMobile,
+  }) => {
+    test.skip(isMobile, 'mouse gestures; touch gestures are covered by the camera math unit tests');
     await settle(page);
     const b = await page.evaluate(() => window.__dl.sys()!.body(1)!);
     await page.mouse.move(b.x, b.y);
@@ -83,7 +87,8 @@ test.describe('system view', () => {
     await expect(page.getByTestId('body-panel')).toBeVisible();
   });
 
-  test('dragging pans the view and does not select', async ({ page }) => {
+  test('dragging pans the view and does not select', async ({ page, isMobile }) => {
+    test.skip(isMobile, 'mouse gestures; touch gestures are covered by the camera math unit tests');
     const before = await page.evaluate(() => window.__dl.sys()!.cam);
     await page.mouse.move(700, 600);
     await page.mouse.down();
@@ -95,13 +100,26 @@ test.describe('system view', () => {
     expect(after.y).toBeLessThan(before.y - 20);
   });
 
-  test('double click focuses a body; the reset button returns to the whole system', async ({ page }) => {
+  test('double click focuses a body; the reset button returns to the whole system', async ({
+    page,
+    isMobile,
+  }) => {
+    test.skip(isMobile, 'mouse gestures; touch gestures are covered by the camera math unit tests');
     await settle(page);
     const b = await page.evaluate(() => window.__dl.sys()!.body(1)!);
     await page.mouse.dblclick(b.x, b.y);
     await expect.poll(() => page.evaluate(() => window.__dl.sys()!.zoom)).toBeGreaterThan(3);
     await page.getByTestId('sys-zoom-reset').click();
     await expect.poll(() => page.evaluate(() => window.__dl.sys()!.zoom)).toBeLessThan(1.2);
+  });
+
+  test('a tap selects a body and the dock button is within reach', async ({ page, isMobile }) => {
+    test.skip(!isMobile, 'touch');
+    await settle(page);
+    const b = await page.evaluate(() => window.__dl.sys()!.body(1)!);
+    await page.touchscreen.tap(b.x, b.y);
+    await expect(page.getByTestId('body-panel')).toBeVisible();
+    await expect(page.locator('[data-testid^="btn-dock-quick-"]').first()).toBeVisible();
   });
 
   test('keyboard zoom works and there is a visible dock button', async ({ page }) => {
@@ -125,7 +143,8 @@ test.describe('system view', () => {
 });
 
 test.describe('map and jumps', () => {
-  test('after zooming the galaxy map can be dragged left and right', async ({ page }) => {
+  test('after zooming the galaxy map can be dragged left and right', async ({ page, isMobile }) => {
+    test.skip(isMobile, 'mouse gestures; touch gestures are covered by the camera math unit tests');
     await startGame(page, { seed: 'E2E-MAP' });
     await openScreen(page, 'map');
     await page.waitForFunction(() => !!window.__dl.map());
