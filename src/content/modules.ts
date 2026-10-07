@@ -49,16 +49,16 @@ const FAMILIES: Record<string, Family> = {
   fuel: { kind: 'fuel', sizes: ['S', 'M', 'L'], value: 25, power: 0, mode: 'always', mass: 2.5, price: 350, wear: 0 },
   cooler: { kind: 'cooler', sizes: ['S', 'M'], value: 4, power: 3, mode: 'always', mass: 2, price: 900, wear: 0.02 },
   vault: { kind: 'vault', sizes: ['S', 'M'], value: 3, power: 1, mode: 'always', mass: 3, price: 1100, wear: 0.01 },
-  laser: { kind: 'laser', sizes: ['M', 'L'], value: 4.2, power: 12, mode: 'active', mass: 5, price: 1500, wear: 1.4 },
-  refinery: { kind: 'refinery', sizes: ['M', 'L'], value: 10, power: 8, mode: 'active', mass: 7, price: 2400, wear: 0.5 },
-  surface: { kind: 'surface', sizes: ['S', 'M'], value: 2, power: 5, mode: 'active', mass: 2, price: 1300, wear: 0.3 },
-  probe: { kind: 'probe', sizes: ['S', 'M'], value: 1, power: 3, mode: 'active', mass: 2, price: 1200, wear: 0.2 },
+  laser: { kind: 'laser', sizes: ['M', 'L'], value: 4.2, power: 7, mode: 'active', mass: 5, price: 1500, wear: 1.4 },
+  refinery: { kind: 'refinery', sizes: ['M', 'L'], value: 10, power: 6, mode: 'active', mass: 7, price: 2400, wear: 0.5 },
+  surface: { kind: 'surface', sizes: ['S', 'M'], value: 2, power: 4, mode: 'active', mass: 2, price: 1300, wear: 0.3 },
+  probe: { kind: 'probe', sizes: ['S', 'M'], value: 1, power: 2.5, mode: 'active', mass: 2, price: 1200, wear: 0.2 },
   repair: { kind: 'repair', sizes: ['S', 'M'], value: 6, power: 4, mode: 'active', mass: 2.5, price: 1400, wear: 0.1 },
   shield: { kind: 'shield', sizes: ['S', 'M', 'L'], value: 15, power: 3, mode: 'always', mass: 3, price: 1600, wear: 0.15 },
   amplifier: { kind: 'amplifier', sizes: ['S', 'M'], value: 0, power: 3, mode: 'always', mass: 2, price: 1800, wear: 0.05, adjacency: { boost: 0.18 } },
   radiator: { kind: 'radiator', sizes: ['S', 'M'], value: 0, power: 1, mode: 'always', mass: 2, price: 1300, wear: 0.02, adjacency: { wearCut: 0.25, powerCut: 0.1 } },
   quarters: { kind: 'quarters', sizes: ['S', 'M', 'L'], value: 2, power: 2, mode: 'always', mass: 3, price: 800, wear: 0.02, aux: 1 },
-  scoop: { kind: 'scoop', sizes: ['M', 'L'], value: 4.5, power: 8, mode: 'active', mass: 4, price: 1500, wear: 0.7 },
+  scoop: { kind: 'scoop', sizes: ['M', 'L'], value: 4.5, power: 6, mode: 'active', mass: 4, price: 1500, wear: 0.7 },
 };
 
 export const MODULES: ModuleDef[] = [];

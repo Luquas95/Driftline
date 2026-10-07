@@ -3,7 +3,7 @@
  * Usage: npm run balance -- [--seeds N] [--days D] [--quick] [--out path]
  */
 import { writeFileSync } from 'node:fs';
-import { newGame } from '../core/state';
+import { newGame } from '../core/start';
 import { Bot, type BotRun, type Strategy } from './bots';
 
 interface Agg {
