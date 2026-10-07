@@ -157,7 +157,7 @@ test.describe('core game flow', () => {
     const saved = await state(page);
     // change something: wait a day by buying probes
     await openScreen(page, 'station');
-    await page.getByRole('button', { name: '+5' }).click();
+    await page.getByRole('button', { name: '+5' }).first().click();
     expect((await state(page)).credits).toBeLessThan(saved.credits);
     await openScreen(page, 'settings');
     await page.getByTestId('load-slot1').click();
