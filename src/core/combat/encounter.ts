@@ -28,10 +28,12 @@ export function buildEnemyShip(def: EnemyDef, tier: number, rng: Rng, index: num
       void i;
     }
   });
+  // weaker tiers carry fewer modules: tier 3 the full loadout, tier 2 one less, tier 1 two less (at least two)
+  const loadout = def.loadout.slice(0, Math.max(Math.min(2, def.loadout.length), def.loadout.length - (3 - tier)));
   let li = 0;
   for (const sl of slots) {
-    if (sl.core || li >= def.loadout.length) continue;
-    const mod = MODULES_BY_ID[def.loadout[li]];
+    if (sl.core || li >= loadout.length) continue;
+    const mod = MODULES_BY_ID[loadout[li]];
     if (mod && moduleFits(sl, mod)) {
       ship.slots[sl.index] = newModule(mod.id, q, `e${++n}`);
       li++;

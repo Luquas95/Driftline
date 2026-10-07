@@ -73,7 +73,7 @@ export const WEAPON_SPECS: Record<WeaponKind, WeaponSpec> = {
     mass: 3.5,
   },
   missile: {
-    dmg: 15.3,
+    dmg: 18,
     charge: 10,
     heat: 2,
     speed: 1.5,
@@ -98,7 +98,7 @@ export const WEAPON_SPECS: Record<WeaponKind, WeaponSpec> = {
     sysMult: 0,
     breach: 0,
     fire: 0,
-    ion: 9,
+    ion: 6,
     ammo: 0,
     power: 4,
     price: 1600,
