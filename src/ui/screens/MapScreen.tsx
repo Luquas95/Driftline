@@ -2,7 +2,8 @@ import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { MARKET_GOODS } from '../../content/goods';
 import { STATION_TYPES_BY_ID } from '../../content/stations';
 import { recommendTrades, planRoute, type RoutePlan } from '../../core/advisor';
-import { callTow, isStranded, jump, planJump, undock } from '../../core/game';
+import { callTow, dockAt, isStranded, jump, planJump, undock } from '../../core/game';
+import { dockReport } from '../DockReport';
 import { createMapScene, type MapFilter, type MapScene } from '../../render/mapscene';
 import { stage } from '../../render/instance';
 import { fmt, money, t, plural } from '../../i18n';
@@ -97,7 +98,7 @@ export function MapScreen() {
         const st2 = game.value!;
         if (st2.location.systemId === path[path.length - 1]) {
           setAutopilot(null);
-          selectedSystem.value = null;
+          selectedSystem.value = st2.location.systemId;
         } else setAutopilot({ running: true, step: here + 1 });
       }
     }, 70);
@@ -450,7 +451,8 @@ function SystemPanel({
                     if (report(r)) {
                       sfx('jump');
                       flag('tut:jumped');
-                      selectedSystem.value = null;
+                      // show the system we arrived in, with a way to dock right away
+                      selectedSystem.value = game.value!.location.systemId;
                     }
                   }}
                 >
@@ -484,6 +486,33 @@ function SystemPanel({
           </section>
         )}
         {!here && !route && <p class="warn">{t('map.noRoute')}</p>}
+        {here && sys.stations.length > 0 && (
+          <section class="stack" style={{ gap: 6 }} data-testid="map-stations">
+            <h3>{t('map.stations')}</h3>
+            {sys.stations.map((st) => (
+              <div key={st.id} class="spread">
+                <span>
+                  {st.name} <span class="faint">· {t(`st.${st.type}`)}</span>
+                </span>
+                <Btn
+                  small
+                  kind="primary"
+                  testid={`map-dock-${st.id}`}
+                  onClick={() => {
+                    const r = act((x) => dockAt(x, st.id));
+                    if (report(r) && r.ok) {
+                      sfx('dock');
+                      dockReport.value = r.report;
+                      screen.value = 'station';
+                    }
+                  }}
+                >
+                  {s.location.stationId === st.id ? t('sys.enter') : t('sys.dock')}
+                </Btn>
+              </div>
+            ))}
+          </section>
+        )}
         {here && (
           <Btn icon="system" onClick={() => (screen.value = 'system')}>
             {t('map.toSystem')}

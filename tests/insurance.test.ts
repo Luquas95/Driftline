@@ -124,4 +124,18 @@ describe('insurance and death', () => {
     expect(callTow(s).ok).toBe(false);
     expect(jump(s, g.systems[s.location.systemId].neighbors[0]).ok).toBeTypeOf('boolean');
   });
+
+  it('losing the ship to starvation during a jump does not continue to the destination', () => {
+    const s = loaded('INS10');
+    const g = galaxyOf(s);
+    const to = g.systems[s.location.systemId].neighbors[0];
+    s.ship.supplies = 0;
+    s.ship.hp = 2;
+    const home = s.home;
+    const r = jump(s, to);
+    expect(r.ok).toBe(true);
+    expect(s.stats.deaths).toBe(1);
+    expect(s.location.stationId).toBe(home);
+    expect(s.pendingEvent).toBeNull();
+  });
 });

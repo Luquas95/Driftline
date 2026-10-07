@@ -65,10 +65,13 @@ export function dockAt(state: GameState, stationId: string): Result<{ report: Do
   if (state.location.stationId === stationId) return ok({ report: { completed: [] } });
   const { stats } = analyze(state);
   if (stats.speedAuDay <= 0 || stats.powerFree < -0.001) return fail('err.noEngine');
+  const deaths0 = state.stats.deaths;
   const t = travelToBody(state, st.bodyIndex);
   if (!t.ok) return t;
   passTime(state, T.dockDays);
   if (state.dead) return fail('err.dead');
+  // the ship was lost on the way (e.g. starvation): the insured respawn already placed the player elsewhere
+  if (state.stats.deaths !== deaths0) return fail('err.shipLost');
   state.location.stationId = st.id;
   state.location.body = st.bodyIndex;
   state.home = st.id;
@@ -203,8 +206,9 @@ export function jump(state: GameState, toId: number): Result<{ report: JumpRepor
     );
     return { kind, roll: rng.next(), roll2: rng.next() };
   });
+  const deaths0 = state.stats.deaths;
   passTime(state, plan.days);
-  if (state.dead) return ok({ report });
+  if (state.dead || state.stats.deaths !== deaths0) return ok({ report });
   if (accident) {
     state.stats.accidents++;
     const amount = applyAccident(state, accident.kind, accident.roll, accident.roll2);

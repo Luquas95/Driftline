@@ -194,7 +194,7 @@ const base: Record<string, string> = {
   'tut.step1':
     'Skvěle. Teď otevři Mapu (M), klikni na sousední systém a skoč. Skok stojí palivo a několik dní.',
   'tut.step2':
-    'V cíli otevři Systém (Y), přistaň u stanice a v Obchodu zboží prodej. Rozdíl cen je tvůj zisk.',
+    'V cíli klikni na Přistát (v panelu systému na mapě nebo v obrazovce Systém, Y) a v Obchodu zboží prodej. Rozdíl cen je tvůj zisk.',
   'tut.step3':
     'Ve stanici máš nástěnku zakázek. Přijmi jednu a doruč ji do termínu: platí víc než jeden obchod, zálohu dostaneš hned.',
   'tut.step4':
@@ -736,6 +736,7 @@ const base: Record<string, string> = {
   'err.eventPending': 'Nejdřív vyřeš probíhající událost.',
   'err.noEvent': 'Žádná událost.',
   'err.choiceUnavailable': 'Tuhle volbu teď nemáš.',
+  'err.shipLost': 'Cestou jsi přišel o loď.',
   'err.dead': 'Hra skončila.',
   'err.noStation': 'Taková stanice tu není.',
   'err.notDocked': 'Musíš být přistán ve stanici.',
