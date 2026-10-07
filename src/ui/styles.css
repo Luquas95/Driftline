@@ -1259,3 +1259,70 @@ kbd {
     min-width: 44px;
   }
 }
+
+/* ---- crew (v2) ---- */
+.crew-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 10px;
+}
+.crew-card {
+  display: flex;
+  gap: 12px;
+  padding: 10px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius, 10px);
+}
+.crew-card .portrait {
+  flex: none;
+  border-radius: 8px;
+}
+.crew-main {
+  flex: 1;
+  min-width: 0;
+}
+.crew-main .small {
+  font-size: 12px;
+  margin: 2px 0 4px;
+}
+.vitals {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin: 6px 0;
+  font-size: 11px;
+  color: var(--dim);
+}
+.skill-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2px 12px;
+  margin: 6px 0;
+}
+.skill {
+  display: grid;
+  grid-template-columns: 72px 1fr 26px;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  color: var(--dim);
+}
+.skill.main {
+  color: var(--text);
+  font-weight: 600;
+}
+@media (max-width: 899px) {
+  .crew-list {
+    grid-template-columns: 1fr;
+  }
+  .skill-grid {
+    grid-template-columns: 1fr;
+  }
+  .nav button span {
+    font-size: 10px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+  }
+}

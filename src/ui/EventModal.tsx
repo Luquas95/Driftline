@@ -42,6 +42,18 @@ function effectLine(e: Effect): { text: string; tone: 'pos' | 'neg' | '' } | nul
       return { text: `${t('fx.probes')} ${sign(e.n)}`, tone: e.n >= 0 ? 'pos' : 'neg' };
     case 'discover':
       return { text: t('fx.discover'), tone: 'pos' };
+    case 'crewHurt':
+      return { text: t('fx.crewHurt', { n: e.n }), tone: 'neg' };
+    case 'crewXp':
+      return { text: t('fx.crewXp'), tone: 'pos' };
+    case 'crewMorale':
+      return { text: `${t('fx.morale')} ${sign(e.n)}`, tone: e.n >= 0 ? 'pos' : 'neg' };
+    case 'crewLeave':
+      return { text: t('fx.crewLeave'), tone: 'neg' };
+    case 'crewJoin':
+      return { text: t('fx.crewJoin'), tone: 'pos' };
+    case 'fight':
+      return { text: t('fx.fight'), tone: 'neg' };
     case 'death':
       return { text: t('fx.death'), tone: 'neg' };
     default:

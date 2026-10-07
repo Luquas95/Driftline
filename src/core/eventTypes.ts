@@ -1,3 +1,4 @@
+import type { OfficerId, RaceId, Role, Skill } from '../content/crew';
 import type { GoodTag, ModuleKind, Quality, Region } from './types';
 
 /**
@@ -18,6 +19,11 @@ export type Cond =
   | { t: 'dangerMin'; n: number }
   | { t: 'cargoValueMin'; n: number }
   | { t: 'dayMin'; n: number }
+  | { t: 'crewRole'; role: Role }
+  | { t: 'crewRace'; race: RaceId }
+  | { t: 'crewSkill'; skill: Skill; min: number }
+  | { t: 'crewMoraleBelow'; n: number }
+  | { t: 'officer'; id: OfficerId }
   | { t: 'not'; c: Cond }
   | { t: 'ext'; key: string; args?: Record<string, unknown> };
 
@@ -37,6 +43,12 @@ export type Effect =
   | { t: 'flag'; key: string; value: number | string | boolean }
   | { t: 'probes'; n: number }
   | { t: 'discover'; value: number }
+  | { t: 'crewHurt'; n: number; all?: boolean }
+  | { t: 'crewXp'; skill: Skill; n: number }
+  | { t: 'crewMorale'; n: number }
+  | { t: 'crewLeave'; role?: Role }
+  | { t: 'crewJoin'; role?: Role; race?: RaceId; level: number }
+  | { t: 'fight'; enemy: string; tier: number }
   | { t: 'death' }
   | { t: 'ext'; key: string; args?: Record<string, unknown> };
 

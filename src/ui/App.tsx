@@ -25,6 +25,7 @@ import { SystemScreen } from './screens/SystemScreen';
 import { StationScreen } from './screens/StationScreen';
 import { ShipScreen } from './screens/ShipScreen';
 import { CargoScreen } from './screens/CargoScreen';
+import { CrewScreen } from './screens/CrewScreen';
 import { JournalScreen } from './screens/JournalScreen';
 import { SettingsScreen } from './screens/SettingsScreen';
 import { EventModal, eventResult } from './EventModal';
@@ -60,6 +61,7 @@ const NAV: { id: ScreenId; icon: string; label: string; key: string }[] = [
   { id: 'station', icon: 'station', label: 'nav.station', key: 'S' },
   { id: 'ship', icon: 'ship', label: 'nav.ship', key: 'L' },
   { id: 'cargo', icon: 'cargo', label: 'nav.cargo', key: 'C' },
+  { id: 'crew', icon: 'crew', label: 'nav.crew', key: 'P' },
   { id: 'journal', icon: 'journal', label: 'nav.journal', key: 'J' },
   { id: 'settings', icon: 'settings', label: 'nav.settings', key: 'O' },
 ];
@@ -281,6 +283,7 @@ export function App() {
               {scr === 'station' && <StationScreen />}
               {scr === 'ship' && <ShipScreen />}
               {scr === 'cargo' && <CargoScreen />}
+              {scr === 'crew' && <CrewScreen />}
               {scr === 'journal' && <JournalScreen />}
               {scr === 'settings' && <SettingsScreen />}
               {!s.tutorial.done && settings.value.tutorial && !s.pendingEvent && !eventResult.value && (

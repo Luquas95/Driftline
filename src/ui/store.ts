@@ -8,7 +8,7 @@ import { sfx } from '../audio/audio';
 import { settings } from './settings';
 import type { GameState } from '../core/types';
 
-export type ScreenId = 'map' | 'system' | 'station' | 'ship' | 'cargo' | 'journal' | 'settings';
+export type ScreenId = 'map' | 'system' | 'station' | 'ship' | 'cargo' | 'crew' | 'journal' | 'settings';
 
 export const game = signal<GameState | null>(null);
 /** Bumped after every mutation; components read it to re-render (GameState is mutated in place). */
