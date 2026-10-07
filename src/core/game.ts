@@ -312,7 +312,8 @@ function planJumpsPossible(state: GameState): boolean {
 
 /** Just let time pass at the current location. */
 export function wait(state: GameState, days: number): Result {
-  if (days <= 0) return fail('err.badAmount');
+  if (!Number.isFinite(days) || days <= 0) return fail('err.badAmount');
+  days = Math.min(days, 365);
   passTime(state, days);
   return ok();
 }
@@ -374,6 +375,7 @@ export function buyGoods(
   const st = atStation(state, stationId);
   if (!st) return fail('err.notDocked');
   if (!st.goods.includes(goodId)) return fail('err.notSold');
+  if (!Number.isFinite(qty)) return fail('err.badAmount');
   qty = Math.floor(qty);
   if (qty <= 0) return fail('err.badAmount');
   const max = maxBuy(state, stationId, goodId);
@@ -418,6 +420,7 @@ export function sellGoods(
   if (!st.goods.includes(goodId)) return fail('err.notBought');
   const good = GOODS_BY_ID[goodId];
   const have = unitsOf(state.cargo, goodId);
+  if (!Number.isFinite(qty)) return fail('err.badAmount');
   qty = Math.min(Math.floor(qty), have);
   if (qty <= 0) return fail('err.badAmount');
   const fees = feesFor(st, state.difficulty, isBlackMarketGood(goodId));
@@ -462,6 +465,7 @@ export function buyFuel(
   const st = atStation(state, stationId);
   if (!st) return fail('err.notDocked');
   const { stats } = analyze(state);
+  if (!Number.isFinite(units)) return fail('err.badAmount');
   const room = Math.floor(stats.fuelCap - state.ship.fuel);
   const unit = T.fuelPrice * serviceCost(state, stationId);
   const n = Math.min(Math.floor(units), room, Math.floor(state.credits / unit));
@@ -480,6 +484,7 @@ export function buySupplies(
   const st = atStation(state, stationId);
   if (!st) return fail('err.notDocked');
   const { stats } = analyze(state);
+  if (!Number.isFinite(units)) return fail('err.badAmount');
   const room = Math.floor(stats.suppliesCap - state.ship.supplies);
   const unit = T.suppliesPrice * serviceCost(state, stationId);
   const n = Math.min(Math.floor(units), room, Math.floor(state.credits / unit));
@@ -497,6 +502,7 @@ export function buyProbes(
 ): Result<{ units: number; paid: number }> {
   const st = atStation(state, stationId);
   if (!st) return fail('err.notDocked');
+  if (!Number.isFinite(n)) return fail('err.badAmount');
   const unit = T.probePrice * serviceCost(state, stationId);
   const units = Math.min(Math.floor(n), Math.floor(state.credits / unit), 20 - state.ship.probes);
   if (units <= 0) return fail('err.noCredits');

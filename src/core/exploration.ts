@@ -40,7 +40,9 @@ export function travelToBody(state: GameState, bodyIdx: number): Result<{ days: 
   const days = sublightDays(stats, au);
   state.location.stationId = null;
   state.location.body = bodyIdx;
+  const deaths0 = state.stats.deaths;
   passTime(state, days);
+  if (state.stats.deaths !== deaths0) return fail('err.shipLost');
   return ok({ days });
 }
 
@@ -321,6 +323,7 @@ export function mine(
   state.stats.unitsMined += r.added;
   passTime(state, 1);
   if (hullDamage) damageHull(state, hullDamage);
+  if (!state.dead) rollEvent(state, 'mine', 0.1, { systemId: state.location.systemId, bodyId: body.id });
   void GOODS_BY_ID;
   void newUid;
   void unitsOf;

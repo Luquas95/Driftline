@@ -15,7 +15,7 @@ const nearbyCache = new Map<string, Nearby[]>();
 
 /** Stations reachable within `maxJumps` hops of a system, nearest first (excluding the system itself when `exclude`). */
 export function stationsNear(g: Galaxy, systemId: number, maxJumps: number): Nearby[] {
-  const key = `${g.seed}|${systemId}|${maxJumps}`;
+  const key = `${g.seed}|${g.systems.length}|${systemId}|${maxJumps}`;
   const hit = nearbyCache.get(key);
   if (hit) return hit;
   const seen = new Map<number, number>([[systemId, 0]]);

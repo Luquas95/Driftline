@@ -737,6 +737,7 @@ const base: Record<string, string> = {
   'err.noEvent': 'Žádná událost.',
   'err.choiceUnavailable': 'Tuhle volbu teď nemáš.',
   'err.shipLost': 'Cestou jsi přišel o loď.',
+  'err.passengersAboard': 'Na palubě jsou cestující, kteří potřebují tyto ubikace.',
   'err.dead': 'Hra skončila.',
   'err.noStation': 'Taková stanice tu není.',
   'err.notDocked': 'Musíš být přistán ve stanici.',

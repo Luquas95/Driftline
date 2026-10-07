@@ -17,8 +17,9 @@ export function activePassengers(state: GameState): number {
 
 export function acceptContract(state: GameState, stationId: string, contractId: string): Result {
   const dyn = state.stations[stationId];
+  if (!dyn || state.location.stationId !== stationId) return fail('err.notDocked');
   const c = dyn.board.find((x) => x.id === contractId);
-  if (!c) return fail('err.contractGone');
+  if (!c || c.deadline <= state.day) return fail('err.contractGone');
   if (state.contracts.filter((x) => x.state === 'active').length >= MAX_ACTIVE_CONTRACTS)
     return fail('err.tooManyContracts');
   const { stats, dims } = analyze(state);
@@ -100,6 +101,11 @@ export function completeContractsAt(state: GameState, g: Galaxy, stationId: stri
       }
       const nextC = advanceChain(g, state, c, st);
       if (nextC) {
+        if ((nextC.kind === 'freight' || nextC.kind === 'courier') && nextC.goodId) {
+          const an = analyze(state);
+          const quotas = { chilledCells: an.stats.chilledCells, secureCells: an.stats.secureCells };
+          addGoods(state.cargo, an.dims, quotas, nextC.goodId, nextC.qty ?? 1, 0, state.day, nextC.id);
+        }
         state.contracts.push(nextC);
         msg(state, 'msg.chainNext', { chain: c.chainId }, 'info');
       }

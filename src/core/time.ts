@@ -10,7 +10,7 @@ import type { Galaxy, GameState } from './types';
  * Advance game time. Handles upkeep (supplies, insurance), the daily economy tick, perishables and expired contracts.
  */
 export function passTime(state: GameState, days: number): void {
-  if (days <= 0 || state.dead) return;
+  if (!Number.isFinite(days) || days <= 0 || state.dead) return;
   const g = galaxyOf(state);
   const { stats } = analyze(state);
   state.day += days;

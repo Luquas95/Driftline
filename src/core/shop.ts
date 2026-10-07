@@ -3,7 +3,7 @@ import { MODULES, MODULES_BY_ID } from '../content/modules';
 import { STATION_TYPES_BY_ID } from '../content/stations';
 import { serviceMult } from './economy';
 import { Rng } from './rng';
-import { autoArrange, gridDims } from './cargo';
+import { autoArrange, cargoMass, gridDims } from './cargo';
 import {
   buildStarterShip,
   computeShipStats,
@@ -85,6 +85,22 @@ export function hullPrice(state: GameState, st: StationStatic, hullId: string): 
   );
 }
 
+/**
+ * Would the ship still work with these slots? Cargo must still fit, and carried passengers need their beds.
+ * On success the repacked cargo positions are applied; returns an error key otherwise.
+ */
+function refit(state: GameState, slots: (ModuleInstance | null)[]): string | null {
+  const trial: Ship = { ...state.ship, slots };
+  const stats = computeShipStats(trial);
+  const copy = state.cargo.map((c) => ({ ...c }));
+  if (!autoArrange(copy, gridDims(stats))) return 'err.cargoWontFit';
+  const pax = state.contracts.filter((c) => c.state === 'active' && c.kind === 'passenger');
+  const need = pax.reduce((s, c) => s + (c.passengers ?? 0), 0);
+  if (need > stats.beds || pax.some((c) => (c.comfort ?? 1) > stats.comfort)) return 'err.passengersAboard';
+  for (let i = 0; i < state.cargo.length; i++) Object.assign(state.cargo[i], { x: copy[i].x, y: copy[i].y });
+  return null;
+}
+
 export function sellValue(m: ModuleInstance): number {
   return Math.round(moduleValue(m) * 0.6);
 }
@@ -128,7 +144,13 @@ export function sellModule(state: GameState, stationId: string, uid: string): Re
       // refuse to strip the last core module of a kind
       return fail('err.sellCore');
     }
+    const bad = refit(
+      state,
+      state.ship.slots.map((x, i) => (i === idx ? null : x)),
+    );
+    if (bad) return fail(bad);
     state.ship.slots[idx] = null;
+    clampShipResources(state);
   }
   const price = sellValue(m);
   state.credits += price;
@@ -163,6 +185,12 @@ export function removeModuleToInventory(state: GameState, slotIndex: number): Re
   if (!state.location.stationId) return fail('err.mustBeDocked');
   const m = state.ship.slots[slotIndex];
   if (!m) return fail('err.noModule');
+  if (MODULES_BY_ID[m.defId].core) return fail('err.sellCore');
+  const bad = refit(
+    state,
+    state.ship.slots.map((x, i) => (i === slotIndex ? null : x)),
+  );
+  if (bad) return fail(bad);
   const trial: Ship = { ...state.ship, slots: state.ship.slots.map((x, i) => (i === slotIndex ? null : x)) };
   const dims = gridDims(computeShipStats(trial));
   const cargoCopy = state.cargo.map((c) => ({ ...c }));
@@ -187,7 +215,16 @@ export function toggleModule(state: GameState, slotIndex: number, enabled?: bool
   if (!m) return fail('err.noModule');
   const kind = MODULES_BY_ID[m.defId].kind;
   if (kind === 'reactor' || kind === 'life') return fail('err.cannotDisable');
-  m.enabled = enabled ?? !m.enabled;
+  const next = enabled ?? !m.enabled;
+  if (!next) {
+    const bad = refit(
+      state,
+      state.ship.slots.map((x, i) => (i === slotIndex ? { ...x!, enabled: false } : x)),
+    );
+    if (bad) return fail(bad);
+  }
+  m.enabled = next;
+  clampShipResources(state);
   return ok();
 }
 
@@ -204,6 +241,11 @@ export function disassembleModule(
     if (fromSlot < 0) return fail('err.itemGone');
     m = state.ship.slots[fromSlot]!;
     if (MODULES_BY_ID[m.defId].core) return fail('err.sellCore');
+    const bad = refit(
+      state,
+      state.ship.slots.map((x, i) => (i === fromSlot ? null : x)),
+    );
+    if (bad) return fail(bad);
     state.ship.slots[fromSlot] = null;
   }
   const value = modulePrice(MODULES_BY_ID[m.defId], m.quality);
@@ -276,12 +318,13 @@ function swapCore(state: GameState, hullId: string, cost: number): HullSwapPrevi
     }
   }
   const before = analyze(state).stats;
-  const after = computeShipStats(result, before.mass - before.hullMass + 0);
+  const after = computeShipStats(result, cargoMass(state.cargo));
   const dims = gridDims(computeShipStats(result));
   const cargoCopy = state.cargo.map((c) => ({ ...c }));
   const cargoFits = autoArrange(cargoCopy, dims);
   result.fuel = Math.min(state.ship.fuel, after.fuelCap);
   result.supplies = Math.min(state.ship.supplies, after.suppliesCap);
+  result.probes = state.ship.probes;
   return {
     ok: true,
     cost,
