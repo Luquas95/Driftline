@@ -2,7 +2,6 @@ import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { createBackdropScene } from '../../render/backdrop';
 import { hullThumb } from '../../render/hullThumb';
 import { HULLS_BY_ID } from '../../content/hulls';
-import { STATION_TYPES_BY_ID } from '../../content/stations';
 import {
   buildOfferShip,
   buyFirstShip,
@@ -33,12 +32,10 @@ function useThumb(hullId: string): string | null {
 }
 
 function OfferStats({ offer }: { offer: ShipOffer }) {
-  const s = game.value!;
   const ship = useMemo(() => buildOfferShip(offer, 'x', () => 'p'), [offer.id]);
   const st = useMemo(() => computeShipStats(ship), [offer.id]);
   const slots = hullSlots(offer.hullId).filter((x) => !x.core);
   const count = (z: string) => slots.filter((x) => x.size === z).length;
-  void s;
   return (
     <dl class="kv first-stats">
       <dt>{t('first.cargo')}</dt>
@@ -117,6 +114,7 @@ export function FirstShipScreen() {
   const offer = offers.find((o) => o.id === sel) ?? offers[0];
   const [name, setName] = useState(() => suggestShipName(s.seed, offer.hullId));
   const nameTouched = useRef(false);
+  const detailRef = useRef<HTMLElement>(null);
   const prev = previewOffer(s, offer);
   const thumb = useThumb(offer.hullId);
   useEffect(() => {
@@ -164,7 +162,6 @@ export function FirstShipScreen() {
             <b class="mono" data-testid="first-credits">
               {money(s.credits)}
             </b>
-            {STATION_TYPES_BY_ID[st.type].shipyard > 0 ? '' : ''}
           </p>
         </header>
         <div class="first-body">
@@ -178,11 +175,17 @@ export function FirstShipScreen() {
                 onSelect={() => {
                   setSel(o.id);
                   sfx('click');
+                  // on narrow screens the detail and the buy button sit below the list
+                  if (window.innerWidth < 900)
+                    setTimeout(
+                      () => detailRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }),
+                      30,
+                    );
                 }}
               />
             ))}
           </div>
-          <aside class="offer-detail panel" data-testid="offer-detail">
+          <aside class="offer-detail panel" data-testid="offer-detail" ref={detailRef}>
             <div class="offer-big">{thumb && <img src={thumb} alt={t(`hull.${offer.hullId}`)} />}</div>
             <h3>
               {t(`hull.${offer.hullId}`)}

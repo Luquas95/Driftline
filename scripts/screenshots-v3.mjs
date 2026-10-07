@@ -1,6 +1,7 @@
+/* global document */
 // README media for v3: node scripts/screenshots-v3.mjs  (needs `npm run build && npm run preview` on :4173, ffmpeg for the GIF)
 import { chromium } from '@playwright/test';
-import { mkdirSync, readdirSync, renameSync, rmSync } from 'node:fs';
+import { mkdirSync, rmSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 
 mkdirSync('docs/screenshots', { recursive: true });
@@ -56,7 +57,14 @@ for (const [name, vp, mobile] of [
   ['mobile', { width: 390, height: 844 }, true],
 ]) {
   const { ctx, page } = await newPage(vp, mobile, false);
-  await page.waitForTimeout(1200);
+  await page
+    .waitForFunction(
+      () => [...document.querySelectorAll('.offer-pic')].every((e) => e.querySelector('img')),
+      null,
+      { timeout: 60000 },
+    )
+    .catch(() => {});
+  await page.waitForTimeout(800);
   await snap(page, `${name}-first-ship`);
   await buyThird(page);
   await page.getByTestId('nav-system').click();

@@ -17,11 +17,12 @@ export function hullThumb(hullId: string, seed = 'thumb'): Promise<string | null
   const hit = cache.get(key);
   if (hit) return hit;
   const job = async (): Promise<string | null> => {
+    let root: Container | null = null;
     try {
       if (!HULLS_BY_ID[hullId] || !stage.app?.renderer) return null;
       let n = 0;
       const ship = buildStarterShip(hullId, 'x', () => `th${++n}`);
-      const root = new Container();
+      root = new Container();
       const g = new Graphics();
       root.addChild(g);
       drawShip(g, hullId, ship.slots, seed, null);
@@ -31,14 +32,19 @@ export function hullThumb(hullId: string, seed = 'thumb'): Promise<string | null
         resolution: 0.75,
         antialias: true,
       });
-      root.destroy({ children: true });
       return url;
     } catch {
       return null;
+    } finally {
+      root?.destroy({ children: true });
     }
   };
   const p = queue.then(job, job);
   queue = p.catch(() => undefined);
   cache.set(key, p);
+  // a failed or premature extraction must not stick: let the next request try again
+  void p.then((u) => {
+    if (u === null) cache.delete(key);
+  });
   return p;
 }

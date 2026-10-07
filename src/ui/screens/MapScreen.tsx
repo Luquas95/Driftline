@@ -65,6 +65,8 @@ export function MapScreen() {
       onHover: (id, x, y) => setHover(id === null ? null : { id, x, y }),
     }) as MapScene & { attach: (c: HTMLCanvasElement) => void };
     sc.attach(stage.app.canvas);
+    // a tap anywhere on the map skips a running jump animation (touch has no Space/Enter)
+    stage.app.canvas.addEventListener('pointerup', () => sc.isJumping() && sc.skipJump());
     sc.refresh(s);
     sc.centerOn(s.location.systemId, 11);
     sceneRef = sc;
@@ -141,6 +143,14 @@ export function MapScreen() {
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [autopilot]);
+
+  useEffect(
+    () => () => {
+      // the scene is destroyed with the screen; do not keep calling into it
+      sceneRef = null;
+    },
+    [],
+  );
 
   const tips = useMemo(() => (showTips ? recommendTrades(s, 6) : []), [showTips, rev.value]);
   const here = g.systems[s.location.systemId];

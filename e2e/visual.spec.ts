@@ -92,7 +92,16 @@ test.describe('visual snapshots: first ship', () => {
   test('first ship screen', async ({ page }) => {
     await startGame(page, { seed: 'VISUAL1', quick: false });
     await expect(page.getByTestId('screen-firstship')).toBeVisible();
-    await page.waitForTimeout(1500);
+    await page
+      .waitForFunction(
+        () => [...document.querySelectorAll('.offer-pic')].every((e) => e.querySelector('img')),
+        null,
+        {
+          timeout: 60_000,
+        },
+      )
+      .catch(() => {});
+    await page.waitForTimeout(500);
     await page.evaluate(() => window.__dl.freeze(3));
     await page.waitForTimeout(250);
     await expect(page).toHaveScreenshot('first-ship.png', {

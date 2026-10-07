@@ -39,3 +39,37 @@ describe('v1 -> v2 save migration', () => {
     expect(importSave(v1).crew).toEqual(importSave(v1).crew);
   });
 });
+
+describe('v2 -> v3 save migration', () => {
+  const asV2 = (): string => {
+    const cur = JSON.parse(JSON.stringify(importSave(v1)));
+    cur.v = 2;
+    delete cur.noShip;
+    delete cur.captain;
+    return JSON.stringify({
+      magic: 'driftline-save',
+      version: 2,
+      savedAt: '2026-01-01T00:00:00Z',
+      state: cur,
+    });
+  };
+
+  it('a v2 save keeps its ship and gets noShip=false and a captain name', () => {
+    const s = importSave(asV2());
+    expect(s.v).toBe(SAVE_VERSION);
+    expect(s.noShip).toBe(false);
+    expect(typeof s.captain).toBe('string');
+    expect(s.captain.length).toBeGreaterThan(0);
+    const before = s.day;
+    passTime(s, 3);
+    expect(s.day).toBeGreaterThan(before);
+  });
+
+  it('time does not pass while the player is still without a ship', () => {
+    const s = importSave(v1);
+    s.noShip = true;
+    const day = s.day;
+    expect(() => passTime(s, 5)).not.toThrow();
+    expect(s.day).toBe(day);
+  });
+});

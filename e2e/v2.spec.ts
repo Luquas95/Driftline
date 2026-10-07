@@ -142,7 +142,7 @@ test.describe('saves', () => {
     (await chooser).setFiles('tests/fixtures/v1-save.json');
     await page.waitForFunction(() => !!window.__dl?.state());
     const s = await state(page);
-    expect(s.v).toBe(3)
+    expect(s.v).toBe(3);
     expect(s.noShip).toBe(false);
     expect(s.seed).toBe('V1FIXTURE');
     expect(s.crew.length).toBeGreaterThan(0);

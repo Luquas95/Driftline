@@ -47,6 +47,13 @@ import {
 const WORLD_R = 300;
 const TILT = 0.62;
 
+/** Arrival streak layout, computed once (the hashes are string based). */
+const ARRIVAL_STREAKS = Array.from({ length: 70 }, (_, i) => ({
+  a: hash01(`arr:${i}`) * Math.PI * 2,
+  r: hash01(`arr:r${i}`),
+  l: hash01(`arr:l${i}`),
+}));
+
 export type SystemSound = 'thrust' | 'dock' | 'scan' | 'mine' | 'probe' | 'arrive';
 
 export interface SystemSceneOptions {
@@ -885,7 +892,7 @@ export function createSystemScene(opts: SystemSceneOptions): SystemScene {
     const touch = e.pointerType === 'touch';
     if (downSample && isTap(downSample, up, touch)) {
       vel = { x: 0, y: 0 };
-      if (flight && flight.kind !== 'dock') {
+      if (flight) {
         skipFlight();
       } else {
         const hit = pick(p.x, p.y, touch);
@@ -1101,19 +1108,20 @@ export function createSystemScene(opts: SystemSceneOptions): SystemScene {
     const maxR = Math.hypot(W, H) / 2;
     const fade = 1 - u;
     if (!reduced) {
-      for (let i = 0; i < 70; i++) {
-        const a = hash01(`arr:${i}`) * Math.PI * 2;
-        const r0 = (0.05 + hash01(`arr:r${i}`) * 0.95) * maxR;
+      for (const { a, r, l } of ARRIVAL_STREAKS) {
+        const r0 = (0.05 + r * 0.95) * maxR;
         const out = easeInOut(u);
         const r1 = r0 * (0.35 + 1.6 * out);
-        const len = (0.1 + 0.5 * hash01(`arr:l${i}`)) * maxR * fade * 0.5;
+        const len = (0.1 + 0.5 * l) * maxR * fade * 0.5;
         arrivalG
           .moveTo(cx + Math.cos(a) * (r1 - len), cy + Math.sin(a) * (r1 - len))
           .lineTo(cx + Math.cos(a) * r1, cy + Math.sin(a) * r1)
           .stroke({ width: 1.4, color: 0xcfe9ff, alpha: 0.8 * fade });
       }
     }
-    arrivalG.rect(0, 0, W, H).fill({ color: 0xffffff, alpha: Math.max(0, 0.75 * (1 - u * 2.2)) });
+    // a full-screen flash only at full animation; reduced motion gets a faint, non-pulsing wash
+    const flash = level() === 'full' ? 0.75 : 0.1;
+    arrivalG.rect(0, 0, W, H).fill({ color: 0xffffff, alpha: Math.max(0, flash * (1 - u * 2.2)) });
   }
 
   /* ------------------------------ scene ------------------------------ */
