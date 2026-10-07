@@ -6,6 +6,9 @@ import { writeFileSync } from 'node:fs';
 import { newGame } from '../core/start';
 import { Bot, type BotRun, type Strategy } from './bots';
 import { combatReport } from './combatBalance';
+import { buyFirstShip, firstShipOffers } from '../core/firstShip';
+import { HULLS_BY_ID } from '../content/hulls';
+import { T } from '../core/tuning';
 
 interface Agg {
   strategy: Strategy;
@@ -36,6 +39,59 @@ export function runOne(strategy: Strategy, seed: string, days: number, size = 30
   const state = newGame({ seed, galaxySize: size });
   const bot = new Bot(state, strategy);
   return bot.play(days);
+}
+
+/** The new start: what each first ship earns, per hull (trader bot, normal prices) and per difficulty (default picks). */
+function startSection(seeds: number, days: number): string[] {
+  const L: string[] = ['## Nový začátek: první loď a kapitál', ''];
+  L.push(
+    `Kapitál: snadná ${T.startCapital.easy} kr, normální ${T.startCapital.normal} kr, těžká ${T.startCapital.hard} kr. Boti si první loď vybírají podle strategie (nechají si 30–40 % kapitálu na první náklad). Tabulka ukazuje obchodníka, který dostal danou loď (${seeds} semínek × ${days} dní, normální obtížnost, jen nové kusy, které kapitál dovolí).`,
+    '',
+    '| Loď | Cena (kr) | Zbude (kr) | Příjem/den (medián) | Čistá hodnota po 30 dnech | Zničení lodi | Dny do +3000 kr |',
+    '|---|---:|---:|---:|---:|---:|---:|',
+  );
+  const probe = newGame({ seed: 'BALSTART', galaxySize: 60 });
+  const offers = firstShipOffers(probe).filter((o) => !o.used && o.price <= probe.credits);
+  for (const o of offers) {
+    const runs: BotRun[] = [];
+    for (let i = 0; i < seeds; i++) {
+      const state = newGame({ seed: `BALS${i}`, galaxySize: 160 });
+      const offer = firstShipOffers(state).find((x) => x.id === o.id)!;
+      buyFirstShip(state, offer.id, 'Bot');
+      runs.push(new Bot(state, 'trader').play(days));
+    }
+    const w30 = runs.map((r) => (r.worthByDay[30] ?? r.finalWorth) - r.startWorth);
+    const d3k = runs.map((r) => daysTo(r, 3000)).filter((x): x is number => x !== null);
+    L.push(
+      `| ${HULLS_BY_ID[o.hullId].id} | ${o.price} | ${probe.credits - o.price} | ${median(runs.map((r) => r.income)).toFixed(0)} | ${median(w30).toFixed(0)} | ${runs.reduce((a, r) => a + r.deaths, 0)} | ${d3k.length ? median(d3k).toFixed(0) : '—'} (${d3k.length}/${runs.length}) |`,
+    );
+  }
+  L.push('', '### Podle obtížnosti (výchozí volba bota)', '');
+  L.push(
+    '| Obtížnost | Strategie | První loď (modus) | Příjem/den (medián) | Zničení lodi | Dny do +3000 kr |',
+    '|---|---|---|---:|---:|---:|',
+  );
+  for (const prices of ['easy', 'normal', 'hard'] as const) {
+    for (const strategy of ['trader', 'miner', 'explorer'] as const) {
+      const runs: BotRun[] = [];
+      const ships: string[] = [];
+      for (let i = 0; i < seeds; i++) {
+        const state = newGame({ seed: `BALD${i}`, galaxySize: 160, difficulty: { prices } });
+        const bot = new Bot(state, strategy);
+        ships.push(state.ship.hullId);
+        runs.push(bot.play(days));
+      }
+      const top = Object.entries(
+        ships.reduce<Record<string, number>>((m, h) => ((m[h] = (m[h] ?? 0) + 1), m), {}),
+      ).sort((a, b) => b[1] - a[1])[0][0];
+      const d3k = runs.map((r) => daysTo(r, 3000)).filter((x): x is number => x !== null);
+      L.push(
+        `| ${prices} | ${strategy} | ${top} | ${median(runs.map((r) => r.income)).toFixed(0)} | ${runs.reduce((a, r) => a + r.deaths, 0)} | ${d3k.length ? median(d3k).toFixed(0) : '—'} (${d3k.length}/${runs.length}) |`,
+      );
+    }
+  }
+  L.push('');
+  return L;
 }
 
 function main(): void {
@@ -143,6 +199,8 @@ function main(): void {
       }),
     );
   }
+  if (!process.argv.includes('--no-start'))
+    lines.push(...startSection(Math.max(4, Math.floor(seeds * 0.6)), Math.min(days, 90)));
   lines.push(`Doba běhu simulace: ${((Date.now() - t0) / 1000).toFixed(0)} s.`, '');
   writeFileSync(out, lines.join('\n'));
   console.log(`Report written to ${out}`);
