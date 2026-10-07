@@ -238,14 +238,14 @@ export function makeEncounter(
   if (canFlee)
     options.push({
       id: 'flee',
-      chance: Math.min(0.9, 0.3 + 0.06 * pilot + (def.personality === 'turret' ? 0.4 : 0)),
+      chance: Math.min(0.9, 0.42 + 0.06 * pilot + (def.personality === 'turret' ? 0.4 : 0)),
     });
   if (kind === 'pirate' || kind === 'hunter') {
     const toll = Math.max(
       60,
       Math.round(Math.min(state.credits * 0.35, 80 + cargoValue * 0.1) * trade.feeMult),
     );
-    options.push({ id: 'bribe', cost: toll, chance: def.personality === 'greedy' ? 0.82 : 0.55 });
+    options.push({ id: 'bribe', cost: toll, chance: def.personality === 'greedy' ? 0.9 : 0.7 });
     options.push({
       id: 'negotiate',
       chance: Math.min(0.7, 0.12 + 0.05 * bestSkill(state, 'trade') * social),

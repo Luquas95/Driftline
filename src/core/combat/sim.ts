@@ -480,7 +480,7 @@ function stepJump(c: CombatState, s: CShip, dt: number): void {
   if (!s.fleeing || !s.canFlee || s.out) return;
   const jr = roomOf(s, 'jump');
   if (!jr || jr.sys <= 0 || jr.ion > 0) return;
-  const t = 30 / Math.max(0.05, powerEff(s, 'engines') * roomPerf(jr) * (1 + 0.06 * pilotSkill(s)));
+  const t = 20 / Math.max(0.05, powerEff(s, 'engines') * roomPerf(jr) * (1 + 0.06 * pilotSkill(s)));
   s.jumpCharge += dt / Math.min(60, t);
   if (s.jumpCharge >= 1) {
     s.out = 'fled';

@@ -209,7 +209,7 @@ Boj je **čistá simulace s pevným krokem** `DT = 0,1 s`. Stav (`CombatState`) 
 
 **Posádka.** Oprava systému `+4,2 · (1 + 0,18 · inženýrství) · rasa/s`, léčení `3 · (1 + 0,2 · medicína)/s` (lékař plně, ostatní 30 %). Hráč posádku přesouvá klepnutím nebo tažením; volní členové hasí a opravují sami (AI `assignCrew`). Abordáž: boj v místnosti `(2,4 + 0,25 · střelba) · melee rasy`/s.
 
-**Útěk.** Nabití skoku trvá `14 s / (energie motorů · výkon skoku · (1 + 0,06 · pilotáž))` (nejvýše 60 s) a stojí 10 % nádrže paliva (nejméně 2); důstojník Kesh Oru jednou za cestu bez paliva.
+**Útěk.** Nabití skoku trvá `20 s / (energie motorů · výkon skoku · (1 + 0,06 · pilotáž))` (nejvýše 60 s) a stojí 10 % nádrže paliva (nejméně 2); důstojník Kesh Oru jednou za cestu bez paliva.
 
 **AI nepřátel** (`combat/ai.ts`): dvakrát za sekundu rozdělí energii podle osobnosti (agresivní zbraně, opatrný štíty a motory), vybere cíl (nejslabší loď) a místnost podle druhu zbraně (zbraně a štíty první, iont na zbraně a štíty, energie na štíty, rakety na reaktor), posílá posádku hasit a opravovat, a utíká při ztrátách (opatrný pod 45 % trupu, chamtivý 35 %, ostatní 22 %). **Chamtivý** protivník po zničení motorů nebo pod 45 % trupu požaduje 40 % nákladu: boj se zastaví a hráč platí nebo odmítne. Zvířata a věže neutíkají.
 

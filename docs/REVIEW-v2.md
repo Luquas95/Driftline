@@ -6,7 +6,7 @@ Tři nezávislé revize (subagenti, jen čtení, každá ověřovala skripty a s
 
 | # | Závažnost | Nález | Stav |
 |---|---|---|---|
-| 1 | HIGH | Útěk z boje vždy vyšel (156 ze 156 pokusů): nabití 14 s, nic ho nenarušilo, AI nemířila na skokový pohon. | **Opraveno.** Nabití 30 s, zásah skokového pohonu při útěku vrací nabití o 25 %, ion ho zastaví, AI při útěku míří na skokový pohon (priorita +3,5). |
+| 1 | HIGH | Útěk z boje vždy vyšel (156 ze 156 pokusů): nabití 14 s, nic ho nenarušilo, AI nemířila na skokový pohon. | **Opraveno.** Nabití 20 s, zásah skokového pohonu při útěku vrací nabití o 25 %, ion ho zastaví, AI při útěku míří na skokový pohon (priorita +3,5). |
 | 2 | HIGH | Kořist mimo ekonomiku (1–5 tis. kr za souboj proti příjmu 100–200 kr/den): zboží se losovalo po kusech bez ohledu na cenu. | **Opraveno.** Množství zboží se škáluje cenou (`min(1, 100/cena)`), kredity z tabulky zůstaly; report počítá i spoluúčast pojištění. |
 | 3 | HIGH | Ruční rozdělení energie dominovalo: skokový pohon trvale bral většinu skupiny motorů, motory a pilot byly past (úhyb jen 10–20 %). | **Opraveno.** Skokový pohon bere v boji 30 % příkonu, úhyb ×2, AI (i auto-boj) snižuje váhu motorů mimo útěk. |
 | 4 | MEDIUM | Matice výher počítala útěk jako výhru/prohru a skrývala výsledky podle trupu; smíšená výzbroj dominovala; stalemate u borer. | **Částečně.** Výhra jen zabitím nebo vzdáním, útěk je remíza; regenerace štítu 4 → 3 %/s; zbraně znovu vyladěny optimalizací proti matici. Zůstává, že výsledek závisí na trupu (sloty S/M/L): report ukazuje tabulku podle trupu a smíšená výzbroj je o něco silnější (viz `balance.md`). |
