@@ -1,6 +1,9 @@
 /** Czech texts for crew and combat (v2). */
 export const csV2: Record<string, string> = {
   'nav.crew': 'Posádka',
+  'err.noShip': 'Nejdřív si kup loď.',
+  'err.hasShip': 'Loď už máš.',
+  'msg.firstShip': 'Kupuješ loď {ship}. Ať ti slouží!',
   'crew.title': 'Posádka',
   'crew.count': 'Posádka',
   'crew.wages': 'Mzdy',

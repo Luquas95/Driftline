@@ -1,6 +1,9 @@
 /** Central tuning constants. Documented in docs/DESIGN.md. */
 export const T = {
-  startCredits: 2500,
+  /** Capital of a new game by difficulty (prices setting): the first ship is bought from it. */
+  startCapital: { easy: 60000, normal: 40000, hard: 25000 },
+  /** Credits of the quick start used by tests and bots that skip the shipyard. */
+  quickStartCredits: 2500,
   startHull: 'wayfarer',
   galaxySystems: 300,
   galaxyRadius: 80,

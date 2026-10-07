@@ -79,6 +79,8 @@ export interface ModuleDef {
 
 export interface HullDef {
   id: string;
+  /** Short role key for the shipyard (hull.role.<role>). */
+  role: string;
   /** Rows of slot tokens: lowercase = core (r e j l n), uppercase S/M/L = free slot, '.' = empty. */
   layout: string[];
   mass: number;
@@ -363,6 +365,8 @@ export interface GameState {
   rng: RngState;
   credits: number;
   ship: Ship;
+  /** v3: true on a new game until the first ship is bought (the placeholder `ship` is not owned yet). */
+  noShip: boolean;
   cargo: CargoItem[];
   /** body: index of the body the ship is at, -1 = jump point. */
   location: { systemId: number; stationId: string | null; body: number };
@@ -399,7 +403,7 @@ export interface GameState {
   officersMet: string[];
 }
 
-export const SAVE_VERSION = 2;
+export const SAVE_VERSION = 3;
 
 /* ------------------------------ v2: crew & combat ------------------------------ */
 

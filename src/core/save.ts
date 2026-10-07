@@ -63,6 +63,12 @@ export const MIGRATIONS: Record<number, Migration> = {
     }
     return s;
   },
+  // v2 -> v3: new games start without a ship; existing saves already own one.
+  2: (s) => {
+    s.v = 3;
+    s.noShip = false;
+    return s;
+  },
 };
 
 export function serializeState(state: GameState): string {
@@ -291,6 +297,7 @@ function repair(state: GameState): void {
     ? state.officersMet.filter((o) => (OFFICERS_BY_ID as Record<string, unknown>)[o])
     : [];
   if (!finite(state.wagesDue, 0, 1e9)) state.wagesDue = 0;
+  state.noShip = state.noShip === true;
   const n = GOODS.length;
   for (const dyn of Object.values(state.stations)) {
     if (!Array.isArray(dyn.stock)) dyn.stock = [];

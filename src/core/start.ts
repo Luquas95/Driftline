@@ -30,8 +30,9 @@ export function newGame(opts: NewGameOptions = {}): GameState {
     difficulty,
     day: 0,
     rng: Rng.fromSeed(`${seed}:play`).getState(),
-    credits: T.startCredits,
+    credits: opts.quickStart ? T.quickStartCredits : T.startCapital[difficulty.prices],
     ship: null as never,
+    noShip: !opts.quickStart,
     cargo: [],
     location: { systemId: startSys.id, stationId: startSt.id, body: startSt.bodyIndex },
     inventory: [],
@@ -78,17 +79,17 @@ export function newGame(opts: NewGameOptions = {}): GameState {
   };
   state.ship = buildStarterShip(T.startHull, opts.shipName ?? 'Poutník', () => newUid(state, 'm'));
   // starter loadout: a cargo pod in the first free medium slot
-  const hull = HULLS_BY_ID[state.ship.hullId];
-  void hull;
-  const mIdx = starterSlot(state, 'M');
-  if (mIdx >= 0) state.ship.slots[mIdx] = newModule('cargo_m', 'C', newUid(state, 'm'));
+  if (opts.quickStart) {
+    const mIdx = starterSlot(state, 'M');
+    if (mIdx >= 0) state.ship.slots[mIdx] = newModule('cargo_m', 'C', newUid(state, 'm'));
+  }
 
   for (const sys of g.systems) {
     for (const st of sys.stations) {
       state.stations[st.id] = createStationDyn(st, Rng.fromSeed(`${seed}:stock:${st.id}`));
     }
   }
-  state.crew = defaultCrew(seed, state.ship.hullId, 0, () => newUid(state, 'w'));
+  state.crew = opts.quickStart ? defaultCrew(seed, state.ship.hullId, 0, () => newUid(state, 'w')) : [];
   arrive(state, startSys.id);
   state.location = { systemId: startSys.id, stationId: startSt.id, body: startSt.bodyIndex };
   refreshBoard(g, state, startSt);

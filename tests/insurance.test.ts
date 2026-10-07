@@ -10,7 +10,12 @@ import { HULLS_BY_ID } from '../src/content/hulls';
 import { mk } from './helpers';
 
 function loaded(seed: string, insured = true, permadeath = false) {
-  const s = newGame({ seed, galaxySize: 100, difficulty: { insurance: insured, permadeath } });
+  const s = newGame({
+    seed,
+    galaxySize: 100,
+    quickStart: true,
+    difficulty: { insurance: insured, permadeath },
+  });
   const free = hullSlots(s.ship.hullId).filter((x) => !x.core && !s.ship.slots[x.index]);
   s.ship.slots[free[0].index] = newModule('shield_s', 'C', 'extra1');
   const { stats, dims } = analyze(s);

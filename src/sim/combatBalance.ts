@@ -126,7 +126,7 @@ const MISSILE_COST = 26;
 
 /** A new game whose ship is fitted with the archetype's loadout (hull: mule, the cargo hauler most players start from). */
 function armedGame(seed: string, arch: Archetype, risk: 'low' | 'normal' | 'high') {
-  const s = newGame({ seed, galaxySize: 60, difficulty: { risk } });
+  const s = newGame({ seed, galaxySize: 60, quickStart: true, difficulty: { risk } });
   s.ship = buildStarterShip('mule', 'Test', () => newUid(s, 'm'));
   for (const id of loadoutFor('mule', arch)) {
     const def = MODULES_BY_ID[id];

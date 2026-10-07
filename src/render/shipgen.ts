@@ -21,6 +21,43 @@ interface Shape {
   cockpit: P;
 }
 
+/** Compact silhouette builder for the newer hulls: a tapered body, two fins and `n` nozzles. */
+function shape(o: {
+  tail: number;
+  nose: number;
+  wTail: number;
+  wMid: number;
+  fin: number;
+  finAt?: number;
+  nozzles: number;
+  area: { x0: number; y0: number; x1: number; y1: number };
+  cockpit: number;
+}): Shape {
+  const { tail, nose, wTail, wMid } = o;
+  const body: P[] = [
+    [tail, -wTail],
+    [tail * 0.6, -wMid],
+    [nose * 0.55, -wMid * 0.85],
+    [nose * 0.88, -wMid * 0.3],
+    [nose, 0],
+    [nose * 0.88, wMid * 0.3],
+    [nose * 0.55, wMid * 0.85],
+    [tail * 0.6, wMid],
+    [tail, wTail],
+  ];
+  const fa = o.finAt ?? -20;
+  const fins: P[][] = [-1, 1].map((sd) => [
+    [fa - 50, sd * wMid * 0.95],
+    [fa - 10, sd * (wMid + o.fin)],
+    [fa + 30, sd * (wMid + o.fin)],
+    [fa + 15, sd * wMid * 0.9],
+  ]);
+  const nozzles: P[] = [];
+  for (let i = 0; i < o.nozzles; i++)
+    nozzles.push([tail - 2, o.nozzles === 1 ? 0 : -wTail * 0.55 + (i * wTail * 1.1) / (o.nozzles - 1)]);
+  return { body, fins, nozzles, area: o.area, cockpit: [o.cockpit, 0] };
+}
+
 const SHAPES: Record<string, Shape> = {
   wayfarer: {
     body: [
@@ -218,6 +255,89 @@ const SHAPES: Record<string, Shape> = {
     area: { x0: -150, y0: -52, x1: 130, y1: 52 },
     cockpit: [140, 0],
   },
+  shuttle: shape({
+    tail: -120,
+    nose: 135,
+    wTail: 30,
+    wMid: 36,
+    fin: 22,
+    nozzles: 1,
+    area: { x0: -95, y0: -24, x1: 80, y1: 24 },
+    cockpit: 98,
+  }),
+  courier: shape({
+    tail: -125,
+    nose: 165,
+    wTail: 15,
+    wMid: 22,
+    fin: 34,
+    nozzles: 1,
+    area: { x0: -95, y0: -16, x1: 90, y1: 16 },
+    cockpit: 118,
+  }),
+  scout: shape({
+    tail: -140,
+    nose: 170,
+    wTail: 22,
+    wMid: 30,
+    fin: 40,
+    finAt: 10,
+    nozzles: 2,
+    area: { x0: -115, y0: -22, x1: 100, y1: 22 },
+    cockpit: 128,
+  }),
+  prospector: shape({
+    tail: -140,
+    nose: 150,
+    wTail: 40,
+    wMid: 50,
+    fin: 26,
+    nozzles: 2,
+    area: { x0: -112, y0: -40, x1: 98, y1: 40 },
+    cockpit: 108,
+  }),
+  merchant: shape({
+    tail: -155,
+    nose: 150,
+    wTail: 48,
+    wMid: 58,
+    fin: 24,
+    nozzles: 2,
+    area: { x0: -125, y0: -48, x1: 100, y1: 48 },
+    cockpit: 112,
+  }),
+  armored: shape({
+    tail: -165,
+    nose: 160,
+    wTail: 58,
+    wMid: 70,
+    fin: 18,
+    nozzles: 3,
+    area: { x0: -140, y0: -56, x1: 110, y1: 56 },
+    cockpit: 122,
+  }),
+  yacht: shape({
+    tail: -150,
+    nose: 185,
+    wTail: 30,
+    wMid: 48,
+    fin: 30,
+    finAt: 0,
+    nozzles: 2,
+    area: { x0: -120, y0: -36, x1: 118, y1: 36 },
+    cockpit: 140,
+  }),
+  expedition: shape({
+    tail: -180,
+    nose: 185,
+    wTail: 52,
+    wMid: 64,
+    fin: 34,
+    finAt: 20,
+    nozzles: 3,
+    area: { x0: -150, y0: -50, x1: 130, y1: 50 },
+    cockpit: 140,
+  }),
 };
 
 export interface ShipDrawing {

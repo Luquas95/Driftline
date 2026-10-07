@@ -13,6 +13,7 @@ describe('v1 -> v2 save migration', () => {
     expect(JSON.parse(v1).version).toBe(1);
     const s = importSave(v1);
     expect(s.v).toBe(SAVE_VERSION);
+    expect(s.noShip).toBe(false);
     expect(s.crew).toHaveLength(HULLS_BY_ID[s.ship.hullId].crew);
     expect(s.crew.map((c) => c.role)[0]).toBe('pilot');
     expect(s.combat).toBeNull();

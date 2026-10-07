@@ -31,6 +31,8 @@ export interface NewGameOptions {
   seed?: string;
   difficulty?: Partial<Difficulty>;
   shipName?: string;
+  /** Skip the shipyard: start with the old basic ship and a small purse (tests and balance bots). */
+  quickStart?: boolean;
   galaxySize?: number;
   /** Entropy used to create a seed when none is given (the caller supplies it: core never reads the clock). */
   entropy?: number;

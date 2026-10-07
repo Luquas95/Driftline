@@ -74,7 +74,37 @@ const hulls: Record<string, [string, string]> = {
   mule: ['Mula', 'Lehká nákladní loď. Pomalá, ale věrná, s velkou mřížkou nákladu.'],
   swift: ['Šipka', 'Kurýrní loď. Malá a rychlá, náklad bere jen pár kontejnerů.'],
   borer: ['Vrták', 'Těžební trup se sloty pro lasery a rafinerii. Silný, ale žíznivý.'],
+  shuttle: ['Ojetý raketoplán', 'Nejlevnější cesta do vesmíru. Malý, opotřebený a skromný, ale létá.'],
+  courier: ['Kurýr', 'Malá a čilá loď pro zásilky a spěchající zákazníky. Náklad skoro žádný.'],
+  scout: ['Průzkumník', 'Velký dolet a sloty pro senzory. Hodí se na mapování a objevy, na obchod ne.'],
+  prospector: ['Prospektor', 'Lehká těžební loď: místo pro lasery, vrtáky a rafinerii za rozumnou cenu.'],
+  merchant: ['Obchodník', 'Rychlejší nákladní loď s velkým prostorem a slušnými doplňky. Rodinný kšeft.'],
+  armored: [
+    'Pancéřník',
+    'Těžký nákladní trup s pancířem. Pomalý, ale přežije i špatný skok a pirátskou palbu.',
+  ],
+  yacht: ['Luxusní jachta', 'Spousta kabin a zásob, malý náklad. Pro cestující, kteří platí za pohodlí.'],
+  expedition: [
+    'Expediční loď',
+    'Obří nádrže a zásoby pro dlouhé cesty do neznáma. Drahý sen o hranicích mapy.',
+  ],
   behemoth: ['Behemot', 'Těžká nákladní loď. Obrovský náklad a velké nádrže, pomalá a drahá.'],
+};
+
+const hullRoles: Record<string, string> = {
+  universal: 'univerzální',
+  scout: 'průzkumník',
+  cargo: 'nákladní',
+  courier: 'kurýr',
+  mining: 'těžební',
+  heavy: 'těžký nákladní',
+  budget: 'levný start',
+  explorer: 'průzkumná',
+  trader: 'obchodní',
+  armored: 'pancéřovaná',
+  passenger: 'pro cestující',
+  expedition: 'expediční',
+  npc: 'cizí',
 };
 
 const stations: Record<string, string> = {
@@ -805,5 +835,6 @@ for (const [k, [name, desc]] of Object.entries(hulls)) {
   dict[`hull.${k}.desc`] = desc;
 }
 for (const [k, v] of Object.entries(stations)) dict[`st.${k}`] = v;
+for (const [k, v] of Object.entries(hullRoles)) dict[`hull.role.${k}`] = v;
 
 export const cs: Record<string, string> = dict;
