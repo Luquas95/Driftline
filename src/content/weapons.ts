@@ -41,7 +41,7 @@ export const DMG_SCALE = 0.45;
 
 export const WEAPON_SPECS: Record<WeaponKind, WeaponSpec> = {
   energy: {
-    dmg: 9.27,
+    dmg: 9.54,
     charge: 5,
     heat: 6,
     speed: 0.45,
@@ -89,7 +89,7 @@ export const WEAPON_SPECS: Record<WeaponKind, WeaponSpec> = {
     mass: 4,
   },
   ion: {
-    dmg: 9.24,
+    dmg: 8.07,
     charge: 6,
     heat: 4,
     speed: 0.5,
@@ -105,7 +105,7 @@ export const WEAPON_SPECS: Record<WeaponKind, WeaponSpec> = {
     mass: 3,
   },
   drones: {
-    dmg: 4.3,
+    dmg: 4.82,
     charge: 19,
     heat: 1,
     speed: 0.6,
