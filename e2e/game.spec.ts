@@ -15,8 +15,7 @@ test.describe('core game flow', () => {
   test('tutorial guides through the first trade and can be skipped', async ({ page }) => {
     await startGame(page, { tutorial: true });
     const tut = page.getByTestId('tutorial');
-    await expect(tut).toContainText('1/6');
-    await page.getByTestId('tutorial-next').click();
+    // the quick-start ship already carries a cargo module, so the outfit step is done
     await expect(tut).toContainText('2/6');
     const row = page
       .locator('[data-testid^="good-"]')

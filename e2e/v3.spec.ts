@@ -1,6 +1,19 @@
 import { expect, test, type Page } from '@playwright/test';
 import { clearModals, openScreen, startGame, state } from './helpers';
 
+/** Wait until the view has stopped moving (the first frames re-centre it around the side panel). */
+async function settle(page: Page) {
+  let last = '';
+  for (let i = 0; i < 20; i++) {
+    const now = await page.evaluate(() =>
+      JSON.stringify([window.__dl.sys()!.cam, window.__dl.sys()!.body(1)]),
+    );
+    if (now === last) return;
+    last = now;
+    await page.waitForTimeout(350);
+  }
+}
+
 async function viewport(page: Page) {
   return page.evaluate(() => ({ w: window.innerWidth, h: window.innerHeight }));
 }
@@ -57,12 +70,12 @@ test.describe('system view', () => {
   });
 
   test('wheel zoom goes to the cursor and selecting a body works after zooming', async ({ page }) => {
+    await settle(page);
     const b = await page.evaluate(() => window.__dl.sys()!.body(1)!);
     await page.mouse.move(b.x, b.y);
     for (let i = 0; i < 4; i++) await page.mouse.wheel(0, -240);
-    await page.waitForTimeout(250);
-    const z = await page.evaluate(() => window.__dl.sys()!.zoom);
-    expect(z).toBeGreaterThan(2);
+    await expect.poll(() => page.evaluate(() => window.__dl.sys()!.zoom)).toBeGreaterThan(2);
+    await settle(page);
     const after = await page.evaluate(() => window.__dl.sys()!.body(1)!);
     // the body under the cursor stays under it
     expect(Math.hypot(after.x - b.x, after.y - b.y)).toBeLessThan(6);
@@ -83,21 +96,19 @@ test.describe('system view', () => {
   });
 
   test('double click focuses a body; the reset button returns to the whole system', async ({ page }) => {
+    await settle(page);
     const b = await page.evaluate(() => window.__dl.sys()!.body(1)!);
     await page.mouse.dblclick(b.x, b.y);
-    await page.waitForTimeout(400);
-    expect(await page.evaluate(() => window.__dl.sys()!.zoom)).toBeGreaterThan(3);
+    await expect.poll(() => page.evaluate(() => window.__dl.sys()!.zoom)).toBeGreaterThan(3);
     await page.getByTestId('sys-zoom-reset').click();
-    await page.waitForTimeout(400);
-    expect(await page.evaluate(() => window.__dl.sys()!.zoom)).toBeLessThan(1.2);
+    await expect.poll(() => page.evaluate(() => window.__dl.sys()!.zoom)).toBeLessThan(1.2);
   });
 
   test('keyboard zoom works and there is a visible dock button', async ({ page }) => {
     await page.keyboard.press('+');
-    await page.waitForTimeout(300);
-    expect(await page.evaluate(() => window.__dl.sys()!.zoom)).toBeGreaterThan(1.2);
+    await expect.poll(() => page.evaluate(() => window.__dl.sys()!.zoom)).toBeGreaterThan(1.2);
     await page.keyboard.press('0');
-    await page.waitForTimeout(300);
+    await expect.poll(() => page.evaluate(() => window.__dl.sys()!.zoom)).toBeLessThan(1.1);
     const dock = page.locator('[data-testid^="btn-dock-quick-"]').first();
     await expect(dock).toBeVisible();
     await dock.click();
