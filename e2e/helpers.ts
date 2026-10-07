@@ -20,7 +20,10 @@ declare global {
   }
 }
 
-export async function startGame(page: Page, opts: { seed?: string; tutorial?: boolean } = {}) {
+export async function startGame(
+  page: Page,
+  opts: { seed?: string; tutorial?: boolean; quick?: boolean } = {},
+) {
   await page.addInitScript((tutorial) => {
     try {
       localStorage.setItem(
@@ -31,7 +34,7 @@ export async function startGame(page: Page, opts: { seed?: string; tutorial?: bo
       /* ignore */
     }
   }, opts.tutorial ?? false);
-  await page.goto('/?e2e=1');
+  await page.goto(opts.quick === false ? '/?e2e=1' : '/?e2e=1&quick=1');
   await page.getByTestId('menu-new').click();
   await page.getByTestId('new-seed').fill(opts.seed ?? 'E2E1');
   await page.getByTestId('menu-start').click();

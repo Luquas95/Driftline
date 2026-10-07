@@ -367,6 +367,8 @@ export interface GameState {
   ship: Ship;
   /** v3: true on a new game until the first ship is bought (the placeholder `ship` is not owned yet). */
   noShip: boolean;
+  /** v3: the captain's name chosen on the new-game screen. */
+  captain: string;
   cargo: CargoItem[];
   /** body: index of the body the ship is at, -1 = jump point. */
   location: { systemId: number; stationId: string | null; body: number };

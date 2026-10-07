@@ -67,6 +67,7 @@ export const MIGRATIONS: Record<number, Migration> = {
   2: (s) => {
     s.v = 3;
     s.noShip = false;
+    s.captain ??= 'Kapitán';
     return s;
   },
 };
@@ -298,6 +299,7 @@ function repair(state: GameState): void {
     : [];
   if (!finite(state.wagesDue, 0, 1e9)) state.wagesDue = 0;
   state.noShip = state.noShip === true;
+  if (typeof state.captain !== 'string') state.captain = 'Kapitán';
   const n = GOODS.length;
   for (const dyn of Object.values(state.stations)) {
     if (!Array.isArray(dyn.stock)) dyn.stock = [];

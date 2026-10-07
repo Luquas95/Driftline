@@ -31,6 +31,7 @@ export interface NewGameOptions {
   seed?: string;
   difficulty?: Partial<Difficulty>;
   shipName?: string;
+  captainName?: string;
   /** Skip the shipyard: start with the old basic ship and a small purse (tests and balance bots). */
   quickStart?: boolean;
   galaxySize?: number;

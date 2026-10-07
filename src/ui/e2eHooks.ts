@@ -1,6 +1,6 @@
 import { stage } from '../render/instance';
 import { galaxyOf } from '../core/state';
-import { game, rev, screen, selectedSystem, toasts } from './store';
+import { e2eFlags, game, rev, screen, selectedSystem, toasts } from './store';
 import { updateSettings } from './settings';
 import { combatRoomPos } from './screens/CombatScreen';
 import { DT, drainEvents, stepCombat } from '../core/combat/sim';
@@ -16,6 +16,7 @@ import { analyze, newUid } from '../core/state';
  * without pixel-hunting on the canvas and freeze the animation clock for deterministic screenshots.
  */
 export function installE2eHooks(): void {
+  e2eFlags.quick = new URLSearchParams(window.location.search).get('quick') === '1';
   const hooks = {
     state: () => game.value,
     screen: () => screen.value,

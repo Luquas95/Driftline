@@ -28,6 +28,7 @@ import { CargoScreen } from './screens/CargoScreen';
 import { CombatScreen } from './screens/CombatScreen';
 import { CombatResultModal, EncounterModal } from './CombatModals';
 import { combatSummary } from './combatCtl';
+import { FirstShipScreen } from './screens/FirstShipScreen';
 import { CrewScreen } from './screens/CrewScreen';
 import { JournalScreen } from './screens/JournalScreen';
 import { SettingsScreen } from './screens/SettingsScreen';
@@ -134,7 +135,7 @@ function Nav() {
   return (
     <nav class="nav" aria-label={t('nav.label')}>
       {NAV.map((n) => {
-        const disabled = (n.id === 'station' && !docked) || !!s.combat;
+        const disabled = (n.id === 'station' && !docked) || !!s.combat || s.noShip;
         return (
           <button
             key={n.id}
@@ -276,20 +277,21 @@ function AppInner() {
         </div>
       )}
       {s && !menuOpen.value && (
-        <div class={`shell ${s.combat ? 'in-combat' : ''}`}>
+        <div class={`shell ${s.combat || s.noShip ? 'in-combat' : ''}`}>
           <TopBar />
           <div class="main">
             <Nav />
-            <div class="content" data-screen={s.combat ? 'combat' : scr}>
+            <div class="content" data-screen={s.noShip ? 'firstship' : s.combat ? 'combat' : scr}>
+              {s.noShip && <FirstShipScreen />}
               {s.combat && <CombatScreen />}
-              {!s.combat && scr === 'map' && <MapScreen />}
-              {!s.combat && scr === 'system' && <SystemScreen />}
-              {!s.combat && scr === 'station' && <StationScreen />}
-              {!s.combat && scr === 'ship' && <ShipScreen />}
-              {!s.combat && scr === 'cargo' && <CargoScreen />}
-              {!s.combat && scr === 'crew' && <CrewScreen />}
-              {!s.combat && scr === 'journal' && <JournalScreen />}
-              {!s.combat && scr === 'settings' && <SettingsScreen />}
+              {!s.noShip && !s.combat && scr === 'map' && <MapScreen />}
+              {!s.noShip && !s.combat && scr === 'system' && <SystemScreen />}
+              {!s.noShip && !s.combat && scr === 'station' && <StationScreen />}
+              {!s.noShip && !s.combat && scr === 'ship' && <ShipScreen />}
+              {!s.noShip && !s.combat && scr === 'cargo' && <CargoScreen />}
+              {!s.noShip && !s.combat && scr === 'crew' && <CrewScreen />}
+              {!s.noShip && !s.combat && scr === 'journal' && <JournalScreen />}
+              {!s.noShip && !s.combat && scr === 'settings' && <SettingsScreen />}
               {!s.combat &&
                 !s.tutorial.done &&
                 settings.value.tutorial &&

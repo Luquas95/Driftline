@@ -112,14 +112,17 @@ export function report(r: Result<object>): boolean {
   return false;
 }
 
+/** Test hook: `?e2e=1&quick=1` skips the shipyard (set by e2eHooks, never by the game itself). */
+export const e2eFlags = { quick: false };
+
 export function startNewGame(opts: NewGameOptions): void {
-  const s = newGame({ ...opts, entropy: opts.entropy ?? Date.now() });
+  const s = newGame({ ...opts, quickStart: e2eFlags.quick, entropy: opts.entropy ?? Date.now() });
   game.value = s;
   msgSeen = s.messages.length;
   menuOpen.value = false;
   screen.value = 'station';
   selectedSystem.value = null;
-  s.tutorial.done = !settings.value.tutorial;
+  s.tutorial.done = !settings.value.tutorial || s.noShip;
   rev.value++;
   void saves.put('autosave', s, t('save.autosave'));
 }

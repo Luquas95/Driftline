@@ -203,7 +203,8 @@ const base: Record<string, string> = {
   'menu.import': 'Importovat ze souboru',
   'menu.offline': 'Hra běží offline a ukládá jen v tomto zařízení.',
   'menu.noSaves': 'Žádné uložené hry.',
-  'menu.shipName': 'Jméno lodi',
+  'menu.shipName': 'Jméno kapitána',
+  'menu.defaultCaptain': 'Kapitán',
   'menu.defaultShip': 'Svítání',
   'menu.seed': 'Semínko galaxie',
   'menu.seedPlaceholder': 'prázdné = náhodné',
@@ -225,17 +226,21 @@ const base: Record<string, string> = {
   'tut.title': 'Tutoriál',
   'tut.skip': 'Přeskočit',
   'tut.done': 'Rozumím',
+  'tut.openShipyard': 'Otevřít loděnici',
+  'tut.next': 'Dál',
   'tut.openStation': 'Otevřít stanici',
   'tut.openMap': 'Otevřít mapu',
   'tut.step0':
-    'Vítej, kapitáne. Ve stanici otevři Obchod, klikni na zboží a kup ho. Hledej zboží, které je u vás levné: ve sloupci „jinde“ uvidíš, kde se dá prodat dráž.',
+    'Gratulujeme k lodi! Co znamenají hodnoty? Náklad = kolik se vejde, dolet = jak daleko skočíš na plnou nádrž, sloty S/M/L = kam půjdou moduly. Peníze nech hlavně na náklad a palivo. Volitelně si v Loděnici (Stanice) kup první modul, třeba nákladový prostor.',
   'tut.step1':
-    'Skvěle. Teď otevři Mapu (M), klikni na sousední systém a skoč. Skok stojí palivo a několik dní.',
+    'Vítej, kapitáne. Ve stanici otevři Obchod, klikni na zboží a kup ho. Hledej zboží, které je u vás levné: ve sloupci „jinde“ uvidíš, kde se dá prodat dráž.',
   'tut.step2':
-    'V cíli klikni na Přistát (v panelu systému na mapě nebo v obrazovce Systém, Y) a v Obchodu zboží prodej. Rozdíl cen je tvůj zisk.',
+    'Skvěle. Teď otevři Mapu (M), klikni na sousední systém a skoč. Skok stojí palivo a několik dní.',
   'tut.step3':
-    'Ve stanici máš nástěnku zakázek. Přijmi jednu a doruč ji do termínu: platí víc než jeden obchod, zálohu dostaneš hned.',
+    'V cíli klikni na Přistát (v panelu systému na mapě nebo v obrazovce Systém, Y) a v Obchodu zboží prodej. Rozdíl cen je tvůj zisk.',
   'tut.step4':
+    'Ve stanici máš nástěnku zakázek. Přijmi jednu a doruč ji do termínu: platí víc než jeden obchod, zálohu dostaneš hned.',
+  'tut.step5':
     'Dvě věci na závěr. Loď (L): moduly spotřebovávají energii z reaktoru, takže někdy musíš něco vypnout. Náklad (C): co se nevejde do trupu, jde do varovného řádku navíc. Zvyšuje spotřebu zásob a riziko nehod.',
   /* help */
   'help.title': 'Nápověda a zkratky',

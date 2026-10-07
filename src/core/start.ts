@@ -33,6 +33,7 @@ export function newGame(opts: NewGameOptions = {}): GameState {
     credits: opts.quickStart ? T.quickStartCredits : T.startCapital[difficulty.prices],
     ship: null as never,
     noShip: !opts.quickStart,
+    captain: (opts.captainName ?? '').trim().slice(0, 24) || 'Kapitán',
     cargo: [],
     location: { systemId: startSys.id, stationId: startSt.id, body: startSt.bodyIndex },
     inventory: [],
