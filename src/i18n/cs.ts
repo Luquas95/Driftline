@@ -1,5 +1,6 @@
 /** Czech UI dictionary. Event texts live next to their definitions (content/events.ts) and are merged in i18n/index.ts. */
 const goods: Record<string, string> = {
+  missiles: 'Rakety',
   water_ice: 'Vodní led',
   iron_ore: 'Železná ruda',
   silicates: 'Silikáty',
@@ -39,6 +40,12 @@ const goods: Record<string, string> = {
 };
 
 const mods: Record<string, string> = {
+  energy: 'Energetická zbraň',
+  kinetic: 'Kinetická zbraň',
+  missile: 'Raketomet',
+  ion: 'Iontová zbraň',
+  drones: 'Dronový hangár',
+  teleporter: 'Teleportér',
   reactor: 'Reaktor',
   engine: 'Podsvětelný motor',
   jump: 'Skokový pohon',
@@ -773,6 +780,18 @@ const base: Record<string, string> = {
   'err.alreadyInsured': 'Pojištění je aktivní.',
   'err.notInsured': 'Nejsi pojištěný.',
   'err.nothingToSell': 'Nemáš co prodat.',
+  'err.crewFull': 'Na lodi není místo pro další posádku. Přidej ubikace.',
+  'err.lastCrew': 'Poslední člen posádky nemůže odejít.',
+  'err.noEncounter': 'Žádný střet neprobíhá.',
+  'msg.hired': '{name} se přidává k posádce.',
+  'msg.dismissed': '{name} opouští posádku.',
+  'msg.crewLeft': '{name} odešel z posádky kvůli nízké morálce.',
+  'msg.crewKilled': '{name} v boji zahynul.',
+  'msg.crewWiped': 'Na lodi nezůstal nikdo z posádky.',
+  'msg.combat.victory': 'Vítězství! Kořist: {credits} kr.',
+  'msg.combat.tribute': 'Zaplatil jsi výkupné v nákladu (hodnota {value} kr).',
+  'msg.combat.fled': 'Unikl jsi ze střetu. Spotřeba paliva: {fuel}.',
+  'msg.combat.enemyFled': 'Protivník utekl.',
   'err.towNotNeeded': 'Odtah nepotřebuješ: palivo na skok máš.',
 };
 
