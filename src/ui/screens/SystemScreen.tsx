@@ -24,6 +24,7 @@ import {
   analysis,
   galaxy,
   game,
+  arrivalFlag,
   launchFlag,
   report,
   rev,
@@ -58,6 +59,8 @@ export function SystemScreen() {
   useScene(() => {
     const launch = launchFlag.pending;
     launchFlag.pending = false;
+    const arrive = arrivalFlag.pending;
+    arrivalFlag.pending = false;
     const sc = createSystemScene({
       system: sys,
       stations: sys.stations,
@@ -68,6 +71,7 @@ export function SystemScreen() {
       level: animLevel,
       saved: rememberedCam(sys.id),
       launch,
+      arrive,
       onSound: (n) =>
         sfx(
           n === 'dock'

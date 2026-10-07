@@ -1,6 +1,12 @@
 /** Czech texts for crew and combat (v2). */
 export const csV2: Record<string, string> = {
   'nav.crew': 'Posádka',
+  'settings.anim': 'Animace',
+  'settings.anim.full': 'Plné',
+  'settings.anim.reduced': 'Omezené',
+  'settings.anim.off': 'Vypnuté',
+  'settings.animHelp':
+    'Lety lodí, skoky, sken, těžba, přechody. Každou animaci jde přeskočit klikem nebo mezerníkem.',
   'sys.zoom': 'Přiblížení',
   'sys.zoomIn': 'Přiblížit (+)',
   'sys.zoomOut': 'Oddálit (−)',

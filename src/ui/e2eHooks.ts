@@ -2,6 +2,7 @@ import { stage } from '../render/instance';
 import { galaxyOf } from '../core/state';
 import { e2eFlags, game, rev, screen, selectedSystem, toasts } from './store';
 import { updateSettings } from './settings';
+import { mapScene } from './screens/MapScreen';
 import { systemScene } from './screens/SystemScreen';
 import { combatRoomPos } from './screens/CombatScreen';
 import { DT, drainEvents, stepCombat } from '../core/combat/sim';
@@ -91,6 +92,10 @@ export function installE2eHooks(): void {
       updateSettings(
         a === 'full' ? { animations: 'full', motion: 'full' } : { animations: a, motion: 'reduced' },
       );
+    },
+    map: () => {
+      const sc = mapScene();
+      return sc ? { cam: sc.getCam(), pos: (id: number) => sc.systemScreenPos(id) } : null;
     },
     sys: () => {
       const sc = systemScene();

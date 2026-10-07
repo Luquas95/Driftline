@@ -66,6 +66,8 @@ export interface SystemSceneOptions {
   onCamera?: (cam: Cam) => void;
   /** The ship has just left a station: show it flying out. */
   launch?: boolean;
+  /** The ship has just jumped in: play the hyperspace arrival (flash and star streaks). */
+  arrive?: boolean;
   onSound?: (s: SystemSound) => void;
 }
 
@@ -186,7 +188,10 @@ export function createSystemScene(opts: SystemSceneOptions): SystemScene {
     fxG,
   );
   const labelLayer = new Container();
-  container.addChild(world, labelLayer);
+  const arrivalG = new Graphics();
+  container.addChild(world, labelLayer, arrivalG);
+  let arrivalT = opts.arrive && opts.level() !== 'off' ? 0 : 99;
+  const ARRIVAL_DUR = 1.3;
 
   let W = 800;
   let H = 600;
@@ -1084,6 +1089,33 @@ export function createSystemScene(opts: SystemSceneOptions): SystemScene {
     });
   }
 
+  /** Hyperspace exit: a white flash and star streaks flying outwards that settle into the system view. */
+  function drawArrival(dt: number): void {
+    arrivalG.clear();
+    if (arrivalT >= ARRIVAL_DUR) return;
+    arrivalT += dt;
+    const u = Math.min(1, arrivalT / ARRIVAL_DUR);
+    const reduced = level() !== 'full';
+    const cx = Wv() / 2;
+    const cy = Hv() / 2;
+    const maxR = Math.hypot(W, H) / 2;
+    const fade = 1 - u;
+    if (!reduced) {
+      for (let i = 0; i < 70; i++) {
+        const a = hash01(`arr:${i}`) * Math.PI * 2;
+        const r0 = (0.05 + hash01(`arr:r${i}`) * 0.95) * maxR;
+        const out = easeInOut(u);
+        const r1 = r0 * (0.35 + 1.6 * out);
+        const len = (0.1 + 0.5 * hash01(`arr:l${i}`)) * maxR * fade * 0.5;
+        arrivalG
+          .moveTo(cx + Math.cos(a) * (r1 - len), cy + Math.sin(a) * (r1 - len))
+          .lineTo(cx + Math.cos(a) * r1, cy + Math.sin(a) * r1)
+          .stroke({ width: 1.4, color: 0xcfe9ff, alpha: 0.8 * fade });
+      }
+    }
+    arrivalG.rect(0, 0, W, H).fill({ color: 0xffffff, alpha: Math.max(0, 0.75 * (1 - u * 2.2)) });
+  }
+
   /* ------------------------------ scene ------------------------------ */
 
   // initial ship position: instantly at its rest place (or flying out of the station it has just left)
@@ -1127,6 +1159,7 @@ export function createSystemScene(opts: SystemSceneOptions): SystemScene {
       updateShip(dt, time);
       updateNpcs(time);
       draw(time, dt);
+      drawArrival(dt);
       star.setTime(time);
     },
     destroy() {

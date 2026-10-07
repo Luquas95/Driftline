@@ -646,7 +646,7 @@ const base: Record<string, string> = {
   'settings.sfx': 'Efekty',
   'settings.testSound': 'Vyzkoušet',
   'settings.display': 'Zobrazení',
-  'settings.motion': 'Animace',
+  'settings.motion': 'Pohyb (přístupnost)',
   'settings.motion.auto': 'Podle systému',
   'settings.motion.reduced': 'Méně',
   'settings.motion.full': 'Plné',

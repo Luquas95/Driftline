@@ -112,6 +112,9 @@ export function report(r: Result<object>): boolean {
   return false;
 }
 
+/** Set after a jump: the next system view opens with the hyperspace arrival effect. */
+export const arrivalFlag = { pending: false };
+
 /** Set when the player leaves a station: the system scene shows the ship flying out. */
 export const launchFlag = { pending: false };
 

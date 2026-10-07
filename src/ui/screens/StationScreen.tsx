@@ -34,6 +34,7 @@ import { sfx } from '../../audio/audio';
 import { fmt, money, t } from '../../i18n';
 import { Bar, Btn, Delta, Empty, Modal, Panel, QualityBadge, Stat, Tabs, Tag } from '../components';
 import { CategoryIcon, Icon } from '../Icon';
+import { creditsShown, flyIcon, tweenSignal } from '../anim';
 import { act, analysis, galaxy, game, launchFlag, report, rev, screen, flag, toast } from '../store';
 import { useScene } from '../useScene';
 import { ShipyardTab } from './ShipyardTab';
@@ -469,6 +470,7 @@ function TradePanel({
   const good = GOODS_BY_ID[goodId];
   const { stats, dims, overload } = analyze(s);
   const [qty, setQty] = useState(10);
+  const [done, setDone] = useState<{ text: string; tone: 'good' | 'warn' } | null>(null);
   const owned = unitsOf(s.cargo, goodId);
   const maxB = maxBuy(s, st.id, goodId);
   const q = Math.max(0, Math.floor(qty));
@@ -492,28 +494,38 @@ function TradePanel({
   const willOverload = cellsAfter > dims.cells;
   const priceImpact = buyN > 0 ? buyQ.endMid / midPrice(st, goodId, stockOf(s, st.id, goodId)) - 1 : 0;
   const sellImpact = sellQ.endMid / midPrice(st, goodId, stockOf(s, st.id, goodId)) - 1;
+  const confirmTrade = (text: string, tone: 'good' | 'warn', before: number) => {
+    setDone({ text, tone });
+    window.setTimeout(() => setDone(null), 4200);
+    tweenSignal(creditsShown, before, game.value!.credits, 800);
+  };
   const doBuy = (n: number) => {
+    const before = game.value!.credits;
     const r = act((x) => buyGoods(x, st.id, goodId, n));
     if (report(r) && r.ok) {
       sfx('buy');
       flag('tut:bought');
-      toast(t('market.boughtMsg', { n: r.qty, good: t(`good.${goodId}`), price: money(r.paid) }), 'info');
+      const text = t('market.boughtMsg', { n: r.qty, good: t(`good.${goodId}`), price: money(r.paid) });
+      toast(text, 'good');
+      confirmTrade(text, 'good', before);
+      flyIcon('[data-testid="btn-buy"]', '[data-testid="nav-cargo"]', '▣');
     }
   };
   const doSell = (n: number) => {
+    const before = game.value!.credits;
     const r = act((x) => sellGoods(x, st.id, goodId, n));
     if (report(r) && r.ok) {
       sfx('sell');
       flag('tut:sold');
-      toast(
-        t('market.soldMsg', {
-          n: r.qty,
-          good: t(`good.${goodId}`),
-          price: money(r.revenue),
-          profit: (r.profit >= 0 ? '+' : '') + fmt(r.profit),
-        }),
-        r.profit >= 0 ? 'good' : 'warn',
-      );
+      const text = t('market.soldMsg', {
+        n: r.qty,
+        good: t(`good.${goodId}`),
+        price: money(r.revenue),
+        profit: (r.profit >= 0 ? '+' : '') + fmt(r.profit),
+      });
+      toast(text, r.profit >= 0 ? 'good' : 'warn');
+      confirmTrade(text, r.profit >= 0 ? 'good' : 'warn', before);
+      flyIcon('[data-testid="nav-cargo"]', '[data-testid="top-credits"]', '¤', '#ffd36b');
     }
   };
   const Wrap = bare ? 'div' : Panel;
@@ -566,6 +578,16 @@ function TradePanel({
             <Btn kind="good" disabled={owned <= 0 || q <= 0} onClick={() => doSell(q)} testid="btn-sell">
               {t('market.sell')} {Math.min(q, owned) || ''}
             </Btn>
+          </div>
+          <div class="trade-confirm-slot" aria-live="polite">
+            {done && (
+              <div class={`trade-confirm ${done.tone}`} data-testid="trade-confirm" role="status">
+                <span class="tick" aria-hidden="true">
+                  ✓
+                </span>
+                {done.text}
+              </div>
+            )}
           </div>
           {needsCooler && <p class="explain warn">{t('market.needCooler')}</p>}
           {needsVault && <p class="explain warn">{t('market.needVault')}</p>}

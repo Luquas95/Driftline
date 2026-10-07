@@ -90,5 +90,6 @@ effect(() => {
   if (typeof document !== 'undefined') {
     document.documentElement.dataset.contrast = s.contrast;
     document.documentElement.dataset.motion = prefersReducedMotion() ? 'reduced' : 'full';
+    document.documentElement.dataset.anim = animLevel();
   }
 });

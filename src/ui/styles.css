@@ -1806,3 +1806,174 @@ html[data-motion='reduced'] .offer-big img {
   border: 1px solid var(--line);
   border-radius: 10px;
 }
+
+/* ---- feedback and motion (v3) ---- */
+.trade-confirm-slot {
+  min-height: 0;
+}
+.trade-confirm {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-size: 13px;
+  border: 1px solid var(--good, #59e1a0);
+  background: color-mix(in srgb, var(--good, #59e1a0) 16%, transparent);
+  animation: confirm-in 0.3s ease-out;
+}
+.trade-confirm.warn {
+  border-color: var(--warn, #ffc857);
+  background: color-mix(in srgb, var(--warn, #ffc857) 16%, transparent);
+}
+.trade-confirm .tick {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--good, #59e1a0);
+  color: #07110c;
+  font-weight: 800;
+}
+.trade-confirm.warn .tick {
+  background: var(--warn, #ffc857);
+}
+@keyframes confirm-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.flash-good {
+  animation: flash-good 0.7s ease-out;
+}
+.flash-bad {
+  animation: flash-bad 0.7s ease-out;
+}
+@keyframes flash-good {
+  0% {
+    color: #6dffb0;
+    text-shadow: 0 0 10px #59e1a0;
+  }
+  100% {
+    text-shadow: none;
+  }
+}
+@keyframes flash-bad {
+  0% {
+    color: #ff7a7a;
+    text-shadow: 0 0 10px #ff5d5d;
+  }
+  100% {
+    text-shadow: none;
+  }
+}
+.fly-icon {
+  position: fixed;
+  z-index: 9999;
+  pointer-events: none;
+  font-size: 18px;
+  font-weight: 700;
+  text-shadow: 0 0 8px currentColor;
+  transform: translate(-50%, -50%);
+}
+.screen {
+  animation: screen-in 0.22s ease-out;
+}
+@keyframes screen-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.modal-backdrop {
+  animation: backdrop-in 0.18s ease-out;
+}
+.modal {
+  animation: modal-in 0.22s cubic-bezier(0.2, 0.9, 0.3, 1.1);
+}
+@keyframes backdrop-in {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes modal-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.97);
+  }
+}
+.btn,
+.nav button,
+.tab {
+  transition:
+    transform 0.12s ease,
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+.btn:not(:disabled):hover,
+.nav button:not(:disabled):hover {
+  transform: translateY(-1px);
+}
+.btn:not(:disabled):active,
+.nav button:not(:disabled):active {
+  transform: scale(0.96);
+}
+.side-panel {
+  animation: panel-in 0.22s ease-out;
+}
+@keyframes panel-in {
+  from {
+    opacity: 0;
+    transform: translateX(10px);
+  }
+}
+/* reduced and off: no decoration, instant state changes */
+html[data-anim='reduced'] .screen,
+html[data-anim='reduced'] .side-panel,
+html[data-anim='reduced'] .modal,
+html[data-anim='reduced'] .modal-backdrop {
+  animation-duration: 0.01s;
+}
+html[data-anim='reduced'] .btn:not(:disabled):hover,
+html[data-anim='reduced'] .btn:not(:disabled):active {
+  transform: none;
+}
+html[data-anim='off'] *,
+html[data-anim='off'] *::before,
+html[data-anim='off'] *::after {
+  animation: none !important;
+  transition: none !important;
+}
+.fps-meter {
+  position: fixed;
+  right: 6px;
+  bottom: 4px;
+  z-index: 10000;
+  font: 11px/1 ui-monospace, monospace;
+  color: #9fe8ff;
+  background: #000a;
+  padding: 3px 6px;
+  border-radius: 4px;
+  pointer-events: none;
+}
+.cargo-item {
+  animation: cargo-settle 0.35s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+}
+@keyframes cargo-settle {
+  from {
+    opacity: 0;
+    transform: translateY(-14px) scale(0.92);
+  }
+}

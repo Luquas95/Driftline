@@ -11,7 +11,20 @@ import { fmt, money, t, plural } from '../../i18n';
 import { sfx } from '../../audio/audio';
 import { Btn, Modal, Tag, Bar, Delta } from '../components';
 import { Icon } from '../Icon';
-import { act, analysis, galaxy, game, report, rev, selectedSystem, screen, flag } from '../store';
+import {
+  act,
+  analysis,
+  arrivalFlag,
+  galaxy,
+  game,
+  report,
+  rev,
+  selectedSystem,
+  screen,
+  flag,
+} from '../store';
+import { animLevel } from '../settings';
+import { dayShown, tweenSignal } from '../anim';
 import { useScene } from '../useScene';
 import { dist } from '../../core/galaxy';
 import type { GameState } from '../../core/types';
@@ -25,6 +38,11 @@ const FILTERS: { id: MapFilter; label: string; icon: string }[] = [
 
 let sceneRef: (MapScene & { attach: (c: HTMLCanvasElement) => void }) | null = null;
 
+/** The running map scene (test hooks). */
+export function mapScene(): MapScene | null {
+  return sceneRef;
+}
+
 export function MapScreen() {
   void rev.value;
   const s = game.value!;
@@ -35,7 +53,6 @@ export function MapScreen() {
   const [route, setRoute] = useState<RoutePlan | null>(null);
   const [autopilot, setAutopilot] = useState<{ running: boolean; step: number } | null>(null);
   const [hover, setHover] = useState<{ id: number; x: number; y: number } | null>(null);
-  const timer = useRef<number>();
   const sel = selectedSystem.value;
 
   useScene(() => {
@@ -69,42 +86,41 @@ export function MapScreen() {
     else setRoute(planRoute(s, sel));
   }, [sel, s.location.systemId, Math.floor(s.ship.fuel), s.cargo.length]);
 
-  // autopilot: one jump at a time with a short animation, Space pauses
+  // autopilot: one jump at a time, each with its flight animation; Space pauses
+  const autoRef = useRef(autopilot);
+  autoRef.current = autopilot;
   useEffect(() => {
     if (!autopilot?.running || !route) return;
     const sc = sceneRef;
     const path = route.path;
     const here = path.indexOf(s.location.systemId);
     if (here < 0 || here >= path.length - 1) {
-      sc?.setMarker(null, null, 0);
       setAutopilot(null);
       return;
     }
+    // a hop is still being shown: wait for its callback to continue
+    if (sc?.isJumping()) return;
     const from = path[here];
     const to = path[here + 1];
-    let p = 0;
-    const tick = window.setInterval(() => {
-      p += 0.12;
-      sc?.setMarker(from, to, Math.min(1, p));
-      if (p >= 1) {
-        clearInterval(tick);
-        sc?.setMarker(null, null, 0);
-        const r = act((st) => jump(st, to));
-        if (!report(r) || game.value!.pendingEvent || game.value!.dead) {
-          setAutopilot(null);
-          return;
-        }
-        sfx('jump');
-        flag('tut:jumped');
-        const st2 = game.value!;
-        if (st2.location.systemId === path[path.length - 1]) {
-          setAutopilot(null);
-          selectedSystem.value = st2.location.systemId;
-        } else setAutopilot({ running: true, step: here + 1 });
-      }
-    }, 70);
-    timer.current = tick;
-    return () => clearInterval(tick);
+    const day0 = game.value!.day;
+    const r = act((st) => jump(st, to));
+    if (!report(r) || game.value!.pendingEvent || game.value!.dead) {
+      setAutopilot(null);
+      return;
+    }
+    sfx('jump');
+    flag('tut:jumped');
+    arrivalFlag.pending = true;
+    tweenSignal(dayShown, day0, game.value!.day, 1200);
+    const next = () => {
+      const st2 = game.value!;
+      if (st2.location.systemId === path[path.length - 1]) {
+        setAutopilot(null);
+        selectedSystem.value = st2.location.systemId;
+      } else if (autoRef.current?.running) setAutopilot({ running: true, step: here + 1 });
+    };
+    if (sc) sc.playJump(from, to, game.value!.ship.hullId, animLevel(), next);
+    else next();
   }, [autopilot, route]);
 
   useEffect(() => {
@@ -114,6 +130,10 @@ export function MapScreen() {
       if (e.code === 'Space' && autopilot) {
         e.preventDefault();
         setAutopilot({ ...autopilot, running: !autopilot.running });
+      }
+      if ((e.code === 'Space' || e.key === 'Enter') && sceneRef?.isJumping()) {
+        sceneRef.skipJump();
+        e.preventDefault();
       }
       if (e.key === '+' || e.key === '=') sceneRef?.zoomBy(1.3);
       if (e.key === '-') sceneRef?.zoomBy(1 / 1.3);
@@ -463,13 +483,23 @@ function SystemPanel({
                   disabled={!plan?.ok}
                   testid="btn-jump"
                   onClick={() => {
+                    if (sceneRef?.isJumping()) return;
+                    const from = s.location.systemId;
+                    const day0 = s.day;
                     undock(s);
                     const r = act((st) => jump(st, sysId));
                     if (report(r)) {
                       sfx('jump');
                       flag('tut:jumped');
-                      // show the system we arrived in, with a way to dock right away
-                      selectedSystem.value = game.value!.location.systemId;
+                      arrivalFlag.pending = true;
+                      tweenSignal(dayShown, day0, game.value!.day, 1200);
+                      // show the system we arrived in, with a way to dock right away, once the flight has played
+                      const arrived = () => {
+                        selectedSystem.value = game.value!.location.systemId;
+                      };
+                      if (sceneRef)
+                        sceneRef.playJump(from, sysId, game.value!.ship.hullId, animLevel(), arrived);
+                      else arrived();
                     }
                   }}
                 >

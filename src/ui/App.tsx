@@ -1,9 +1,10 @@
 import { signal } from '@preact/signals';
-import { useEffect } from 'preact/hooks';
+import { useEffect, useState } from 'preact/hooks';
 import { stage, stageFailed, stageReady } from '../render/instance';
 import { unlockAudio, sfx } from '../audio/audio';
 import { t, fmt, money, plural } from '../i18n';
 import { Icon } from './Icon';
+import { creditsShown, dayShown, useFlash } from './anim';
 import { Modal, Btn, ErrorBoundary } from './components';
 import {
   act,
@@ -81,6 +82,11 @@ function TopBar() {
   const lowFuel = fuelPct < 0.2;
   const hullPct = s.ship.hp / a.stats.hpMax;
   const noPower = a.stats.powerFree < -0.001;
+  const dayVal = dayShown.value ?? s.day;
+  const creditVal = creditsShown.value ?? s.credits;
+  const creditFlash = useFlash(Math.round(s.credits));
+  const fuelFlash = useFlash(Math.round(s.ship.fuel));
+  const hullFlash = useFlash(Math.round(hullPct * 100));
   return (
     <header class="topbar">
       <span class="brand">Driftline</span>
@@ -91,21 +97,25 @@ function TopBar() {
       <div class="top-stats">
         <span class="top-stat" title={t('top.day')} data-testid="top-day">
           <Icon name="clock" />
-          <span class="mono">{fmt(s.day, 1)}</span>
+          <span class="mono">{fmt(dayVal, 1)}</span>
           <span class="lbl dim">{t('top.dayShort')}</span>
         </span>
-        <span class="top-stat" title={t('top.credits')} data-testid="top-credits">
+        <span class={`top-stat ${creditFlash}`} title={t('top.credits')} data-testid="top-credits">
           <Icon name="credits" />
-          <span class="mono">{fmt(Math.round(s.credits))}</span>
+          <span class="mono">{fmt(Math.round(creditVal))}</span>
         </span>
-        <span class={`top-stat ${lowFuel ? 'neg' : ''}`} title={t('top.fuel')} data-testid="top-fuel">
+        <span
+          class={`top-stat ${lowFuel ? 'neg' : ''} ${fuelFlash}`}
+          title={t('top.fuel')}
+          data-testid="top-fuel"
+        >
           <Icon name="fuel" />
           <span class="mono">
             {fmt(s.ship.fuel, 0)}
             <span class="dim">/{fmt(a.stats.fuelCap, 0)}</span>
           </span>
         </span>
-        <span class={`top-stat hull ${hullPct < 0.4 ? 'neg' : ''}`} title={t('top.hull')}>
+        <span class={`top-stat hull ${hullPct < 0.4 ? 'neg' : ''} ${hullFlash}`} title={t('top.hull')}>
           <Icon name="shield" />
           <span class="mono">{Math.round(hullPct * 100)}%</span>
         </span>
@@ -255,6 +265,34 @@ function useShortcuts() {
   }, []);
 }
 
+/** Frame rate readout for development (`npm run dev`) or `?fps=1`. */
+function FpsMeter() {
+  const [fps, setFps] = useState(0);
+  useEffect(() => {
+    let frames = 0;
+    let last = performance.now();
+    let id = 0;
+    const loop = (now: number) => {
+      frames++;
+      if (now - last >= 500) {
+        setFps(Math.round((frames * 1000) / (now - last)));
+        frames = 0;
+        last = now;
+      }
+      id = requestAnimationFrame(loop);
+    };
+    id = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(id);
+  }, []);
+  return (
+    <div class="fps-meter" data-testid="fps">
+      {fps} FPS
+    </div>
+  );
+}
+
+const SHOW_FPS = import.meta.env.DEV || new URLSearchParams(window.location.search).get('fps') === '1';
+
 function AppInner() {
   useShortcuts();
   useEffect(() => {
@@ -309,6 +347,7 @@ function AppInner() {
       )}
       {menuOpen.value && <MenuScreen />}
       <Toasts />
+      {SHOW_FPS && <FpsMeter />}
     </>
   );
 }

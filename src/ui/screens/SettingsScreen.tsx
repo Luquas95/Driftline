@@ -83,6 +83,23 @@ export function SettingsScreen() {
           <Panel title={t('settings.display')} icon="settings">
             <div class="stack">
               <div class="field">
+                {t('settings.anim')}
+                <div class="seg">
+                  {(['full', 'reduced', 'off'] as const).map((v) => (
+                    <button
+                      key={v}
+                      type="button"
+                      class={set.animations === v ? 'active' : ''}
+                      onClick={() => updateSettings({ animations: v })}
+                      data-testid={`anim-${v}`}
+                    >
+                      {t(`settings.anim.${v}`)}
+                    </button>
+                  ))}
+                </div>
+                <small class="faint">{t('settings.animHelp')}</small>
+              </div>
+              <div class="field">
                 {t('settings.motion')}
                 <div class="seg">
                   {(['auto', 'reduced', 'full'] as const).map((v) => (
