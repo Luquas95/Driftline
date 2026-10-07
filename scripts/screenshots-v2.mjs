@@ -5,15 +5,29 @@ import { mkdirSync } from 'node:fs';
 mkdirSync('docs/screenshots', { recursive: true });
 const browser = await chromium.launch({
   executablePath: process.env.CHROMIUM_PATH || '/opt/pw-browsers/chromium',
-  args: ['--use-angle=swiftshader', '--use-gl=angle', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist', '--no-sandbox'],
+  args: [
+    '--use-angle=swiftshader',
+    '--use-gl=angle',
+    '--enable-unsafe-swiftshader',
+    '--ignore-gpu-blocklist',
+    '--no-sandbox',
+  ],
 });
 
 async function session(name, viewport, mobile) {
-  const ctx = await browser.newContext({ viewport, deviceScaleFactor: 1, hasTouch: mobile, isMobile: mobile });
+  const ctx = await browser.newContext({
+    viewport,
+    deviceScaleFactor: 1,
+    hasTouch: mobile,
+    isMobile: mobile,
+  });
   const page = await ctx.newPage();
   page.on('pageerror', (e) => console.log('[pageerror]', e.message));
   await page.addInitScript(() =>
-    localStorage.setItem('driftline.settings', JSON.stringify({ tutorial: false, motion: 'full', muted: true })),
+    localStorage.setItem(
+      'driftline.settings',
+      JSON.stringify({ tutorial: false, motion: 'full', muted: true }),
+    ),
   );
   await page.goto('http://localhost:4173/?e2e=1');
   await page.getByTestId('menu-new').click();
