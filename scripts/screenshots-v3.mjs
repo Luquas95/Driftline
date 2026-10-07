@@ -114,7 +114,7 @@ for (const [name, vp, mobile] of [
       '-i',
       src,
       '-vf',
-      'fps=10,scale=720:-1:flags=lanczos,split[a][b];[a]palettegen=max_colors=96[p];[b][p]paletteuse',
+      'fps=6,scale=560:-1:flags=lanczos,split[a][b];[a]palettegen=max_colors=48[p];[b][p]paletteuse',
       'docs/screenshots/v3-demo.gif',
     ],
     { stdio: 'ignore' },
