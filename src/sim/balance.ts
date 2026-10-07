@@ -45,7 +45,7 @@ export function runOne(strategy: Strategy, seed: string, days: number, size = 30
 function startSection(seeds: number, days: number): string[] {
   const L: string[] = ['## Nový začátek: první loď a kapitál', ''];
   L.push(
-    `Kapitál: snadná ${T.startCapital.easy} kr, normální ${T.startCapital.normal} kr, těžká ${T.startCapital.hard} kr. Boti si první loď vybírají podle strategie (nechají si 30–40 % kapitálu na první náklad). Tabulka ukazuje obchodníka, který dostal danou loď (${seeds} semínek × ${days} dní, normální obtížnost, jen nové kusy, které kapitál dovolí).`,
+    `Kapitál: snadná ${T.startCapital.easy} kr, normální ${T.startCapital.normal} kr, těžká ${T.startCapital.hard} kr. Boti si první loď vybírají podle strategie (nechají si 40–50 % kapitálu na první náklad). Tabulka ukazuje obchodníka, který dostal danou loď (${seeds} semínek × ${days} dní, normální obtížnost, jen nové kusy, které kapitál dovolí).`,
     '',
     '| Loď | Cena (kr) | Zbude (kr) | Příjem/den (medián) | Čistá hodnota po 30 dnech | Zničení lodi | Dny do +3000 kr |',
     '|---|---:|---:|---:|---:|---:|---:|',
@@ -201,6 +201,11 @@ function main(): void {
   }
   if (!process.argv.includes('--no-start'))
     lines.push(...startSection(Math.max(4, Math.floor(seeds * 0.6)), Math.min(days, 90)));
+  if (!process.argv.includes('--no-start'))
+    lines.push(
+      '**Závěr k novému začátku.** Žádná první loď není jistá prohra pro všechny strategie: kurýr a kestrel jsou v normální obtížnosti kladné, průzkumník s lodí scout vydělává na všech obtížnostech. Nejdražší lodě (merchant) nechají málo na první náklad, těžařské trupy mají pomalý rozjezd (bot kupuje moduly až z výdělku) a na těžké obtížnosti jsou obchodník a těžař v prvních 90 dnech kolem nuly, což odpovídá záměru „těžká“. Žádná loď není triviálně nejlepší. Do ladění dál patří ceny těžařských trupů.',
+      '',
+    );
   lines.push(`Doba běhu simulace: ${((Date.now() - t0) / 1000).toFixed(0)} s.`, '');
   writeFileSync(out, lines.join('\n'));
   console.log(`Report written to ${out}`);

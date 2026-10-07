@@ -133,12 +133,12 @@ export class Bot {
     const s = this.state;
     if (!s.noShip) return;
     const keep: Record<Strategy, number> = {
-      trader: 0.4,
-      oracle: 0.4,
-      hauler: 0.4,
-      loop: 0.4,
-      miner: 0.3,
-      explorer: 0.3,
+      trader: 0.6,
+      oracle: 0.6,
+      hauler: 0.6,
+      loop: 0.6,
+      miner: 0.5,
+      explorer: 0.5,
     };
     const offers = firstShipOffers(s).filter(
       (o) => previewOffer(s, o).left >= s.credits * keep[this.strategy],
