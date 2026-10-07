@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { advanceChain, makeContract } from '../src/core/contracts';
 import { completeContractsAt, isDeliverable } from '../src/core/contractOps';
 import { buyFuel, wait } from '../src/core/game';
+import { makeEncounter, startCombat } from '../src/core/combat/encounter';
 import { Rng } from '../src/core/rng';
 import { deserializeState, serializeState, SaveError } from '../src/core/save';
 import { newModule, hullSlots } from '../src/core/ship';
@@ -165,5 +166,54 @@ describe('hardening', () => {
       });
     const pod = s.ship.slots.findIndex((m) => m?.defId.startsWith('cargo_'));
     expect(sellModule(s, s.location.stationId!, s.ship.slots[pod]!.uid).ok).toBe(false);
+  });
+});
+
+describe('v2 saves: fights and crew', () => {
+  const armedFight = () => {
+    const s = mk('FZ', 60);
+    const slot = hullSlots(s.ship.hullId).find((x) => !s.ship.slots[x.index] && !x.core)!;
+    s.ship.slots[slot.index] = newModule('kinetic_s', 'C', 'fz1');
+    const enc = makeEncounter(s, 'pirate', s.location.systemId, Rng.fromSeed('fz'), 1)!;
+    s.encounter = enc;
+    startCombat(s, enc);
+    return JSON.parse(serializeState(s));
+  };
+
+  it('keeps a sane mid-fight state and drops broken ones instead of crashing later', () => {
+    const base = armedFight();
+    expect(deserializeState(JSON.stringify(base)).combat).not.toBeNull();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const breakers: ((s: any) => void)[] = [
+      (s) => (s.combat.player.rooms[0].adj = [99]),
+      (s) => (s.combat.player.crew[0].room = 999),
+      (s) => (s.combat.player.weapons[0].kind = 'plasma'),
+      (s) => (s.combat.player.crew[0].race = 'gone'),
+      (s) => (s.combat.player.rooms = []),
+      (s) => (s.combat.rng = [0, 0, 0, 0]),
+      (s) => (s.combat.player.weapons[0].room = -3),
+      (s) => (s.combat.player.hull = NaN),
+      (s) => (s.combat.player.drones = new Array(500).fill({ id: 'd', kind: 'attack', ttl: 1, cd: 1 })),
+    ];
+    for (const b of breakers) {
+      const copy = JSON.parse(JSON.stringify(base));
+      b(copy);
+      const s = deserializeState(JSON.stringify(copy));
+      expect(s.combat).toBeNull();
+    }
+  });
+
+  it('drops an encounter that names removed enemies and repairs odd crew data', () => {
+    const base = armedFight();
+    base.combat = null;
+    base.encounter = { ...base.encounter, enemyDefs: ['gone'] };
+    base.crew[0].skills = {};
+    base.crew[0].officer = 'nobody';
+    base.officersMet = ['nobody'];
+    const s = deserializeState(JSON.stringify(base));
+    expect(s.encounter).toBeNull();
+    expect(Object.values(s.crew[0].skills).every((v) => Number.isFinite(v))).toBe(true);
+    expect(s.crew[0].officer).toBeUndefined();
+    expect(s.officersMet).toEqual([]);
   });
 });

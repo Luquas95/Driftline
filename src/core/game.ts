@@ -2,6 +2,7 @@
  * Public action API of the simulation. Every function mutates the given GameState and returns a Result.
  * UI, bots (balance simulator) and tests all drive the game through this file.
  */
+import { rollEncounter } from './combat/encounter';
 import { GOODS_BY_ID, GOOD_INDEX, isIllegal } from '../content/goods';
 import { MODULES_BY_ID, QUALITY } from '../content/modules';
 import { STATION_TYPES_BY_ID } from '../content/stations';
@@ -216,7 +217,7 @@ export function jump(state: GameState, toId: number): Result<{ report: JumpRepor
     if (state.dead || state.location.stationId !== null) return ok({ report });
   }
   arrive(state, toId);
-  rollEvent(state, 'jump', 0.42, { systemId: toId });
+  if (!rollEncounter(state, toId, plan.days)) rollEvent(state, 'jump', 0.42, { systemId: toId });
   if (!state.pendingEvent) rollEvent(state, 'arrival', 0.12, { systemId: toId });
   void stats;
   return ok({ report });
@@ -493,6 +494,37 @@ export function buySupplies(
   state.credits -= paid;
   state.ship.supplies += n;
   return ok({ units: n, paid });
+}
+
+/** Missiles are ammunition for missile launchers; they live in the cargo hold as the `missiles` good. */
+export function buyMissiles(
+  state: GameState,
+  stationId: string,
+  n: number,
+): Result<{ units: number; paid: number }> {
+  const st = atStation(state, stationId);
+  if (!st) return fail('err.notDocked');
+  if (!Number.isFinite(n)) return fail('err.badAmount');
+  const unit = T.missilePrice * serviceCost(state, stationId);
+  const { dims, stats } = analyze(state);
+  const want = Math.min(Math.floor(n), Math.floor(state.credits / unit));
+  if (want <= 0) return fail('err.noCredits');
+  const quotas = { chilledCells: stats.chilledCells, secureCells: stats.secureCells };
+  const r = addGoods(
+    state.cargo,
+    dims,
+    quotas,
+    'missiles',
+    want,
+    Math.round(want * unit),
+    state.day,
+    undefined,
+    false,
+  );
+  if (r.added <= 0) return fail('err.cargoFull');
+  const paid = Math.round(r.added * unit);
+  state.credits -= paid;
+  return ok({ units: r.added, paid });
 }
 
 export function buyProbes(

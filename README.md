@@ -2,7 +2,7 @@
 
 Klidná obchodně-průzkumná hra o malé lodi v procedurálně generované galaxii. Obchoduješ, plníš zakázky, zkoumáš neznámé systémy, těžíš a vylepšuješ loď. Běží **v prohlížeči** (PC, tablet i mobil), jde nainstalovat jako aplikace a hrát **úplně offline**. Všechno, co vidíš a slyšíš, vzniká v kódu: planety jsou shadery, lodě vektorové siluety, zvuk se syntetizuje za běhu.
 
-> Verze **1 ze 3**: loď, náklad, obchod, průzkum. Verze 2 přidá boj a posádku, verze 3 základnu, frakce, hrozbu a konce. Architektura na to počítá (viz [docs/DECISIONS.md](docs/DECISIONS.md)).
+> Verze **2 ze 3**: loď, náklad, obchod, průzkum (v1) a **boj a posádka** (v2). Verze 3 přidá základnu, frakce, hrozbu a konce. Architektura na to počítá (viz [docs/DECISIONS.md](docs/DECISIONS.md)).
 
 ![Mapa galaxie](docs/screenshots/desktop-map.png)
 
@@ -14,6 +14,16 @@ Klidná obchodně-průzkumná hra o malé lodi v procedurálně generované gala
 |---|---|---|
 | ![Náklad](docs/screenshots/desktop-cargo.png) | ![Mobil mapa](docs/screenshots/mobile-map.png) | ![Mobil stanice](docs/screenshots/mobile-station.png) |
 
+**Boj a posádka (v2)**
+
+| Boj (pozastavený) | Dialog střetu | Posádka |
+|---|---|---|
+| ![Boj](docs/screenshots/desktop-combat.png) | ![Střet](docs/screenshots/desktop-encounter.png) | ![Posádka](docs/screenshots/desktop-crew.png) |
+
+| Mobil: boj | Mobil: výsledek | Mobil: nábor |
+|---|---|---|
+| ![Mobil boj](docs/screenshots/mobile-combat.png) | ![Mobil výsledek](docs/screenshots/mobile-combat-result.png) | ![Mobil nábor](docs/screenshots/mobile-crew-hire.png) |
+
 ## Jak hrát
 
 1. **Obchod:** ve stanici otevři *Obchod*, vyber zboží, které je u vás levné, a kup ho. Sloupec „Nejlepší prodej jinde“ ukazuje nejvyšší známou cenu v okolí (a jak je stará).
@@ -22,7 +32,9 @@ Klidná obchodně-průzkumná hra o malé lodi v procedurálně generované gala
 4. **Zakázky** (nástěnka ve stanici): přeprava, kurýr, cestující, průzkum, dodávka surovin, záchrana. Zálohu dostaneš hned, nesplnění stojí pokutu. Zakázky do stejného cíle dostanou bonus.
 5. **Průzkum a těžba:** skenuj systém, povrch těles a použij sondy. Ložiska těžíš s odstupňovaným rizikem (vyšší intenzita = víc suroviny, víc paliva, víc rizika) a výnos na jednom místě klesá. Průzkumná data prodávej v kartografii (v neprobádaných oblastech platí nejvíc).
 6. **Loď:** moduly spotřebovávají energii z reaktoru, některé zlepšují jen sousední sloty, všechno se opotřebovává. V loděnici vidíš před koupí změnu vlastností zeleně a červeně.
-7. **Smrt:** s pojištěním se probudíš v poslední stanici (ztratíš náklad a nepojištěné moduly). Při nové hře můžeš zapnout **trvalou smrt**.
+7. **Posádka:** obrazovka *Posádka* (`P`). Ve stanici najímáš lidi šesti ras (každá má vlastnosti: dýchání, oheň, opravy, boj zblízka, zásoby, společenský vliv) a rolí (pilot, inženýr, střelec, lékař, obchodník, vědec). Dovednosti rostou používáním. Každý den se platí mzdy a jí se zásoby; nevyplacená mzda a hlad srážejí morálku a lidé pak odcházejí nebo se vzbouří. Počet lidí omezují lůžka (trup + ubikace). Vzácní **důstojníci** mají zvláštní schopnost a vlastní příběh.
+8. **Boj:** po skoku tě může zastavit pirát, lovec odměn, celnice, vrak s obranou nebo zvíře. Dialog nabídne boj, útěk, výkupné, vyjednávání nebo vyhnutí. Boj je **pozastavitelný v reálném čase**: loď je rozdělená na místnosti podle modulů, energii mezi zbraně, štíty, motory a podporu života rozdělujete živě, míříš na konkrétní místnost protivníka, posádka hasí, opravuje a ošetřuje. Zbraně: energetické (silné proti štítům), kinetické (proti trupu), rakety (procházejí štítem, munice z nákladu, koupíš ji ve stanici), iontové (vyřadí systém), dronové hangáry a teleportér pro abordáž. Hrozbu vidíš na mapě u každého systému a na trase. Kořist, rozebrání vraku a zkušenosti posádky jsou odměnou; boj se vyplatí jen někdy, obchodní hra bez boje zůstává plně hratelná (viz [docs/balance.md](docs/balance.md)).
+9. **Smrt:** s pojištěním se probudíš v poslední stanici (ztratíš náklad a nepojištěné moduly). Při nové hře můžeš zapnout **trvalou smrt**.
 
 ### Ovládání
 
@@ -35,9 +47,15 @@ Klidná obchodně-průzkumná hra o malé lodi v procedurálně generované gala
 | Loď, Náklad, Deník, Nastavení | | `L`, `C`, `J`, `O` | spodní navigace |
 | Zpět / zavřít okno | | `Esc` | |
 | Pauza autopilota | | `Mezerník` | tlačítko |
+| Posádka | | `P` | spodní navigace |
+| **Boj:** pauza | | `Mezerník` | tlačítko Pauza |
+| **Boj:** výběr zbraně, cíl | `1`–`9`, klik na nepřátelskou místnost | | klepnutí na zbraň a pak na místnost |
+| **Boj:** přesun posádky | tažení člena do místnosti | | klepnutí na člena a pak na místnost |
+| **Boj:** energie | `Q` `W` `E` `R` `T` (+Shift ubrat) | | tlačítka − / + |
+| **Boj:** útěk, auto | `F`, `A` | | tlačítka |
 | Nápověda | | `?` | tlačítko ? |
 
-Všechna ovládací tlačítka mají na dotykových zařízeních alespoň 44 px.
+Všechna ovládací tlačítka mají na dotykových zařízeních alespoň 44 px (v boji 48 px) a boj se při každém výběru pozastaví (nastavení *Pozastavit boj při každém výběru*). Chvění obrazovky jde vypnout a respektuje `prefers-reduced-motion`.
 
 ## Instalace jako aplikace
 

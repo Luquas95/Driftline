@@ -1,6 +1,7 @@
 import { CHAINS_BY_ID } from '../content/chains';
 import { addGoods, removeGoods, unitsOf, loadableUnits } from './cargo';
 import { advanceChain, isChainFinal } from './contracts';
+import { bedsUsedByCrew } from './crew';
 import { analyze, fail, msg, newUid, ok, stationOf, type Result } from './state';
 import { newModule } from './ship';
 import { Rng } from './rng';
@@ -24,7 +25,8 @@ export function acceptContract(state: GameState, stationId: string, contractId: 
     return fail('err.tooManyContracts');
   const { stats, dims } = analyze(state);
   if (c.kind === 'passenger') {
-    if (stats.beds < activePassengers(state) + (c.passengers ?? 0)) return fail('err.noBeds');
+    if (stats.beds - bedsUsedByCrew(state) < activePassengers(state) + (c.passengers ?? 0))
+      return fail('err.noBeds');
     if (stats.comfort < (c.comfort ?? 1)) return fail('err.noComfort');
   }
   if ((c.kind === 'freight' || c.kind === 'courier') && c.goodId) {

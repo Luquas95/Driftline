@@ -2,6 +2,22 @@
 
 Formát vychází z [Keep a Changelog](https://keepachangelog.com/cs/1.1.0/), verze podle [SemVer](https://semver.org/lang/cs/).
 
+## [0.2.0] – v2: boj a posádka
+
+### Přidáno
+- **Posádka:** 6 originálních ras s vlastnostmi a SVG portréty ze semínka, 6 rolí, dovednosti rostoucí používáním, zdraví, únava a morálka, najímání podle oblasti a reputace, denní mzdy a zásoby, odchod a vzpoura při nízké morálce, ubikace jako měkký limit, 6 důstojníků se schopností a příběhovou událostí.
+- **Boj** v reálném čase s pauzou: interiér lodi z rozložení slotů, živé rozdělení energie, 6 druhů zbraní (energetické, kinetické, rakety s municí v nákladu, iontové, dronové hangáry, teleportér), vrstvené štíty, přehřívání, požáry se šířením, průrazy a kyslík, posádka hasí, opravuje, léčí a bojuje při abordáži, útěk za palivo.
+- **Protivníci:** piráti, lovci odměn, celní hlídky, vraky s obranou a fauna; 3 úrovně hrozby, osobnosti AI (opatrný, agresivní, chamtivý s požadavkem na náklad), auto-boj z téže simulace.
+- Střety po skoku, hrozba na mapě (systém i trasa), dialog (bojovat, utéct, zaplatit, vyjednávat, vyhnout se), kořist, rozebrání vraku, reputace.
+- Služba *Rakety* ve stanici, nastavení boje (auto-boj, chvění, pauza při výběru).
+- Události s podmínkami (role, rasa, dovednost, důstojník) a výsledky (zranění, zkušenost, morálka, odchod, nový člen, spuštění boje); 15 nových událostí.
+- Vizuál boje: místnosti, štíty jako bubliny, projektily s glow, výbuchy, kouř a jiskry, chvění; procedurální zvuk.
+- Balanční simulátor rozšířen o souboje AI proti AI, kořist proti nákladům a obchodní hru bez boje.
+
+### Změněno
+- `SAVE_VERSION` 2. Uložené hry z v1 se při načtení migrují (výchozí posádka podle trupu, žádné zbraně).
+- Zásoby na den se počítají z reálné posádky, zničení lodi se týká i posádky.
+
 ## [1.0.0] – v1: loď, náklad, obchod, průzkum
 
 ### Přidáno

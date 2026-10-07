@@ -58,6 +58,8 @@ export const GOODS: GoodDef[] = [
   g('survivors', 'special', 0, 1, 0.3),
   g('black_box', 'special', 0, 1, 0.05),
   g('crates', 'special', 0, 8, 0.4),
+  // v2 (append only: goods order is part of the save format). Ammunition for missile launchers.
+  g('missiles', 'special', 0, 10, 0.3, ['hazardous']),
 ];
 
 export const GOODS_BY_ID: Record<string, GoodDef> = Object.fromEntries(GOODS.map((x) => [x.id, x]));

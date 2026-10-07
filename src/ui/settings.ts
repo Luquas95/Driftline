@@ -9,6 +9,20 @@ export interface Settings {
   contrast: 'normal' | 'high';
   tutorial: boolean;
   autosave: boolean;
+  /** v2: screen shake in combat (also off with reduced motion). */
+  shake: boolean;
+  /** v2: weak enemies are fought by the AI automatically. */
+  autoCombat: boolean;
+  /** v2: pause the fight on every selection (on by default for touch screens). */
+  pauseOnSelect: boolean;
+}
+
+function coarse(): boolean {
+  try {
+    return window.matchMedia('(pointer: coarse)').matches;
+  } catch {
+    return false;
+  }
 }
 
 const DEFAULTS: Settings = {
@@ -20,6 +34,9 @@ const DEFAULTS: Settings = {
   contrast: 'normal',
   tutorial: true,
   autosave: true,
+  shake: true,
+  autoCombat: false,
+  pauseOnSelect: coarse(),
 };
 const KEY = 'driftline.settings';
 

@@ -1,4 +1,5 @@
 import type { Cond, Effect, EventChoice, EventDef, EventTrigger } from '../core/eventTypes';
+import type { OfficerId, RaceId, Role, Skill } from './crew';
 import type { GoodTag, ModuleKind, Quality, Region } from '../core/types';
 
 /**
@@ -73,6 +74,7 @@ const probes = (n: number): Effect => ({ t: 'probes', n });
 const regionIn = (...r: Region[]): Cond => ({ t: 'region', in: r });
 const hasMod = (kind: ModuleKind): Cond => ({ t: 'hasModule', kind });
 const tag = (t: GoodTag): Cond => ({ t: 'cargoTag', tag: t });
+const dangerMin = (n: number): Cond => ({ t: 'dangerMin', n });
 
 /* ------------------------------- jump -------------------------------- */
 
@@ -900,6 +902,264 @@ ev(
 ev('quiet_space', 'jump', 12, [], 'Klidný skok', 'Skok proběhne bez komplikací. Máš čas přemýšlet.', [
   ch('Pokračovat', [out('Další etapa je za tebou.', [])]),
 ]);
+
+/* ------------------------------- crew (v2) ------------------------------- */
+
+const hurt = (n: number, all = false): Effect => ({ t: 'crewHurt', n, all });
+const xp = (skill: Skill, n: number): Effect => ({ t: 'crewXp', skill, n });
+const morale = (n: number): Effect => ({ t: 'crewMorale', n });
+const leave = (role?: Role): Effect => ({ t: 'crewLeave', role });
+const join = (level: number, role?: Role, race?: RaceId): Effect => ({ t: 'crewJoin', level, role, race });
+const fight = (enemy: string, tier: number): Effect => ({ t: 'fight', enemy, tier });
+const hasRole = (role: Role): Cond => ({ t: 'crewRole', role });
+const hasRace = (race: RaceId): Cond => ({ t: 'crewRace', race });
+const skillMin = (skill: Skill, min: number): Cond => ({ t: 'crewSkill', skill, min });
+const hasOfficer = (id: OfficerId): Cond => ({ t: 'officer', id });
+const never: Cond = { t: 'flag', key: '__never__' };
+
+// triggered directly by the crew model (morale), never rolled
+ev(
+  'mutiny',
+  'jump',
+  1,
+  [never],
+  'Vzpoura na palubě',
+  'Hladová a neplacená posádka se shromáždila v jídelně. Chtějí slyšet, jak je to s výplatami, a nevypadají trpělivě.',
+  [
+    ch('Vyplatit dlužné mzdy', [
+      out('Výplata uklidní hlavy. Morálka se zvedá, kasa řídne.', [cr(-120), morale(25)], 6),
+      out('Nemáš dost. Dva lidé se rozhodnou odejít.', [leave(), leave(), morale(8)], 3),
+    ]),
+    ch('Zasáhnout silou', [
+      out('Vůdce vzpoury se vzdá, ostatní ztichnou.', [morale(-10), hurt(15)], 4),
+      out('Dojde k potyčce. Několik zraněných.', [hurt(30, true), morale(-15), leave()], 4),
+    ]),
+    ch(
+      'Brom Tark zavede pořádek',
+      [out('Starý předák zařve jednou a všichni se vrátí k práci.', [morale(22)])],
+      [hasOfficer('taskmaster')],
+    ),
+    ch(
+      'Vyjednávat',
+      [
+        out('Obchodník najde slova, která zaberou.', [morale(18)], 7),
+        out('Nikdo neposlouchá, ale nevybuchne to.', [morale(5)], 3),
+      ],
+      [hasRole('trader')],
+    ),
+  ],
+);
+
+ev(
+  'officer_haggler',
+  'dock',
+  1,
+  [never],
+  'Ilvaria Dun nastupuje',
+  'Ilvaria Dun, bývalá makléřka z Tessari, přistoupí k přepážce a řekne: „Znám ceny na stovce stanic. Ukážu ti, jak z nich vytáhnout víc.“',
+  [ch('Uvítat ji na palubě', [out('Obchody půjdou lépe: skluz cen ti bude hrát do karet.', [morale(5)])])],
+);
+ev(
+  'officer_ghost',
+  'dock',
+  1,
+  [never],
+  'Kesh Oru nastupuje',
+  'Kesh Oru je pilot, o kterém se říká, že se dokáže ztratit i uprostřed bitvy. Na každou cestu zvládne jeden únik bez spotřeby paliva.',
+  [ch('Přijmout', [out('Kesh si prohlédne kokpit a kývne.', [morale(5)])])],
+);
+ev(
+  'officer_taskmaster',
+  'dock',
+  1,
+  [never],
+  'Brom Tark nastupuje',
+  'Brom Tark je starý předák z doků. Pod jeho dohledem posádka pracuje tvrději a stěžuje si méně.',
+  [ch('Přijmout', [out('Brom si zkontroluje nářadí a vyhlásí nový rozpis služeb.', [morale(8)])])],
+);
+ev(
+  'officer_sharpshooter',
+  'dock',
+  1,
+  [never],
+  'Zhe Nuvai nastupuje',
+  'Zhe Nuvai z Nyxulů míří třemi očima a nemine. Zbraně pod jeho rukama nabíjejí rychleji.',
+  [ch('Přijmout', [out('Zhe si pohladí hlaveň děla jako starého přítele.', [morale(5)])])],
+);
+ev(
+  'officer_mender',
+  'dock',
+  1,
+  [never],
+  'Orsa Vell nastupuje',
+  'Orsa Vell je lékařka z rodu Veth, která ošetří i to, co ostatní zavrhnou. Zranění se u ní hojí rychleji.',
+  [ch('Přijmout', [out('Orsa rozloží lékárničku a hned začne třídit zásoby.', [morale(5)])])],
+);
+ev(
+  'officer_navigator',
+  'dock',
+  1,
+  [never],
+  'Teq Ahlun nastupuje',
+  'Teq Ahlun čte hvězdné mapy jako jiní čtou jídelníček. Na dlouhých skocích ušetří palivo.',
+  [ch('Přijmout', [out('Teq rozloží mapy a okamžitě opraví tvou trasu.', [morale(5)])])],
+);
+
+ev(
+  'crew_brawl',
+  'jump',
+  4,
+  [{ t: 'crewMoraleBelow', n: 40 }],
+  'Rvačka v jídelně',
+  'Mezi dvěma členy posádky se strhla hádka kvůli porcím. Než se nadáš, létají talíře.',
+  [
+    ch('Rozdělit je', [
+      out('Rozhodneš to rázně a oba si odnesou jen modřiny.', [hurt(8), morale(-2)], 6),
+      out('Dostaneš to taky.', [hurt(18), morale(-4)], 2),
+    ]),
+    ch('Nechat to být', [
+      out('Vybijí si to a utichnou.', [morale(-6), hurt(12)], 5),
+      out('Jeden z nich odejde.', [leave()], 2),
+    ]),
+    ch('Poslat obě na přídavnou službu', [out('Potrestaní, ale srovnaní.', [morale(-3)])]),
+  ],
+);
+
+ev(
+  'crew_medic_lesson',
+  'jump',
+  3,
+  [hasRole('medic')],
+  'Nácvik první pomoci',
+  'Lékař navrhne, že by posádku naučil pár fíglů. Zabere to den, ale lidé se budou umět postarat o sebe i bez něj.',
+  [
+    ch('Souhlasit', [
+      out('Posádka se naučí obvazovat a lékař získá zkušenosti učením.', [
+        days(1),
+        xp('medicine', 0.3),
+        morale(4),
+      ]),
+    ]),
+    ch('Odložit', [out('Možná příště.', [])]),
+  ],
+);
+
+ev(
+  'crew_gunnery_drill',
+  'jump',
+  3,
+  [hasRole('gunner')],
+  'Střelecké cvičení',
+  'Střelec chce vyzkoušet děla na odpadky z poslední kolonie. Spotřebuje se trochu energie, ale trefí se líp.',
+  [
+    ch('Povolit cvičení', [
+      out('Odpadky padnou do jednoho. Střelec je spokojený.', [xp('gunnery', 0.35), wear(2)], 6),
+      out('Cvičení dopadne dobře, jen přehřeje zbraně.', [xp('gunnery', 0.2), wear(6)], 3),
+    ]),
+    ch('Šetřit zdroje', [out('Střelec si vzdychne.', [morale(-2)])]),
+  ],
+);
+
+ev(
+  'crew_sylk_shortcut',
+  'jump',
+  3,
+  [hasRace('sylk'), dangerMin(0.2)],
+  'Zkratka od Sylků',
+  'Sylk u kormidla navrhne obejít nebezpečný pás: „Znám tu cestu z doby, kdy jsem lítal pro kurýry.“',
+  [
+    ch('Zkusit zkratku', [
+      out('Zkratka vyjde a ušetříš čas.', [days(-0.5), xp('piloting', 0.25)], 5),
+      out('Na konci čeká patrola pirátů.', [fight('scrapper', 1)], 3),
+    ]),
+    ch('Držet se trasy', [out('Bezpečně, ale pomalu.', [])]),
+  ],
+);
+
+ev(
+  'crew_trader_tip',
+  'arrival',
+  4,
+  [hasRole('trader')],
+  'Tip od obchodníka',
+  'Obchodník na palubě zaslechl v přístavu pomluvu o místním přebytku. Nejspíš má pravdu.',
+  [
+    ch('Poslechnout', [
+      out('Tip se vyplatí a trochu si přivyděláš.', [cr(90), xp('trade', 0.3)], 5),
+      out('Byla to jen drbna.', [xp('trade', 0.1)], 3),
+    ]),
+    ch('Ignorovat', [out('Přeci jen nevíš, komu věřit.', [])]),
+  ],
+);
+
+ev(
+  'crew_science_scan',
+  'jump',
+  3,
+  [hasRole('scientist')],
+  'Anomálie na senzorech',
+  'Vědec zbledne: senzory zachytily slabý signál z blízkého prachového oblaku. Chce ho prozkoumat.',
+  [
+    ch('Prozkoumat', [
+      out('Našli jste starý datový maják. Prodáš data.', [discover(220), xp('science', 0.4)], 5),
+      out('Signál byl past mikrometeorů.', [hull(-14), xp('science', 0.15)], 3),
+    ]),
+    ch('Letět dál', [out('Vědec je zklamaný.', [morale(-3)])]),
+  ],
+);
+
+ev(
+  'crew_stowaway',
+  'dock',
+  2,
+  [{ t: 'dayMin', n: 6 }],
+  'Černý pasažér',
+  'V nákladovém prostoru najdeš ukrytého mladíka. Tvrdí, že umí opravovat motory a že už nemá kam jít.',
+  [
+    ch('Vzít do posádky', [
+      out('Chlapec se vyklube jako šikovný mechanik.', [join(1.8, 'engineer'), morale(2)], 5),
+      out('Moc toho neumí, ale je pilný.', [join(0.8), morale(1)], 3),
+    ]),
+    ch('Vyhodit', [out('Odejde bez řečí.', [morale(-3)])]),
+  ],
+);
+
+ev(
+  'pirate_ambush',
+  'jump',
+  5,
+  [dangerMin(0.3)],
+  'Přepadení',
+  'Z prachového oblaku vyrazí malá loď bez označení a míří přímo na tebe. Rádio mlčí.',
+  [
+    ch('Přijmout boj', [out('Piráti zahájí palbu.', [fight('scrapper', 1)])]),
+    ch(
+      'Pilot převezme řízení',
+      [out('Zkušený pilot ti vytočí loď z palebné linie a unikneš bez škrábnutí.', [xp('piloting', 0.3)])],
+      [skillMin('piloting', 4)],
+    ),
+    ch('Zkusit uniknout', [
+      out('Pilot loď vytočí a odskočíš.', [fuel(-3)], 5),
+      out('Nestíháš, piráti jsou rychlejší.', [fight('scrapper', 1)], 4),
+    ]),
+  ],
+);
+
+ev(
+  'derelict_turret',
+  'jump',
+  3,
+  [dangerMin(0.2)],
+  'Vrak se zbraněmi',
+  'Skenery ukazují vrak zdánlivě bez života. V jeho trupu ale pořád svítí nabíjecí kontrolky střílen.',
+  [
+    ch('Přiblížit se', [
+      out('Střílny ožijí. Čeká tě boj.', [fight('autoturret', 1)], 6),
+      out('Systémy jsou mrtvé. Vybereš z vraku zásoby.', [sup(4), goods('spare_parts', 3)], 3),
+    ]),
+    ch('Vyhnout se', [out('Obletíš ho ve slušné vzdálenosti.', [])]),
+  ],
+);
 
 export const EVENTS_BY_ID: Record<string, EventDef> = Object.fromEntries(EVENTS.map((e) => [e.id, e]));
 export const ANOMALY_EVENT_IDS: string[] = EVENTS.filter((e) => e.trigger === 'anomaly').map((e) => e.id);

@@ -8,7 +8,7 @@ import { sfx } from '../audio/audio';
 import { settings } from './settings';
 import type { GameState } from '../core/types';
 
-export type ScreenId = 'map' | 'system' | 'station' | 'ship' | 'cargo' | 'journal' | 'settings';
+export type ScreenId = 'map' | 'system' | 'station' | 'ship' | 'cargo' | 'crew' | 'journal' | 'settings';
 
 export const game = signal<GameState | null>(null);
 /** Bumped after every mutation; components read it to re-render (GameState is mutated in place). */
@@ -65,13 +65,33 @@ export function afterMutation(s: GameState): void {
     }
   }
   msgSeen = s.messages.length;
-  if (settings.value.autosave && !s.dead) {
-    clearTimeout(saveTimer);
-    saveTimer = window.setTimeout(() => void saves.put('autosave', s, t('save.autosave')), 1500);
-  }
+  scheduleAutosave(s);
   if (s.dead) {
     void saves.remove('autosave');
   }
+}
+
+/** Debounced autosave. Also used by the combat loop, which changes state outside `act`. */
+export function scheduleAutosave(s: GameState, delay = 1500): void {
+  if (settings.value.autosave && !s.dead) {
+    clearTimeout(saveTimer);
+    saveTimer = window.setTimeout(() => void saves.put('autosave', s, t('save.autosave')), delay);
+  }
+}
+
+/** Write the autosave right now (tab hidden or closing): the debounce timer would not survive. */
+export function flushAutosave(): void {
+  const s = game.value;
+  if (!s || s.dead || !settings.value.autosave || menuOpen.value) return;
+  clearTimeout(saveTimer);
+  void saves.put('autosave', s, t('save.autosave'));
+}
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('pagehide', flushAutosave);
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') flushAutosave();
+  });
 }
 
 export function describeMessage(key: string, params?: Record<string, string | number>): string {
@@ -105,6 +125,7 @@ export function startNewGame(opts: NewGameOptions): void {
 }
 
 export function loadGame(s: GameState): void {
+  if (s.combat) s.combat.paused = true;
   game.value = s;
   msgSeen = s.messages.length;
   menuOpen.value = false;

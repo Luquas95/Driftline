@@ -7,6 +7,11 @@ export interface DL {
   freeze: (t?: number) => void;
   neighborWithStation: () => number | null;
   delta: (id: number) => { dx: number; dy: number };
+  loadout: (defs: string[], missiles?: number) => void;
+  encounter: (enemy: string, tier?: number) => void;
+  fightStep: (seconds: number) => void;
+  fightAuto: () => void;
+  roomPos: (side: 'player' | 'enemy', ship: number, room: number) => { x: number; y: number } | null;
 }
 
 declare global {

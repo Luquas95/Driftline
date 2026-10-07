@@ -4,6 +4,8 @@ import { isSpoiled } from './cargo';
 import { GOODS_BY_ID } from '../content/goods';
 import { analyze, damageHull, galaxyOf, msg, premiumPerDay } from './state';
 import { T } from './tuning';
+import { crewDaily } from './crew';
+import { Rng } from './rng';
 import type { Galaxy, GameState } from './types';
 
 /**
@@ -16,6 +18,7 @@ export function passTime(state: GameState, days: number): void {
   state.day += days;
   state.stats.daysPlayed += days;
   state.ship.supplies = Math.max(0, state.ship.supplies - stats.suppliesPerDay * days);
+  crewDaily(state, days, Rng.fromSeed(`${state.seed}:crew:${Math.floor(state.day * 4)}`));
   if (state.ship.supplies <= 0) {
     msg(state, 'msg.starving', undefined, 'bad');
     if (damageHull(state, 3 * days, true)) return;

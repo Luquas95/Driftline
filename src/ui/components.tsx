@@ -1,4 +1,4 @@
-import type { ComponentChildren, JSX } from 'preact';
+import { Component, type ComponentChildren, type JSX } from 'preact';
 import { useEffect, useRef } from 'preact/hooks';
 import { Icon } from './Icon';
 import { t } from '../i18n';
@@ -288,4 +288,43 @@ export function QualityBadge({ q }: { q: string }) {
 
 export function Empty({ children }: { children: ComponentChildren }) {
   return <p class="empty">{children}</p>;
+}
+
+/** Last line of defence: a render error shows a way out instead of a blank page. */
+export class ErrorBoundary extends Component<
+  { children: ComponentChildren; onReset?: () => void },
+  { err: boolean }
+> {
+  state = { err: false };
+  componentDidCatch(error: unknown): void {
+    console.error('ui error', error);
+    this.setState({ err: true });
+  }
+  render() {
+    if (!this.state.err) return this.props.children;
+    return (
+      <div class="modal-backdrop">
+        <div class="modal" role="alertdialog" data-testid="error-boundary">
+          <header class="modal-head">
+            <h2>{t('err.crashTitle')}</h2>
+          </header>
+          <div class="modal-body">
+            <p>{t('err.crashText')}</p>
+          </div>
+          <footer class="modal-foot">
+            <button
+              type="button"
+              class="btn primary"
+              onClick={() => {
+                this.props.onReset?.();
+                this.setState({ err: false });
+              }}
+            >
+              {t('err.crashBack')}
+            </button>
+          </footer>
+        </div>
+      </div>
+    );
+  }
 }

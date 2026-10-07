@@ -2,7 +2,22 @@ import { effect } from '@preact/signals';
 import { settings } from '../ui/settings';
 
 /** Fully procedural audio (Web Audio): a slow generative ambient pad plus synthesized UI effects. No sound files. */
-type Sfx = 'click' | 'buy' | 'sell' | 'jump' | 'error' | 'alert' | 'success' | 'scan' | 'mine' | 'dock';
+type Sfx =
+  | 'click'
+  | 'buy'
+  | 'sell'
+  | 'jump'
+  | 'error'
+  | 'alert'
+  | 'success'
+  | 'scan'
+  | 'mine'
+  | 'dock'
+  | 'laser'
+  | 'laserFar'
+  | 'shield'
+  | 'impact'
+  | 'boom';
 
 let ctx: AudioContext | null = null;
 let master: GainNode | null = null;
@@ -173,6 +188,24 @@ export function sfx(name: Sfx): void {
     case 'mine':
       noise(0, 0.35, 0.18, 260, d);
       tone(110, 0, 0.3, 0.1, 'sawtooth', d);
+      break;
+    case 'laser':
+      tone(1500, 0, 0.16, 0.05, 'sawtooth', d, 300);
+      break;
+    case 'laserFar':
+      tone(900, 0, 0.14, 0.03, 'sawtooth', d, 200);
+      break;
+    case 'shield':
+      tone(520, 0, 0.18, 0.05, 'sine', d, 880);
+      noise(0, 0.12, 0.05, 2400, d);
+      break;
+    case 'impact':
+      noise(0, 0.22, 0.2, 380, d);
+      tone(90, 0, 0.2, 0.12, 'square', d, 50);
+      break;
+    case 'boom':
+      noise(0, 0.9, 0.32, 160, d);
+      tone(70, 0, 0.8, 0.2, 'sawtooth', d, 28);
       break;
     case 'dock':
       tone(260, 0, 0.5, 0.1, 'sine', d, 180);

@@ -69,6 +69,9 @@ export interface ShipStats {
   jumpDraw: number;
   mineDraw: number;
   scanDraw: number;
+  /** v2: combat draw of all weapons and the number of weapon modules. */
+  weaponDraw: number;
+  weaponCount: number;
   powerFree: number;
   /** Power left while performing each activity. */
   powerJump: number;
@@ -143,6 +146,8 @@ export function computeShipStats(ship: Ship, cargoMass = 0, overloadCells = 0): 
     jumpDraw: 0,
     mineDraw: 0,
     scanDraw: 0,
+    weaponDraw: 0,
+    weaponCount: 0,
     powerFree: 0,
     powerJump: 0,
     powerMine: 0,
@@ -229,6 +234,15 @@ export function computeShipStats(ship: Ship, cargoMass = 0, overloadCells = 0): 
       case 'laser':
         s.laserYield += eff;
         s.mineDraw += draw;
+        break;
+      case 'energy':
+      case 'kinetic':
+      case 'missile':
+      case 'ion':
+      case 'drones':
+      case 'teleporter':
+        s.weaponDraw += draw;
+        s.weaponCount++;
         break;
       case 'scoop':
         s.scoopYield += eff;

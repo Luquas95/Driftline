@@ -2,6 +2,14 @@ import { stage } from '../render/instance';
 import { galaxyOf } from '../core/state';
 import { game, rev, screen, selectedSystem, toasts } from './store';
 import { updateSettings } from './settings';
+import { combatRoomPos } from './screens/CombatScreen';
+import { DT, drainEvents, stepCombat } from '../core/combat/sim';
+import { combatRev } from './combatCtl';
+import { spawnEncounter } from '../core/combat/encounter';
+import { MODULES_BY_ID } from '../content/modules';
+import { hullSlots, moduleFits, newModule } from '../core/ship';
+import { addGoods } from '../core/cargo';
+import { analyze, newUid } from '../core/state';
 
 /**
  * Test hooks, enabled only with `?e2e=1`. They never change game rules: they let Playwright select a system
@@ -33,6 +41,49 @@ export function installE2eHooks(): void {
       const b = g.systems[id];
       return { dx: b.x - a.x, dy: b.y - a.y };
     },
+    /** Fit the given modules (def ids) into free slots; optionally stock missiles. */
+    loadout: (defs: string[], missiles = 0) => {
+      const s = game.value!;
+      const slots = hullSlots(s.ship.hullId);
+      for (const id of defs) {
+        const def = MODULES_BY_ID[id];
+        const slot = slots.find((sl) => !s.ship.slots[sl.index] && moduleFits(sl, def));
+        if (slot) s.ship.slots[slot.index] = newModule(id, 'C', newUid(s, 'm'));
+      }
+      if (missiles > 0) {
+        const { dims, stats } = analyze(s);
+        addGoods(
+          s.cargo,
+          dims,
+          { chilledCells: stats.chilledCells, secureCells: stats.secureCells },
+          'missiles',
+          missiles,
+          0,
+          s.day,
+        );
+      }
+      rev.value++;
+    },
+    /** Put an encounter on screen (the player still chooses what to do). */
+    encounter: (enemy: string, tier = 1) => {
+      const s = game.value!;
+      s.location.stationId = null;
+      spawnEncounter(s, enemy, tier);
+      rev.value++;
+    },
+    /** Advance the running fight by `seconds` of game time without waiting for real time. */
+    fightStep: (seconds: number) => {
+      const c = game.value?.combat;
+      if (!c) return;
+      for (let t = 0; t < seconds && !c.outcome && c.demand === null; t += DT) stepCombat(c, DT);
+      drainEvents(c);
+      combatRev.value++;
+    },
+    fightAuto: () => {
+      const c = game.value?.combat;
+      if (c) c.auto = true;
+    },
+    roomPos: (side: 'player' | 'enemy', ship: number, room: number) => combatRoomPos(side, ship, room),
     toasts: () => toasts.value.map((x) => x.text),
     /** Let a headless bot play for a while (used to produce realistic README screenshots). */
     autoplay: async (strategy: 'trader' | 'explorer' | 'miner' | 'hauler', days: number) => {

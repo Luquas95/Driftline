@@ -96,7 +96,11 @@ function refit(state: GameState, slots: (ModuleInstance | null)[]): string | nul
   if (!autoArrange(copy, gridDims(stats))) return 'err.cargoWontFit';
   const pax = state.contracts.filter((c) => c.state === 'active' && c.kind === 'passenger');
   const need = pax.reduce((s, c) => s + (c.passengers ?? 0), 0);
-  if (need > stats.beds || pax.some((c) => (c.comfort ?? 1) > stats.comfort)) return 'err.passengersAboard';
+  if (
+    need > stats.beds - Math.max(0, state.crew.length - (HULLS_BY_ID[state.ship.hullId]?.crew ?? 0)) ||
+    pax.some((c) => (c.comfort ?? 1) > stats.comfort)
+  )
+    return 'err.passengersAboard';
   for (let i = 0; i < state.cargo.length; i++) Object.assign(state.cargo[i], { x: copy[i].x, y: copy[i].y });
   return null;
 }

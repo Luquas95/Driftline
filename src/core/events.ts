@@ -3,6 +3,8 @@ import { GOODS_BY_ID } from '../content/goods';
 import { MODULES } from '../content/modules';
 import { addGoods, removeGoods } from './cargo';
 import type { Cond, Effect, EventDef, EventTrigger } from './eventTypes';
+import { spawnEncounter } from './combat/encounter';
+import { crewCapacity, crewHasOfficer, gainXp, makeCrew } from './crew';
 import { dist } from './galaxy';
 import type { Rng } from './rng';
 import { newModule, slotsOfKind, wearModule } from './ship';
@@ -79,6 +81,16 @@ export function evalCond(state: GameState, c: Cond): boolean {
       return state.cargo.reduce((s, i) => s + i.qty * GOODS_BY_ID[i.goodId].basePrice, 0) >= c.n;
     case 'dayMin':
       return state.day >= c.n;
+    case 'crewRole':
+      return state.crew.some((m) => m.role === c.role);
+    case 'crewRace':
+      return state.crew.some((m) => m.race === c.race);
+    case 'crewSkill':
+      return state.crew.some((m) => m.skills[c.skill] >= c.min);
+    case 'crewMoraleBelow':
+      return state.crew.some((m) => m.morale < c.n);
+    case 'officer':
+      return crewHasOfficer(state, c.id);
     case 'not':
       return !evalCond(state, c.c);
     case 'ext':
@@ -250,6 +262,44 @@ export function applyEffect(state: GameState, e: Effect, ctx?: EventContext): vo
       state.stats.discoveries++;
       break;
     }
+    case 'crewHurt': {
+      const targets = e.all
+        ? state.crew
+        : state.crew.length
+          ? [state.crew[withRng(state, (r) => r.int(0, state.crew.length - 1))]]
+          : [];
+      for (const m of targets) m.hp = Math.max(1, m.hp - e.n);
+      break;
+    }
+    case 'crewXp': {
+      const best = [...state.crew].sort((a, b) => b.skills[e.skill] - a.skills[e.skill])[0];
+      if (best) gainXp(best, e.skill, e.n);
+      break;
+    }
+    case 'crewMorale':
+      for (const m of state.crew) m.morale = Math.max(0, Math.min(100, m.morale + e.n));
+      break;
+    case 'crewLeave': {
+      const pool = state.crew.filter((m) => !m.officer && (!e.role || m.role === e.role));
+      if (pool.length && state.crew.length > 1) {
+        const m = pool[withRng(state, (r) => r.int(0, pool.length - 1))];
+        state.crew = state.crew.filter((x) => x !== m);
+        msg(state, 'msg.crewLeft', { name: m.name }, 'bad');
+      }
+      break;
+    }
+    case 'crewJoin': {
+      if (state.crew.length >= crewCapacity(state) + 3) break;
+      const c = withRng(state, (rng) =>
+        makeCrew(rng, newUid(state, 'w'), { role: e.role, race: e.race, level: e.level, day: state.day }),
+      );
+      state.crew.push(c);
+      msg(state, 'msg.hired', { name: c.name }, 'good');
+      break;
+    }
+    case 'fight':
+      spawnEncounter(state, e.enemy, e.tier);
+      break;
     case 'death':
       destroyShip(state);
       break;

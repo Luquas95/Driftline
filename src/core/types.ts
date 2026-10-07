@@ -45,7 +45,13 @@ export type ModuleKind =
   | 'amplifier'
   | 'radiator'
   | 'quarters'
-  | 'scoop';
+  | 'scoop'
+  | 'energy'
+  | 'kinetic'
+  | 'missile'
+  | 'ion'
+  | 'drones'
+  | 'teleporter';
 
 export const CORE_KINDS: ModuleKind[] = ['reactor', 'engine', 'jump', 'life', 'sensors'];
 export type PowerMode = 'always' | 'active';
@@ -287,6 +293,8 @@ export interface StationDyn {
   boardEpoch: number;
   rep: number;
   shop: { hulls: string[]; modules: ShopItem[]; epoch: number };
+  /** v2: crew available for hire (regenerated weekly). */
+  recruits?: { epoch: number; list: Recruit[] };
 }
 
 export interface BodyDyn {
@@ -335,6 +343,10 @@ export interface Stats {
   daysPlayed: number;
   accidents: number;
   fines: number;
+  /** v2 */
+  fights: number;
+  victories: number;
+  fled: number;
 }
 
 export interface PendingEvent {
@@ -378,6 +390,37 @@ export interface GameState {
   tutorial: { step: number; done: boolean };
   /** Systems where the player found hints (unlocked via events). */
   hints: string[];
+  /** v2 */
+  crew: CrewMember[];
+  wagesDue: number;
+  combat: import('./combat/types').CombatState | null;
+  encounter: import('./combat/types').Encounter | null;
+  /** Officer ids already met (each appears once per game). */
+  officersMet: string[];
 }
 
-export const SAVE_VERSION = 1;
+export const SAVE_VERSION = 2;
+
+/* ------------------------------ v2: crew & combat ------------------------------ */
+
+export interface CrewMember {
+  id: string;
+  name: string;
+  race: import('../content/crew').RaceId;
+  role: import('../content/crew').Role;
+  /** Skill levels 0..10 (fractional: experience accumulates). */
+  skills: Record<import('../content/crew').Skill, number>;
+  hp: number;
+  fatigue: number;
+  morale: number;
+  wage: number;
+  officer?: import('../content/crew').OfficerId;
+  /** Portrait seed. */
+  look: number;
+  /** Day hired (for tenure and stories). */
+  hired: number;
+}
+
+export interface Recruit extends Omit<CrewMember, 'hp' | 'fatigue' | 'morale'> {
+  fee: number;
+}

@@ -19,6 +19,7 @@ export const T = {
   fuelPrice: 8,
   suppliesPrice: 6,
   probePrice: 55,
+  missilePrice: 26,
   /** Sublight: days per AU at mass/thrust = 1 */
   sublightK: 0.08,
   jumpOverhead: 0.35,
@@ -35,6 +36,8 @@ export const T = {
   fineMult: 1.6,
   survey: { sys: 380, body: 160 },
   firstDiscoveryBonus: 1.8,
+  /** v2: encounter chance per jump before modifiers. */
+  encounter: { base: 0.055 },
 };
 
 export function priceFactor(difficulty: 'easy' | 'normal' | 'hard'): number {
