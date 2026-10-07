@@ -231,6 +231,7 @@ p {
 .topbar,
 .nav,
 .screen:not(.overlay),
+.modal-backdrop,
 .hint-card {
   pointer-events: auto;
 }
