@@ -5,13 +5,24 @@ import { cargoMass, daysLeft, fitsAt, freshness, quotaUse, totalRows, type GridD
 import { cargoAutoArrange, cargoMove, cargoRotate, jettison } from '../../core/game';
 import { galaxyOf } from '../../core/state';
 import { sfx } from '../../audio/audio';
+import { createBackdropScene } from '../../render/backdrop';
+import { useScene } from '../useScene';
 import { fmt, money, t } from '../../i18n';
 import { Bar, Btn, Empty, Panel, Stat, Tag } from '../components';
 import { Icon } from '../Icon';
 import { act, analysis, game, report, rev } from '../store';
 import type { CargoItem } from '../../core/types';
 
-const HUE: Record<string, number> = { raw: 35, food: 100, industry: 210, tech: 265, medical: 340, luxury: 48, illegal: 0, special: 175 };
+const HUE: Record<string, number> = {
+  raw: 35,
+  food: 100,
+  industry: 210,
+  tech: 265,
+  medical: 340,
+  luxury: 48,
+  illegal: 0,
+  special: 175,
+};
 const colorFor = (goodId: string, contract: boolean) => {
   const cat = GOODS_BY_ID[goodId]?.category ?? 'raw';
   const l = cat === 'illegal' ? 48 : 68;
@@ -20,13 +31,23 @@ const colorFor = (goodId: string, contract: boolean) => {
 
 export function CargoScreen() {
   void rev.value;
+  useScene(() => createBackdropScene({ tint: 3 }), []);
   const s = game.value!;
   const a = analysis.value!;
   const dims: GridDims = a.dims;
   const wrapRef = useRef<HTMLDivElement>(null);
   const [cell, setCell] = useState(52);
   const [selected, setSelected] = useState<string | null>(null);
-  const [drag, setDrag] = useState<{ uid: string; dx: number; dy: number; ox: number; oy: number; valid: boolean; gx: number; gy: number } | null>(null);
+  const [drag, setDrag] = useState<{
+    uid: string;
+    dx: number;
+    dy: number;
+    ox: number;
+    oy: number;
+    valid: boolean;
+    gx: number;
+    gy: number;
+  } | null>(null);
   const rows = totalRows(dims);
 
   useEffect(() => {
@@ -101,7 +122,10 @@ export function CargoScreen() {
   const quotas = quotaUse(s.cargo);
   const selItem = s.cargo.find((c) => c.uid === selected);
   const g = galaxyOf(s);
-  const value = [...byGood.entries()].reduce((v, [id, e]) => v + e.qty * (bestKnownPrice(s, id, 'sell')?.price ?? GOODS_BY_ID[id].basePrice * 0.8), 0);
+  const value = [...byGood.entries()].reduce(
+    (v, [id, e]) => v + e.qty * (bestKnownPrice(s, id, 'sell')?.price ?? GOODS_BY_ID[id].basePrice * 0.8),
+    0,
+  );
 
   return (
     <div class="screen" data-testid="screen-cargo">
@@ -111,26 +135,62 @@ export function CargoScreen() {
           icon="cargo"
           actions={
             <div class="row wrap">
-              <Btn small icon="auto" onClick={() => { const r = act((x) => cargoAutoArrange(x)); if (report(r)) sfx('success'); }} testid="btn-autoarrange">
+              <Btn
+                small
+                icon="auto"
+                onClick={() => {
+                  const r = act((x) => cargoAutoArrange(x));
+                  if (report(r)) sfx('success');
+                }}
+                testid="btn-autoarrange"
+              >
                 {t('cargo.auto')}
               </Btn>
-              <Btn small icon="rotate" disabled={!selItem || selItem.w === selItem.h} onClick={() => { const r = act((x) => cargoRotate(x, selected!)); report(r); }} testid="btn-rotate">
+              <Btn
+                small
+                icon="rotate"
+                disabled={!selItem || selItem.w === selItem.h}
+                onClick={() => {
+                  const r = act((x) => cargoRotate(x, selected!));
+                  report(r);
+                }}
+                testid="btn-rotate"
+              >
                 {t('cargo.rotate')} (R)
               </Btn>
-              <Btn small kind="danger" disabled={!selItem || !!selItem.contractId} onClick={() => { const r = act((x) => jettison(x, selected!)); if (report(r)) setSelected(null); }}>
+              <Btn
+                small
+                kind="danger"
+                disabled={!selItem || !!selItem.contractId}
+                onClick={() => {
+                  const r = act((x) => jettison(x, selected!));
+                  if (report(r)) setSelected(null);
+                }}
+              >
                 {t('cargo.jettison')}
               </Btn>
             </div>
           }
         >
           <div ref={wrapRef}>
-            <div class="cargo-board" style={{ width: dims.cols * cell, height: rows * cell }} data-testid="cargo-board" onPointerDown={(e) => e.target === e.currentTarget && setSelected(null)}>
+            <div
+              class="cargo-board"
+              style={{ width: dims.cols * cell, height: rows * cell }}
+              data-testid="cargo-board"
+              onPointerDown={(e) => e.target === e.currentTarget && setSelected(null)}
+            >
               {Array.from({ length: rows * dims.cols }, (_, i) => {
                 const x = i % dims.cols;
                 const y = Math.floor(i / dims.cols);
                 const blocked = y < dims.rows && y * dims.cols + x >= dims.cells;
                 const over = y >= dims.rows;
-                return <div key={i} class={`cargo-cell ${blocked ? 'blocked' : ''} ${over ? 'over' : ''}`} style={{ left: x * cell, top: y * cell, width: cell - 2, height: cell - 2 }} />;
+                return (
+                  <div
+                    key={i}
+                    class={`cargo-cell ${blocked ? 'blocked' : ''} ${over ? 'over' : ''}`}
+                    style={{ left: x * cell, top: y * cell, width: cell - 2, height: cell - 2 }}
+                  />
+                );
               })}
               {s.cargo.map((it) => {
                 const dragging = drag?.uid === it.uid;
@@ -142,7 +202,15 @@ export function CargoScreen() {
                   <div
                     key={it.uid}
                     class={`cargo-item ${dragging ? 'dragging' : ''} ${selected === it.uid ? 'selected' : ''} ${it.contractId ? 'contract' : ''} ${dragging ? (drag!.valid ? 'drop-ok' : '') : ''}`}
-                    style={{ left, top, width: it.w * cell - 2, height: it.h * cell - 2, background: colorFor(it.goodId, !!it.contractId), opacity: dragging && !drag!.valid ? 0.6 : 1, transition: dragging ? 'none' : 'left .12s, top .12s' }}
+                    style={{
+                      left,
+                      top,
+                      width: it.w * cell - 2,
+                      height: it.h * cell - 2,
+                      background: colorFor(it.goodId, !!it.contractId),
+                      opacity: dragging && !drag!.valid ? 0.6 : 1,
+                      transition: dragging ? 'none' : 'left .12s, top .12s',
+                    }}
                     onPointerDown={(e) => onDown(e, it)}
                     onPointerMove={(e) => onMove(e, it)}
                     onPointerUp={(e) => onUp(e, it)}
@@ -152,7 +220,9 @@ export function CargoScreen() {
                   >
                     <span style={{ fontSize: it.w * it.h === 1 ? 10 : 12 }}>{t(`good.${it.goodId}`)}</span>
                     <span class="qty">{it.qty}</span>
-                    {good.shelfDays && fr < 1 && <span style={{ fontSize: 10 }}>{Math.round(fr * 100)}%</span>}
+                    {good.shelfDays && fr < 1 && (
+                      <span style={{ fontSize: 10 }}>{Math.round(fr * 100)}%</span>
+                    )}
                   </div>
                 );
               })}
@@ -165,24 +235,49 @@ export function CargoScreen() {
           <p class="explain">{t('cargo.help')}</p>
           {a.overload > 0 && (
             <p class="explain warn" data-testid="overload-warning">
-              <Icon name="warning" size={14} /> {t('cargo.overloadWarn', { n: a.overload, supplies: fmt(a.stats.suppliesPerDay, 1) })}
+              <Icon name="warning" size={14} />{' '}
+              {t('cargo.overloadWarn', { n: a.overload, supplies: fmt(a.stats.suppliesPerDay, 1) })}
             </p>
           )}
         </Panel>
         <div class="stack">
           <Panel title={t('cargo.summary')} icon="info">
             <div class="stats-grid">
-              <Stat label={t('cargo.occupancy')} value={`${used}/${dims.cells}`} sub={a.overload > 0 ? `${t('cargo.overloadShort', { n: a.overload })}` : undefined} tone={a.overload > 0 ? 'warn' : ''} />
-              <Stat label={t('ship.mass')} value={`${fmt(mass, 1)} t`} sub={`${t('ship.range')} ${fmt(a.stats.range, 1)} ly`} />
+              <Stat
+                label={t('cargo.occupancy')}
+                value={`${used}/${dims.cells}`}
+                sub={a.overload > 0 ? `${t('cargo.overloadShort', { n: a.overload })}` : undefined}
+                tone={a.overload > 0 ? 'warn' : ''}
+              />
+              <Stat
+                label={t('ship.mass')}
+                value={`${fmt(mass, 1)} t`}
+                sub={`${t('ship.range')} ${fmt(a.stats.range, 1)} ly`}
+              />
               <Stat label={t('cargo.value')} value={money(value)} sub={t('cargo.valueHelp')} />
             </div>
             <div class="stack" style={{ marginTop: 10 }}>
-              <Bar value={used} max={dims.cells} tone={used > dims.cells ? 'bad' : used > dims.cells * 0.9 ? 'warn' : 'accent'} label={t('cargo.occupancy')} />
+              <Bar
+                value={used}
+                max={dims.cells}
+                tone={used > dims.cells ? 'bad' : used > dims.cells * 0.9 ? 'warn' : 'accent'}
+                label={t('cargo.occupancy')}
+              />
               {a.stats.chilledCells > 0 && (
-                <div class="spread"><span class="dim">{t('ship.chilled')}</span><span class="mono">{quotas.chilled}/{a.stats.chilledCells}</span></div>
+                <div class="spread">
+                  <span class="dim">{t('ship.chilled')}</span>
+                  <span class="mono">
+                    {quotas.chilled}/{a.stats.chilledCells}
+                  </span>
+                </div>
               )}
               {a.stats.secureCells > 0 && (
-                <div class="spread"><span class="dim">{t('ship.secure')}</span><span class="mono">{quotas.secure}/{a.stats.secureCells}</span></div>
+                <div class="spread">
+                  <span class="dim">{t('ship.secure')}</span>
+                  <span class="mono">
+                    {quotas.secure}/{a.stats.secureCells}
+                  </span>
+                </div>
               )}
             </div>
           </Panel>
@@ -209,8 +304,14 @@ export function CargoScreen() {
                           <td>
                             {t(`good.${id}`)}
                             <div class="row wrap" style={{ gap: 4 }}>
-                              {e.contract > 0 && <Tag tone="accent">{t('cargo.contractQty', { n: e.contract })}</Tag>}
-                              {left !== null && <Tag tone={left < 8 ? 'bad' : 'warn'}>{t('market.daysLeft', { n: Math.round(left) })}</Tag>}
+                              {e.contract > 0 && (
+                                <Tag tone="accent">{t('cargo.contractQty', { n: e.contract })}</Tag>
+                              )}
+                              {left !== null && (
+                                <Tag tone={left < 8 ? 'bad' : 'warn'}>
+                                  {t('market.daysLeft', { n: Math.round(left) })}
+                                </Tag>
+                              )}
                             </div>
                           </td>
                           <td class="right mono">{e.qty + e.contract}</td>
@@ -219,8 +320,12 @@ export function CargoScreen() {
                             {best && e.qty > 0 ? (
                               <>
                                 {fmt(best.price, 1)}
-                                <div class={`${best.price * e.qty > e.cost ? 'pos' : 'neg'}`} style={{ fontSize: 11 }}>
-                                  {best.price * e.qty - e.cost >= 0 ? '+' : ''}{fmt(best.price * e.qty - e.cost, 0)}
+                                <div
+                                  class={`${best.price * e.qty > e.cost ? 'pos' : 'neg'}`}
+                                  style={{ fontSize: 11 }}
+                                >
+                                  {best.price * e.qty - e.cost >= 0 ? '+' : ''}
+                                  {fmt(best.price * e.qty - e.cost, 0)}
                                 </div>
                               </>
                             ) : (

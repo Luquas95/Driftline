@@ -1,6 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import { GOOD_INDEX } from '../src/content/goods';
-import { feesFor, midPrice, quoteBuy, quoteSell, targetStock, tickEconomy, maybeSpawnEvent, eventMod, goodCap, serviceMult } from '../src/core/economy';
+import {
+  feesFor,
+  midPrice,
+  quoteBuy,
+  quoteSell,
+  targetStock,
+  tickEconomy,
+  maybeSpawnEvent,
+  eventMod,
+  goodCap,
+  serviceMult,
+} from '../src/core/economy';
 import { buyGoods, sellGoods, maxBuy, quoteFor, stockOf } from '../src/core/game';
 import { galaxyOf, stationOf } from '../src/core/state';
 import { passTime } from '../src/core/time';
@@ -59,7 +70,8 @@ describe('economy', () => {
     for (const st of Object.values(g.stationsById)) {
       if (st.id === a.id || st.blackMarket) continue;
       for (const gid of a.goods) {
-        if ((a.role[gid] ?? 0) > 0.3 && (st.role[gid] ?? 0) < -0.3 && st.goods.includes(gid)) best = { d: st.id, gid };
+        if ((a.role[gid] ?? 0) > 0.3 && (st.role[gid] ?? 0) < -0.3 && st.goods.includes(gid))
+          best = { d: st.id, gid };
       }
     }
     if (!best) return;
@@ -119,7 +131,9 @@ describe('economy', () => {
         found = true;
         expect(ev.end).toBeGreaterThan(ev.start);
         const cat = Object.keys(ev.mods)[0];
-        const gid = ['grain', 'metals', 'medicine', 'iron_ore', 'computers', 'spirits', 'narcotics'].find((x) => eventMod([ev], d, ev.sector, x) !== 1);
+        const gid = ['grain', 'metals', 'medicine', 'iron_ore', 'computers', 'spirits', 'narcotics'].find(
+          (x) => eventMod([ev], d, ev.sector, x) !== 1,
+        );
         void cat;
         if (gid) expect(eventMod([ev], d, ev.sector, gid)).not.toBe(1);
         expect(eventMod([ev], ev.end + 1, ev.sector, 'grain')).toBe(1);

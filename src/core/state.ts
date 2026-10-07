@@ -9,12 +9,21 @@ import { T } from './tuning';
 import type { Difficulty, Galaxy, GameState, Message, StationStatic } from './types';
 import { GOODS } from '../content/goods';
 
-export type Result<T = object> = ({ ok: true } & T) | { ok: false; error: string; params?: Record<string, string | number> };
+export type Result<T = object> =
+  ({ ok: true } & T) | { ok: false; error: string; params?: Record<string, string | number> };
 
 export const ok = <T extends object>(extra?: T): Result<T> => ({ ok: true, ...(extra ?? ({} as T)) });
-export const fail = (error: string, params?: Record<string, string | number>): { ok: false; error: string; params?: Record<string, string | number> } => ({ ok: false, error, params });
+export const fail = (
+  error: string,
+  params?: Record<string, string | number>,
+): { ok: false; error: string; params?: Record<string, string | number> } => ({ ok: false, error, params });
 
-export const DEFAULT_DIFFICULTY: Difficulty = { prices: 'normal', risk: 'normal', insurance: true, permadeath: false };
+export const DEFAULT_DIFFICULTY: Difficulty = {
+  prices: 'normal',
+  risk: 'normal',
+  insurance: true,
+  permadeath: false,
+};
 
 export interface NewGameOptions {
   seed?: string;
@@ -37,7 +46,12 @@ export function newUid(state: GameState, prefix = 'u'): string {
   return `${prefix}${++state.uidCounter}`;
 }
 
-export function msg(state: GameState, key: string, params?: Message['params'], tone: Message['tone'] = 'info'): void {
+export function msg(
+  state: GameState,
+  key: string,
+  params?: Message['params'],
+  tone: Message['tone'] = 'info',
+): void {
   state.messages.push({ day: state.day, key, params, tone });
   if (state.messages.length > 120) state.messages.splice(0, state.messages.length - 120);
 }
@@ -83,7 +97,8 @@ export function arrive(state: GameState, systemId: number): void {
   if (!state.visited.includes(systemId)) state.visited.push(systemId);
   const sys = g.systems[systemId];
   const det = new Set(state.detected[systemId] ?? []);
-  for (const b of sys.bodies) if (b.scanDifficulty === 0 || b.parent < 0 && b.kind !== 'belt' && b.scanDifficulty <= 0) det.add(b.id);
+  for (const b of sys.bodies)
+    if (b.scanDifficulty === 0 || (b.parent < 0 && b.kind !== 'belt' && b.scanDifficulty <= 0)) det.add(b.id);
   // stations are always known on arrival (docking beacons) together with their host bodies
   for (const st of sys.stations) det.add(sys.bodies[st.bodyIndex].id);
   state.detected[systemId] = [...det];
@@ -95,7 +110,13 @@ export function learnStation(state: GameState, st: StationStatic): void {
   const dyn = state.stations[st.id];
   const prices = (state.prices[st.id] ??= {});
   for (const gid of st.goods) {
-    prices[gid] = snapshotPrice(st, dyn.stock[GOODS.findIndex((x) => x.id === gid)], gid, state.difficulty, state.day);
+    prices[gid] = snapshotPrice(
+      st,
+      dyn.stock[GOODS.findIndex((x) => x.id === gid)],
+      gid,
+      state.difficulty,
+      state.day,
+    );
   }
 }
 
@@ -144,7 +165,9 @@ export function destroyShip(state: GameState): void {
     const full = state.insurance.full;
     state.ship.slots = state.ship.slots.map((m) => {
       if (!m) return null;
-      return full || MODULES_BY_ID[m.defId].core ? { ...m, condition: Math.max(25, m.condition * 0.8) } : null;
+      return full || MODULES_BY_ID[m.defId].core
+        ? { ...m, condition: Math.max(25, m.condition * 0.8) }
+        : null;
     });
     state.ship.hp = hullDef.hp;
     const st = computeShipStats(state.ship);
@@ -186,7 +209,6 @@ function nearestStation(state: GameState, g: Galaxy): StationStatic | null {
     }
   return best;
 }
-
 
 /** Run `fn` with the persistent simulation RNG and write its state back. */
 export function withRng<T>(state: GameState, fn: (r: Rng) => T): T {

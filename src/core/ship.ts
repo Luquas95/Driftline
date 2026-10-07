@@ -4,7 +4,13 @@ import type { HullDef, ModuleDef, ModuleInstance, ModuleKind, Quality, Ship, Siz
 import { CORE_KINDS } from './types';
 import { T } from './tuning';
 
-const CORE_TOKEN: Record<string, ModuleKind> = { r: 'reactor', e: 'engine', j: 'jump', l: 'life', n: 'sensors' };
+const CORE_TOKEN: Record<string, ModuleKind> = {
+  r: 'reactor',
+  e: 'engine',
+  j: 'jump',
+  l: 'life',
+  n: 'sensors',
+};
 const slotCache = new Map<string, SlotDef[]>();
 
 export function hullSlots(hullId: string): SlotDef[] {
@@ -50,7 +56,9 @@ export function perf(condition: number): number {
 export function neighbours(hullId: string, index: number): number[] {
   const slots = hullSlots(hullId);
   const me = slots[index];
-  return slots.filter((o) => o.index !== index && Math.abs(o.x - me.x) + Math.abs(o.y - me.y) === 1).map((o) => o.index);
+  return slots
+    .filter((o) => o.index !== index && Math.abs(o.x - me.x) + Math.abs(o.y - me.y) === 1)
+    .map((o) => o.index);
 }
 
 export interface ShipStats {
@@ -303,7 +311,8 @@ export function wearModule(ship: Ship, slotIndex: number, amount: number): numbe
   let cut = 0;
   for (const n of neighbours(ship.hullId, slotIndex)) {
     const nm = ship.slots[n];
-    if (nm && nm.enabled && nm.condition > 0) cut += (MODULES_BY_ID[nm.defId].adjacency?.wearCut ?? 0) * QUALITY[nm.quality].value;
+    if (nm && nm.enabled && nm.condition > 0)
+      cut += (MODULES_BY_ID[nm.defId].adjacency?.wearCut ?? 0) * QUALITY[nm.quality].value;
   }
   const real = amount * QUALITY[m.quality].wear * (1 - Math.min(0.5, cut));
   const before = m.condition;
@@ -333,7 +342,8 @@ export function shipValue(ship: Ship): number {
 export function insuredValue(ship: Ship, full: boolean): number {
   const hull = HULLS_BY_ID[ship.hullId];
   let v = hull.price;
-  for (const m of ship.slots) if (m && (full || MODULES_BY_ID[m.defId].core)) v += modulePrice(MODULES_BY_ID[m.defId], m.quality);
+  for (const m of ship.slots)
+    if (m && (full || MODULES_BY_ID[m.defId].core)) v += modulePrice(MODULES_BY_ID[m.defId], m.quality);
   return v;
 }
 

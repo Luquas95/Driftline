@@ -23,7 +23,13 @@ export function requiredKeys(): Map<string, string> {
     if (!keys.has(k)) keys.set(k, from);
   };
   for (const file of walk('src')) {
-    if (file.includes('i18n/') || file.includes('/content/') || file.includes('/sim/') || file.includes('render/gallery')) continue;
+    if (
+      file.includes('i18n/') ||
+      file.includes('/content/') ||
+      file.includes('/sim/') ||
+      file.includes('render/gallery')
+    )
+      continue;
     const text = readFileSync(file, 'utf8');
     for (const m of text.matchAll(/\bt\(\s*'([a-zA-Z0-9_.]+)'/g)) add(m[1], file);
     if (file.includes('src/core/') || file.includes('src/ui/')) {
@@ -46,7 +52,8 @@ export function requiredKeys(): Map<string, string> {
   for (const e of MARKET_EVENTS) add(`msg.market.${e.kind}`, 'marketEvents');
   for (const r of ['core', 'inner', 'outer', 'rim']) add(`region.${r}`, 'region');
   for (const z of ['small', 'medium', 'large']) add(`size.${z}`, 'size');
-  for (const b of ['rocky', 'desert', 'ocean', 'ice', 'volcanic', 'gas', 'dead', 'belt', 'moon']) add(`body.${b}`, 'body');
+  for (const b of ['rocky', 'desert', 'ocean', 'ice', 'volcanic', 'gas', 'dead', 'belt', 'moon'])
+    add(`body.${b}`, 'body');
   for (const tg of ['chilled', 'hazardous', 'illegal', 'perishable', 'sensitive']) add(`tag.${tg}`, 'tag');
   for (const k of ['freight', 'courier', 'passenger', 'survey', 'supply', 'rescue']) {
     add(`contract.kind.${k}`, 'contract');

@@ -1108,7 +1108,9 @@ kbd {
   }
   .map-zoom {
     bottom: auto;
-    top: 60px;
+    left: auto;
+    right: 8px;
+    top: 112px;
   }
 }
 @media (pointer: coarse) {
@@ -1166,4 +1168,41 @@ kbd {
   .ship-title {
     display: none;
   }
+}
+
+@media (max-width: 899px) {
+  .side-panel.empty-hint {
+    display: none;
+  }
+  .hint-card {
+    padding: 8px 12px;
+    bottom: 8px;
+    font-size: 13.5px;
+  }
+  .hint-card p {
+    font-size: 13.5px;
+    line-height: 1.35;
+  }
+}
+
+/* ---- station market layout ---- */
+.market-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(330px, 1fr);
+  gap: var(--gap);
+  align-items: start;
+}
+.market-side {
+  position: sticky;
+  top: 0;
+}
+.service-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 12px;
+}
+.service {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }

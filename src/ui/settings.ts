@@ -11,7 +11,16 @@ export interface Settings {
   autosave: boolean;
 }
 
-const DEFAULTS: Settings = { master: 0.6, ambient: 0.5, sfx: 0.7, muted: false, motion: 'auto', contrast: 'normal', tutorial: true, autosave: true };
+const DEFAULTS: Settings = {
+  master: 0.6,
+  ambient: 0.5,
+  sfx: 0.7,
+  muted: false,
+  motion: 'auto',
+  contrast: 'normal',
+  tutorial: true,
+  autosave: true,
+};
 const KEY = 'driftline.settings';
 
 function load(): Settings {

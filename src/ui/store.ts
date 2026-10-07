@@ -76,7 +76,9 @@ export function afterMutation(s: GameState): void {
 
 export function describeMessage(key: string, params?: Record<string, string | number>): string {
   const p: Record<string, string | number> = { ...(params ?? {}) };
-  if (typeof p.module === 'string') p.module = t(`mod.${String(p.module).replace(/_[sml]$/, '')}`) + ' ' + String(p.module).slice(-1).toUpperCase();
+  if (typeof p.module === 'string')
+    p.module =
+      t(`mod.${String(p.module).replace(/_[sml]$/, '')}`) + ' ' + String(p.module).slice(-1).toUpperCase();
   if (typeof p.hull === 'string') p.hull = t(`hull.${p.hull}`);
   if (typeof p.good === 'string') p.good = t(`good.${p.good}`);
   return t(key, p);

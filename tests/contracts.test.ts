@@ -1,7 +1,21 @@
 import { describe, expect, it } from 'vitest';
 import { CHAINS } from '../src/content/chains';
-import { abandonContract, acceptContract, completeContractsAt, isDeliverable, MAX_ACTIVE_CONTRACTS } from '../src/core/contractOps';
-import { advanceChain, boardEpoch, isChainFinal, makeContract, pathLength, refreshBoard, stationsNear } from '../src/core/contracts';
+import {
+  abandonContract,
+  acceptContract,
+  completeContractsAt,
+  isDeliverable,
+  MAX_ACTIVE_CONTRACTS,
+} from '../src/core/contractOps';
+import {
+  advanceChain,
+  boardEpoch,
+  isChainFinal,
+  makeContract,
+  pathLength,
+  refreshBoard,
+  stationsNear,
+} from '../src/core/contracts';
 import { dockAt, jump, undock } from '../src/core/game';
 import { Rng } from '../src/core/rng';
 import { analyze, galaxyOf, stationOf } from '../src/core/state';
@@ -29,7 +43,9 @@ describe('contracts', () => {
   it('boards are deterministic per station and week', () => {
     const a = mk('BOARD');
     const b = mk('BOARD');
-    expect(a.stations[a.location.stationId!].board.map((c) => [c.kind, c.reward, c.dest])).toEqual(b.stations[b.location.stationId!].board.map((c) => [c.kind, c.reward, c.dest]));
+    expect(a.stations[a.location.stationId!].board.map((c) => [c.kind, c.reward, c.dest])).toEqual(
+      b.stations[b.location.stationId!].board.map((c) => [c.kind, c.reward, c.dest]),
+    );
     expect(a.stations[a.location.stationId!].board.length).toBeGreaterThan(2);
     expect(boardEpoch(15)).toBe(2);
   });
@@ -164,7 +180,15 @@ describe('contracts', () => {
     acceptContract(s, st, c.id);
     expect(isDeliverable(s, c)).toBe(false);
     const { stats, dims } = analyze(s);
-    addGoods(s.cargo, dims, { chilledCells: stats.chilledCells, secureCells: stats.secureCells }, c.goodId!, c.qty!, 0, 0);
+    addGoods(
+      s.cargo,
+      dims,
+      { chilledCells: stats.chilledCells, secureCells: stats.secureCells },
+      c.goodId!,
+      c.qty!,
+      0,
+      0,
+    );
     expect(isDeliverable(s, c)).toBe(true);
     const sv = makeOne(s, 'survey');
     expect(isDeliverable(s, sv)).toBe(false);
@@ -179,7 +203,12 @@ describe('contracts', () => {
     const g = galaxyOf(s);
     const st = stationOf(s, s.location.stationId!);
     for (const chain of CHAINS) {
-      const first = makeContract(g, s, st, Rng.fromSeed('c0'), { kind: chain.steps[0].kind, step: chain.steps[0], chainId: chain.id, chainStep: 0 });
+      const first = makeContract(g, s, st, Rng.fromSeed('c0'), {
+        kind: chain.steps[0].kind,
+        step: chain.steps[0],
+        chainId: chain.id,
+        chainStep: 0,
+      });
       if (!first) continue;
       expect(first.title).toBe(`chain.${chain.id}.0.text`);
       expect(isChainFinal(first)).toBe(false);

@@ -17,7 +17,10 @@ export function newGame(opts: NewGameOptions = {}): GameState {
   const g = getGalaxy(seed, galaxySize);
   const startSys = findStartSystem(g.systems) ?? g.systems[0];
   const startSt =
-    [...startSys.stations].filter((s) => s.type !== 'pirate').sort((a, b) => STATION_TYPES_BY_ID[b.type].shipyard - STATION_TYPES_BY_ID[a.type].shipyard)[0] ?? startSys.stations[0];
+    [...startSys.stations]
+      .filter((s) => s.type !== 'pirate')
+      .sort((a, b) => STATION_TYPES_BY_ID[b.type].shipyard - STATION_TYPES_BY_ID[a.type].shipyard)[0] ??
+    startSys.stations[0];
 
   const state: GameState = {
     v: SAVE_VERSION,
@@ -42,7 +45,18 @@ export function newGame(opts: NewGameOptions = {}): GameState {
     messages: [],
     notes: {},
     discoveries: [],
-    stats: { jumps: 0, tradesProfit: 0, contractsDone: 0, contractsFailed: 0, discoveries: 0, deaths: 0, unitsMined: 0, daysPlayed: 0, accidents: 0, fines: 0 },
+    stats: {
+      jumps: 0,
+      tradesProfit: 0,
+      contractsDone: 0,
+      contractsFailed: 0,
+      discoveries: 0,
+      deaths: 0,
+      unitsMined: 0,
+      daysPlayed: 0,
+      accidents: 0,
+      fines: 0,
+    },
     insurance: { active: difficulty.insurance, full: false, due: 0, lapsedSince: null },
     home: startSt.id,
     flags: {},
@@ -87,4 +101,3 @@ function starterSlot(state: GameState, size: 'S' | 'M' | 'L'): number {
   }
   return idx;
 }
-

@@ -1,6 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import { EVENTS, EVENTS_BY_ID, EVENT_TEXTS_CS } from '../src/content/events';
-import { applyEffect, choiceAvailable, eligibleEvents, evalCond, extConditions, extEffects, resolveEvent, rollEvent } from '../src/core/events';
+import {
+  applyEffect,
+  choiceAvailable,
+  eligibleEvents,
+  evalCond,
+  extConditions,
+  extEffects,
+  resolveEvent,
+  rollEvent,
+} from '../src/core/events';
 import { hullSlots, newModule } from '../src/core/ship';
 import { addGoods, unitsOf } from '../src/core/cargo';
 import { analyze, galaxyOf } from '../src/core/state';
@@ -68,7 +77,15 @@ describe('events', () => {
     const base = eligibleEvents(s, 'jump').map((e) => e.id);
     expect(base).not.toContain('hazmat_leak');
     const { stats, dims } = analyze(s);
-    addGoods(s.cargo, dims, { chilledCells: stats.chilledCells, secureCells: stats.secureCells }, 'radioactives', 8, 0, 0);
+    addGoods(
+      s.cargo,
+      dims,
+      { chilledCells: stats.chilledCells, secureCells: stats.secureCells },
+      'radioactives',
+      8,
+      0,
+      0,
+    );
     expect(eligibleEvents(s, 'jump').map((e) => e.id)).toContain('hazmat_leak');
   });
 
@@ -163,7 +180,15 @@ describe('events', () => {
   it('sellAllPremium pays out cargo', () => {
     const s = mk('PREM');
     const { stats, dims } = analyze(s);
-    addGoods(s.cargo, dims, { chilledCells: stats.chilledCells, secureCells: stats.secureCells }, 'metals', 10, 400, 0);
+    addGoods(
+      s.cargo,
+      dims,
+      { chilledCells: stats.chilledCells, secureCells: stats.secureCells },
+      'metals',
+      10,
+      400,
+      0,
+    );
     const c = s.credits;
     applyEffect(s, { t: 'ext', key: 'sellAllPremium', args: { pct: 0.1 } });
     expect(s.credits).toBe(c + 440);

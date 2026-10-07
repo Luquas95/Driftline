@@ -10,10 +10,35 @@ import { acceptContract } from '../core/contractOps';
 import { stationsNear } from '../core/contracts';
 import { choiceAvailable } from '../core/events';
 import { EVENTS_BY_ID } from '../content/events';
-import { exploreAnomaly, mine, mineMethodFor, REFINE, scanSurface, scanSystem, sellDiscoveries, bodyDyn, salvage } from '../core/exploration';
+import {
+  exploreAnomaly,
+  mine,
+  mineMethodFor,
+  REFINE,
+  scanSurface,
+  scanSystem,
+  sellDiscoveries,
+  bodyDyn,
+  salvage,
+} from '../core/exploration';
 import { dist, shortestPath } from '../core/galaxy';
 import { Rng } from '../core/rng';
-import { buyFuel, buyGoods, buyProbes, buySupplies, callTow, dockAt, jump, maxBuy, planJump, repairAll, sellGoods, stockOf, undock, wait } from '../core/game';
+import {
+  buyFuel,
+  buyGoods,
+  buyProbes,
+  buySupplies,
+  callTow,
+  dockAt,
+  jump,
+  maxBuy,
+  planJump,
+  repairAll,
+  sellGoods,
+  stockOf,
+  undock,
+  wait,
+} from '../core/game';
 import { computeShipStats, hullSlots, moduleFits, modulePrice } from '../core/ship';
 import { buyModule, installModule } from '../core/shop';
 import { analyze, galaxyOf, stationOf } from '../core/state';
@@ -34,6 +59,8 @@ export interface BotRun {
   firstUpgradeDay: number | null;
   accidents: number;
   deaths: number;
+  /** Day of the first ship destruction, if any. */
+  firstDeathDay: number | null;
   jumps: number;
   routeProfit: Record<string, number>;
   loopTrips: number[];
@@ -70,6 +97,7 @@ export class Bot {
       firstUpgradeDay: null,
       accidents: 0,
       deaths: 0,
+      firstDeathDay: null,
       jumps: 0,
       routeProfit: {},
       loopTrips: [],
@@ -188,7 +216,11 @@ export class Bot {
     for (const m of s.ship.slots) {
       if (!m) continue;
       const kind = MODULES_BY_ID[m.defId].kind;
-      if (['cooler', 'vault', 'shield', 'amplifier', 'quarters', 'radiator'].includes(kind) && analyze(s).stats.powerJump < 0) m.enabled = false;
+      if (
+        ['cooler', 'vault', 'shield', 'amplifier', 'quarters', 'radiator'].includes(kind) &&
+        analyze(s).stats.powerJump < 0
+      )
+        m.enabled = false;
     }
   }
 
@@ -212,7 +244,9 @@ export class Bot {
         .sort((a, b) => b.price - a.price);
       const pick = options.find((it) => it.quality !== 'E' && it.quality !== 'D') ?? options[0];
       if (!pick) continue;
-      const slot = free.filter((sl) => moduleFits(sl, MODULES_BY_ID[pick.defId])).sort((a, b) => (a.size < b.size ? 1 : -1))[0];
+      const slot = free
+        .filter((sl) => moduleFits(sl, MODULES_BY_ID[pick.defId]))
+        .sort((a, b) => (a.size < b.size ? 1 : -1))[0];
       const before = netWorth(s);
       void before;
       if (buyModule(s, st.id, pick.uid).ok) {
@@ -232,14 +266,19 @@ export class Bot {
 
   /* ---------------------------- trading ---------------------------- */
 
-  bestTrade(oracle: boolean): { dest: StationStatic; goodId: string; qty: number; score: number; profit: number } | null {
+  bestTrade(
+    oracle: boolean,
+  ): { dest: StationStatic; goodId: string; qty: number; score: number; profit: number } | null {
     const s = this.state;
     const here = this.stationHere();
     if (!here) return null;
     const g = this.g();
     const { stats } = analyze(s);
-    let best: { dest: StationStatic; goodId: string; qty: number; score: number; profit: number } | null = null;
-    const near = stationsNear(g, here.systemId, 4).filter((n) => n.station.id !== here.id && n.station.type !== 'pirate');
+    let best: { dest: StationStatic; goodId: string; qty: number; score: number; profit: number } | null =
+      null;
+    const near = stationsNear(g, here.systemId, 4).filter(
+      (n) => n.station.id !== here.id && n.station.type !== 'pirate',
+    );
     for (const { station: d } of near) {
       const known = s.prices[d.id];
       if (!known && !oracle) continue;
@@ -264,7 +303,8 @@ export class Bot {
           const rev = quoteSell(d, dStock, goodId, q, feesD).total;
           const profit = rev - cost - fuelCost;
           const score = profit / days;
-          if (profit > 120 && (!best || score > best.score)) best = { dest: d, goodId, qty: q, score, profit };
+          if (profit > 120 && (!best || score > best.score))
+            best = { dest: d, goodId, qty: q, score, profit };
         }
       }
     }
@@ -393,8 +433,14 @@ export class Bot {
     const { stats } = analyze(s);
     // choose contracts: freight / courier / supply-from-cargo, best reward per day, same destination bundle
     const scored = dyn.board
-      .filter((c) => (c.kind === 'freight' || c.kind === 'courier' || c.kind === 'passenger') && c.state === 'offered')
-      .filter((c) => c.kind !== 'passenger' || (stats.beds >= (c.passengers ?? 0) && stats.comfort >= (c.comfort ?? 1)))
+      .filter(
+        (c) =>
+          (c.kind === 'freight' || c.kind === 'courier' || c.kind === 'passenger') && c.state === 'offered',
+      )
+      .filter(
+        (c) =>
+          c.kind !== 'passenger' || (stats.beds >= (c.passengers ?? 0) && stats.comfort >= (c.comfort ?? 1)),
+      )
       .map((c) => {
         const len = this.pathLen(st.systemId, c.destSystem);
         const days = len / Math.max(1, stats.jumpSpeed) + 1;
@@ -467,13 +513,22 @@ export class Bot {
     const sys = g.systems[site.systemId];
     if (!bodyDyn(s, site.bodyId).revealed.length) {
       scanSystem(s);
-      scanSurface(s, sys.bodies.findIndex((b) => b.id === site.bodyId), false);
+      scanSurface(
+        s,
+        sys.bodies.findIndex((b) => b.id === site.bodyId),
+        false,
+      );
     }
     const body = sys.bodies.find((b) => b.id === site.bodyId)!;
     const dyn = bodyDyn(s, body.id);
     let guard = 0;
     while (guard++ < 14 && !s.dead) {
-      const dep = body.deposits.filter((d) => dyn.revealed.includes(d.id)).sort((a, b) => GOODS_BY_ID[b.goodId].basePrice * b.richness - GOODS_BY_ID[a.goodId].basePrice * a.richness)[0];
+      const dep = body.deposits
+        .filter((d) => dyn.revealed.includes(d.id))
+        .sort(
+          (a, b) =>
+            GOODS_BY_ID[b.goodId].basePrice * b.richness - GOODS_BY_ID[a.goodId].basePrice * a.richness,
+        )[0];
       if (!dep) break;
       const free = analyze(s).dims.cells - s.cargo.reduce((x, c) => x + c.w * c.h, 0);
       if (free < 1 || s.ship.fuel < 3) break;
@@ -515,7 +570,9 @@ export class Bot {
       for (const b of sys.bodies) {
         if (b.kind !== 'belt') continue;
         if (!(s.detected[sys.id] ?? []).includes(b.id) && id !== s.location.systemId) continue;
-        const score = b.deposits.reduce((m, d) => Math.max(m, d.richness * GOODS_BY_ID[d.goodId].basePrice), 0) / (1 + dist(sys, here) / 6);
+        const score =
+          b.deposits.reduce((m, d) => Math.max(m, d.richness * GOODS_BY_ID[d.goodId].basePrice), 0) /
+          (1 + dist(sys, here) / 6);
         if (!best || score > best.score) best = { systemId: id, bodyId: b.id, score };
       }
     }
@@ -595,10 +652,13 @@ export class Bot {
     this.run.startWorth = netWorth(s);
     let guard = 0;
     while (s.day - start < days && !s.dead && guard++ < 5000) {
+      const deaths0 = s.stats.deaths;
       this.step();
       this.autoEvent();
+      if (s.stats.deaths > deaths0 && this.run.firstDeathDay === null) this.run.firstDeathDay = s.day - start;
       const d = Math.floor(s.day - start);
-      for (let k = Math.max(0, d - 6); k <= d; k++) if (this.run.worthByDay[k] === undefined && k <= s.day - start) this.run.worthByDay[k] = netWorth(s);
+      for (let k = Math.max(0, d - 6); k <= d; k++)
+        if (this.run.worthByDay[k] === undefined && k <= s.day - start) this.run.worthByDay[k] = netWorth(s);
     }
     this.run.daysPlayed = s.day - start;
     this.run.finalWorth = netWorth(s);

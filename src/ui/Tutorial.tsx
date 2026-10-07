@@ -49,13 +49,33 @@ export function Tutorial() {
       </div>
       <p style={{ margin: '4px 0 8px' }}>{t(`tut.step${step}`)}</p>
       <div class="row wrap">
-        {step === 0 && s.location.stationId && screen.value !== 'station' && <Btn small onClick={() => go('station')}>{t('tut.openStation')}</Btn>}
-        {step === 1 && screen.value !== 'map' && <Btn small onClick={() => go('map')}>{t('tut.openMap')}</Btn>}
+        {step === 0 && s.location.stationId && screen.value !== 'station' && (
+          <Btn small onClick={() => go('station')}>
+            {t('tut.openStation')}
+          </Btn>
+        )}
+        {step === 1 && screen.value !== 'map' && (
+          <Btn small onClick={() => go('map')}>
+            {t('tut.openMap')}
+          </Btn>
+        )}
         {step === 4 && (
           <>
-            <Btn small onClick={() => go('ship')}>{t('nav.ship')}</Btn>
-            <Btn small onClick={() => go('cargo')}>{t('nav.cargo')}</Btn>
-            <Btn small kind="primary" onClick={() => { finish(); updateSettings({ tutorial: false }); }} testid="tutorial-done">
+            <Btn small onClick={() => go('ship')}>
+              {t('nav.ship')}
+            </Btn>
+            <Btn small onClick={() => go('cargo')}>
+              {t('nav.cargo')}
+            </Btn>
+            <Btn
+              small
+              kind="primary"
+              onClick={() => {
+                finish();
+                updateSettings({ tutorial: false });
+              }}
+              testid="tutorial-done"
+            >
               {t('tut.done')}
             </Btn>
           </>

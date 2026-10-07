@@ -1,6 +1,15 @@
 import 'fake-indexeddb/auto';
 import { describe, expect, it } from 'vitest';
-import { exportSave, deserializeState, fromParsed, importSave, migrateState, SaveError, serializeState, toEnvelope } from '../src/core/save';
+import {
+  exportSave,
+  deserializeState,
+  fromParsed,
+  importSave,
+  migrateState,
+  SaveError,
+  serializeState,
+  toEnvelope,
+} from '../src/core/save';
 import { buyGoods, dockAt, jump, maxBuy } from '../src/core/game';
 import { galaxyOf } from '../src/core/state';
 import { passTime } from '../src/core/time';

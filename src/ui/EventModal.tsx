@@ -14,7 +14,10 @@ function effectLine(e: Effect): { text: string; tone: 'pos' | 'neg' | '' } | nul
     case 'credits':
       return { text: `${t('fx.credits')} ${sign(e.n)} kr`, tone: e.n >= 0 ? 'pos' : 'neg' };
     case 'creditsPct':
-      return { text: `${t('fx.credits')} ${sign(Math.round(e.pct * 100))} %`, tone: e.pct >= 0 ? 'pos' : 'neg' };
+      return {
+        text: `${t('fx.credits')} ${sign(Math.round(e.pct * 100))} %`,
+        tone: e.pct >= 0 ? 'pos' : 'neg',
+      };
     case 'fuel':
       return { text: `${t('fx.fuel')} ${sign(e.n)}`, tone: e.n >= 0 ? 'pos' : 'neg' };
     case 'supplies':
@@ -61,7 +64,15 @@ export function EventModal() {
   if (res) {
     const lines = res.effects.map(effectLine).filter((x): x is NonNullable<typeof x> => !!x);
     return (
-      <Modal title={t(ev.titleKey)} testid="modal-event-result" footer={<Btn kind="primary" onClick={() => (eventResult.value = null)} testid="event-ok">{t('ui.continue')}</Btn>}>
+      <Modal
+        title={t(ev.titleKey)}
+        testid="modal-event-result"
+        footer={
+          <Btn kind="primary" onClick={() => (eventResult.value = null)} testid="event-ok">
+            {t('ui.continue')}
+          </Btn>
+        }
+      >
         <p>{t(res.textKey)}</p>
         {lines.length > 0 && (
           <ul class="stack" style={{ listStyle: 'none', padding: 0, margin: '8px 0 0', gap: 4 }}>
@@ -91,7 +102,11 @@ export function EventModal() {
                 const r = act((st) => resolveEvent(st, i));
                 if (report(r) && r.ok) {
                   sfx('alert');
-                  eventResult.value = { eventId: ev.id, textKey: r.outcome.textKey, effects: r.outcome.summary };
+                  eventResult.value = {
+                    eventId: ev.id,
+                    textKey: r.outcome.textKey,
+                    effects: r.outcome.summary,
+                  };
                 }
               }}
             >

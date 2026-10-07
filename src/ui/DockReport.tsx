@@ -14,7 +14,15 @@ export function DockReportModal() {
     return null;
   }
   return (
-    <Modal title={t('dock.reportTitle')} testid="modal-dockreport" footer={<Btn kind="primary" onClick={() => (dockReport.value = null)} testid="dockreport-ok">{t('ui.continue')}</Btn>}>
+    <Modal
+      title={t('dock.reportTitle')}
+      testid="modal-dockreport"
+      footer={
+        <Btn kind="primary" onClick={() => (dockReport.value = null)} testid="dockreport-ok">
+          {t('ui.continue')}
+        </Btn>
+      }
+    >
       {r.completed.length > 0 && (
         <div class="stack">
           <h3>{t('dock.completed')}</h3>
@@ -32,7 +40,12 @@ export function DockReportModal() {
       {r.inspection && (
         <div class="stack" style={{ marginTop: 12 }}>
           <h3 class="neg">{t('dock.inspection')}</h3>
-          <p>{t('dock.inspectionText', { fine: money(r.inspection.fine), value: money(r.inspection.confiscated) })}</p>
+          <p>
+            {t('dock.inspectionText', {
+              fine: money(r.inspection.fine),
+              value: money(r.inspection.confiscated),
+            })}
+          </p>
         </div>
       )}
     </Modal>

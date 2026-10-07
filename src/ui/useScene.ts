@@ -12,6 +12,5 @@ export function useScene(factory: () => Scene | null, deps: unknown[]): void {
     return () => {
       stage.setScene(null);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ready, ...deps]);
 }

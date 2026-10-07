@@ -14,7 +14,15 @@ function loaded(seed: string, insured = true, permadeath = false) {
   const free = hullSlots(s.ship.hullId).filter((x) => !x.core && !s.ship.slots[x.index]);
   s.ship.slots[free[0].index] = newModule('shield_s', 'C', 'extra1');
   const { stats, dims } = analyze(s);
-  addGoods(s.cargo, dims, { chilledCells: stats.chilledCells, secureCells: stats.secureCells }, 'metals', 20, 100, 0);
+  addGoods(
+    s.cargo,
+    dims,
+    { chilledCells: stats.chilledCells, secureCells: stats.secureCells },
+    'metals',
+    20,
+    100,
+    0,
+  );
   s.credits = 4000;
   return s;
 }

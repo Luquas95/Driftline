@@ -25,7 +25,8 @@ export interface MapScene extends Scene {
   getZoom(): number;
 }
 
-const rgbHex = (c: V3): number => (Math.round(c[0] * 255) << 16) | (Math.round(c[1] * 255) << 8) | Math.round(c[2] * 255);
+const rgbHex = (c: V3): number =>
+  (Math.round(c[0] * 255) << 16) | (Math.round(c[1] * 255) << 8) | Math.round(c[2] * 255);
 
 let glowTex: Texture | null = null;
 function glowTexture(): Texture {
@@ -46,8 +47,16 @@ function glowTexture(): Texture {
 
 /** Region tint for the galaxy-wide nebula (core warm, rim cold). */
 const REGION_NEBULA: Record<string, V3[]> = {
-  core: [[0.35, 0.16, 0.12], [0.5, 0.25, 0.1], [0.3, 0.12, 0.3]],
-  inner: [[0.12, 0.18, 0.4], [0.3, 0.14, 0.4], [0.1, 0.3, 0.45]],
+  core: [
+    [0.35, 0.16, 0.12],
+    [0.5, 0.25, 0.1],
+    [0.3, 0.12, 0.3],
+  ],
+  inner: [
+    [0.12, 0.18, 0.4],
+    [0.3, 0.14, 0.4],
+    [0.1, 0.3, 0.45],
+  ],
 };
 
 export function createMapScene(opts: MapOptions): MapScene {
@@ -55,6 +64,7 @@ export function createMapScene(opts: MapOptions): MapScene {
   const container = new Container();
   const nebula = createNebula(REGION_NEBULA.inner[0], REGION_NEBULA.inner[1], REGION_NEBULA.inner[2], 0.8);
   const stars = createStarfield(0.5);
+  stars.mesh.alpha = 0.22;
   container.addChild(nebula.mesh, stars.mesh);
 
   const world = new Container();
@@ -126,7 +136,15 @@ export function createMapScene(opts: MapOptions): MapScene {
   function labelFor(s: SystemStatic): Text {
     let tx = labels.get(s.id);
     if (!tx) {
-      tx = new Text({ text: s.name, style: { fontFamily: 'Inter, sans-serif', fontSize: 12, fill: 0xdbe5f5, stroke: { color: 0x070b14, width: 3 } } });
+      tx = new Text({
+        text: s.name,
+        style: {
+          fontFamily: 'Inter, sans-serif',
+          fontSize: 12,
+          fill: 0xdbe5f5,
+          stroke: { color: 0x070b14, width: 3 },
+        },
+      });
       tx.anchor.set(0.5, 0);
       tx.position.set(s.x, s.y);
       labels.set(s.id, tx);
@@ -171,7 +189,10 @@ export function createMapScene(opts: MapOptions): MapScene {
           color = 0x4cc9f0;
           alpha = 0.9;
         }
-        routes.moveTo(s.x, s.y).lineTo(o.x, o.y).stroke({ width: (both ? 1.6 : 1.1) * px, color, alpha });
+        routes
+          .moveTo(s.x, s.y)
+          .lineTo(o.x, o.y)
+          .stroke({ width: (both ? 1.6 : 1.1) * px, color, alpha });
       }
     }
     void fuelRange;
@@ -181,10 +202,13 @@ export function createMapScene(opts: MapOptions): MapScene {
       const vs = visible(s.id);
       if (!vs) continue;
       if (vs === 'visited') {
+        markers.circle(s.x, s.y, 5.5 * px).stroke({ width: 1 * px, color: 0x8fe3ff, alpha: 0.55 });
         let i = 0;
         for (const st of s.stations) {
           const col = st.type === 'pirate' ? 0xff7b7b : 0x8fe3ff;
-          markers.rect(s.x + (4 + i * 4.5) * px, s.y + 4 * px, 3 * px, 3 * px).fill({ color: col, alpha: 0.95 });
+          markers
+            .rect(s.x + (4 + i * 4.5) * px, s.y + 4 * px, 3 * px, 3 * px)
+            .fill({ color: col, alpha: 0.95 });
           i++;
         }
       }
@@ -196,9 +220,12 @@ export function createMapScene(opts: MapOptions): MapScene {
         if (info) {
           const cheap = info.buy < 0.92;
           const dear = info.sell > 1.12;
-          if (cheap) markers.circle(s.x, s.y, 10 * px).stroke({ width: 2.2 * px, color: 0x6ee7a0, alpha: 0.95 });
-          if (dear) markers.circle(s.x, s.y, 14 * px).stroke({ width: 2.2 * px, color: 0xf5a05b, alpha: 0.95 });
-          if (!cheap && !dear) markers.circle(s.x, s.y, 8 * px).stroke({ width: 1 * px, color: 0x8fa2c0, alpha: 0.5 });
+          if (cheap)
+            markers.circle(s.x, s.y, 10 * px).stroke({ width: 2.2 * px, color: 0x6ee7a0, alpha: 0.95 });
+          if (dear)
+            markers.circle(s.x, s.y, 14 * px).stroke({ width: 2.2 * px, color: 0xf5a05b, alpha: 0.95 });
+          if (!cheap && !dear)
+            markers.circle(s.x, s.y, 8 * px).stroke({ width: 1 * px, color: 0x8fa2c0, alpha: 0.5 });
         }
       }
     }
@@ -207,8 +234,17 @@ export function createMapScene(opts: MapOptions): MapScene {
       if (!visible(id)) return;
       const s = galaxy.systems[id];
       const r = 7 * px;
-      if (shape === 'diamond') markers.poly([s.x, s.y - r, s.x + r, s.y, s.x, s.y + r, s.x - r, s.y]).stroke({ width: 1.8 * px, color });
-      else markers.moveTo(s.x - r, s.y - r).lineTo(s.x + r, s.y + r).moveTo(s.x + r, s.y - r).lineTo(s.x - r, s.y + r).stroke({ width: 1.8 * px, color });
+      if (shape === 'diamond')
+        markers
+          .poly([s.x, s.y - r, s.x + r, s.y, s.x, s.y + r, s.x - r, s.y])
+          .stroke({ width: 1.8 * px, color });
+      else
+        markers
+          .moveTo(s.x - r, s.y - r)
+          .lineTo(s.x + r, s.y + r)
+          .moveTo(s.x + r, s.y - r)
+          .lineTo(s.x - r, s.y + r)
+          .stroke({ width: 1.8 * px, color });
     };
     for (const c of state.contracts) {
       if (c.state !== 'active') continue;
@@ -236,7 +272,8 @@ export function createMapScene(opts: MapOptions): MapScene {
         routeHi.moveTo(a.x, a.y).lineTo(b.x, b.y);
       }
       routeHi.stroke({ width: 3.2 * px, color: 0xffd36b, alpha: 0.95 });
-      for (const id of routePath.slice(1)) routeHi.circle(galaxy.systems[id].x, galaxy.systems[id].y, 4.5 * px).fill({ color: 0xffd36b });
+      for (const id of routePath.slice(1))
+        routeHi.circle(galaxy.systems[id].x, galaxy.systems[id].y, 4.5 * px).fill({ color: 0xffd36b });
     }
   }
 
@@ -256,7 +293,14 @@ export function createMapScene(opts: MapOptions): MapScene {
       const ang = Math.atan2(b.y - a.y, b.x - a.x);
       const r = 7 * px;
       shipGfx
-        .poly([x + Math.cos(ang) * r, y + Math.sin(ang) * r, x + Math.cos(ang + 2.5) * r, y + Math.sin(ang + 2.5) * r, x + Math.cos(ang - 2.5) * r, y + Math.sin(ang - 2.5) * r])
+        .poly([
+          x + Math.cos(ang) * r,
+          y + Math.sin(ang) * r,
+          x + Math.cos(ang + 2.5) * r,
+          y + Math.sin(ang + 2.5) * r,
+          x + Math.cos(ang - 2.5) * r,
+          y + Math.sin(ang - 2.5) * r,
+        ])
         .fill({ color: 0xffffff });
     }
   }
@@ -284,11 +328,14 @@ export function createMapScene(opts: MapOptions): MapScene {
         continue;
       }
       const c = STAR_COLORS[s.spectral];
-      const base = (vs === 'visited' ? 30 : 20) * (0.7 + c.size * 0.4);
+      const base = (vs === 'visited' ? 58 : 38) * (0.7 + c.size * 0.4);
       const scale = (base * (0.55 + 0.45 * Math.sqrt(z / 7))) / z / 64;
       sp.scale.set(scale);
       sp.alpha = vs === 'visited' ? 1 : 0.62;
-      const showLabel = vs === 'visited' ? labelZoom || s.id === selected || s.id === hover : s.id === selected || s.id === hover;
+      const showLabel =
+        vs === 'visited'
+          ? labelZoom || s.id === selected || s.id === hover
+          : s.id === selected || s.id === hover;
       const route = routePath?.includes(s.id);
       if (showLabel || s.id === state.location.systemId || route) {
         if (vs === 'visited' || s.id === selected || s.id === hover) {
@@ -422,7 +469,11 @@ export function createMapScene(opts: MapOptions): MapScene {
     },
     update(dt, time) {
       const k = prefersReducedMotion() ? 1 : 1 - Math.exp(-dt * 9);
-      if (Math.abs(target.x - cam.x) > 1e-4 || Math.abs(target.y - cam.y) > 1e-4 || Math.abs(target.zoom - cam.zoom) > 1e-3) {
+      if (
+        Math.abs(target.x - cam.x) > 1e-4 ||
+        Math.abs(target.y - cam.y) > 1e-4 ||
+        Math.abs(target.zoom - cam.zoom) > 1e-3
+      ) {
         cam.x += (target.x - cam.x) * k;
         cam.y += (target.y - cam.y) * k;
         cam.zoom += (target.zoom - cam.zoom) * k;
@@ -437,8 +488,22 @@ export function createMapScene(opts: MapOptions): MapScene {
       }
       drawDynamic(time);
       const aspect = W / H;
-      nebula.set({ time, offX: cam.x * 0.012, offY: cam.y * 0.012, scale: 1.4 + Math.min(1.5, cam.zoom * 0.04), aspectX: aspect, aspectY: 1 });
-      stars.set({ time, offX: cam.x * 0.02, offY: cam.y * 0.02, aspectX: aspect, aspectY: 1, twinkle: prefersReducedMotion() ? 0 : 1 });
+      nebula.set({
+        time,
+        offX: cam.x * 0.012,
+        offY: cam.y * 0.012,
+        scale: 1.4 + Math.min(1.5, cam.zoom * 0.04),
+        aspectX: aspect,
+        aspectY: 1,
+      });
+      stars.set({
+        time,
+        offX: cam.x * 0.02,
+        offY: cam.y * 0.02,
+        aspectX: aspect,
+        aspectY: 1,
+        twinkle: prefersReducedMotion() ? 0 : 1,
+      });
     },
     destroy() {
       detach();
@@ -483,7 +548,7 @@ export function createMapScene(opts: MapOptions): MapScene {
     getZoom: () => cam.zoom,
   };
   // initial camera: fit the whole galaxy
-  cam.zoom = target.zoom = Math.max(minZoom, Math.min(W, H) * 0.45 / galaxy.radius);
+  cam.zoom = target.zoom = Math.max(minZoom, (Math.min(W, H) * 0.45) / galaxy.radius);
   void dist;
   return scene;
 }

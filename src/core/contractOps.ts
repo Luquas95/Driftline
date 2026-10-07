@@ -10,14 +10,17 @@ import type { Contract, Galaxy, GameState, Quality } from './types';
 export const MAX_ACTIVE_CONTRACTS = 8;
 
 export function activePassengers(state: GameState): number {
-  return state.contracts.filter((c) => c.state === 'active' && c.kind === 'passenger').reduce((s, c) => s + (c.passengers ?? 0), 0);
+  return state.contracts
+    .filter((c) => c.state === 'active' && c.kind === 'passenger')
+    .reduce((s, c) => s + (c.passengers ?? 0), 0);
 }
 
 export function acceptContract(state: GameState, stationId: string, contractId: string): Result {
   const dyn = state.stations[stationId];
   const c = dyn.board.find((x) => x.id === contractId);
   if (!c) return fail('err.contractGone');
-  if (state.contracts.filter((x) => x.state === 'active').length >= MAX_ACTIVE_CONTRACTS) return fail('err.tooManyContracts');
+  if (state.contracts.filter((x) => x.state === 'active').length >= MAX_ACTIVE_CONTRACTS)
+    return fail('err.tooManyContracts');
   const { stats, dims } = analyze(state);
   if (c.kind === 'passenger') {
     if (stats.beds < activePassengers(state) + (c.passengers ?? 0)) return fail('err.noBeds');
@@ -63,7 +66,9 @@ export interface Completion {
 
 /** Hand in everything deliverable at this station. Applies the bundle bonus for multiple deliveries. */
 export function completeContractsAt(state: GameState, g: Galaxy, stationId: string): Completion[] {
-  const ready = state.contracts.filter((c) => c.state === 'active' && c.dest === stationId && isDeliverable(state, c));
+  const ready = state.contracts.filter(
+    (c) => c.state === 'active' && c.dest === stationId && isDeliverable(state, c),
+  );
   if (!ready.length) return [];
   const bundle = Math.min(1.4, 1 + 0.08 * (ready.length - 1));
   const out: Completion[] = [];

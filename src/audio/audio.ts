@@ -13,7 +13,9 @@ let chimeTimer: number | undefined;
 
 function ensure(): AudioContext | null {
   if (ctx) return ctx;
-  const AC = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+  const AC =
+    window.AudioContext ??
+    (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
   if (!AC) return null;
   try {
     ctx = new AC();
@@ -92,7 +94,15 @@ function startAmbient(c: AudioContext): void {
   chimeTimer = window.setTimeout(chime, 4000);
 }
 
-function tone(freq: number, delay: number, dur: number, vol: number, type: OscillatorType, dest: AudioNode, slideTo?: number): void {
+function tone(
+  freq: number,
+  delay: number,
+  dur: number,
+  vol: number,
+  type: OscillatorType,
+  dest: AudioNode,
+  slideTo?: number,
+): void {
   if (!ctx) return;
   const t0 = ctx.currentTime + delay;
   const o = ctx.createOscillator();

@@ -10,7 +10,14 @@ import { Icon } from '../Icon';
 import { act, game, report, rev, selectedSystem, screen } from '../store';
 import type { Contract, GameState, StationStatic } from '../../core/types';
 
-const KIND_ICON: Record<string, string> = { freight: 'cargo', courier: 'jump', passenger: 'crew', survey: 'scan', supply: 'market', rescue: 'warning' };
+const KIND_ICON: Record<string, string> = {
+  freight: 'cargo',
+  courier: 'jump',
+  passenger: 'crew',
+  survey: 'scan',
+  supply: 'market',
+  rescue: 'warning',
+};
 
 export function describeContract(c: Contract, s: GameState): string {
   const g = galaxyOf(s);
@@ -22,27 +29,49 @@ export function describeContract(c: Contract, s: GameState): string {
     qty: c.qty ?? 0,
     pax: c.passengers ?? 0,
     target: c.targetSystem !== undefined ? g.systems[c.targetSystem].name : '',
-    body: c.targetBody ? (g.systems[c.targetSystem ?? 0].bodies.find((b) => b.id === c.targetBody)?.name ?? '') : '',
+    body: c.targetBody
+      ? (g.systems[c.targetSystem ?? 0].bodies.find((b) => b.id === c.targetBody)?.name ?? '')
+      : '',
   };
   if (c.title) return t(c.title, params);
   return t(`contract.desc.${c.kind}${c.kind === 'survey' && c.targetBody ? 'Body' : ''}`, params);
 }
 
-export function ContractCard({ c, s, onAccept, onAbandon, here }: { c: Contract; s: GameState; onAccept?: () => void; onAbandon?: () => void; here?: string }) {
+export function ContractCard({
+  c,
+  s,
+  onAccept,
+  onAbandon,
+  here,
+}: {
+  c: Contract;
+  s: GameState;
+  onAccept?: () => void;
+  onAbandon?: () => void;
+  here?: string;
+}) {
   const g = galaxyOf(s);
   const dest = g.stationsById[c.dest];
   const originSys = g.stationsById[c.origin].systemId;
   const len = pathLength(g, originSys, c.destSystem);
   const days = c.deadline - s.day;
-  const sameDest = s.contracts.some((x) => x.state === 'active' && x.dest === c.dest) && c.state === 'offered';
+  const sameDest =
+    s.contracts.some((x) => x.state === 'active' && x.dest === c.dest) && c.state === 'offered';
   const ready = c.state === 'active' && isDeliverable(s, c);
   const chain = c.chainId ? CHAINS_BY_ID[c.chainId] : null;
   return (
-    <div class={`contract-card ${sameDest ? 'same-dest' : ''} ${chain ? 'chain' : ''}`} data-testid={`contract-${c.id}`}>
+    <div
+      class={`contract-card ${sameDest ? 'same-dest' : ''} ${chain ? 'chain' : ''}`}
+      data-testid={`contract-${c.id}`}
+    >
       <div class="spread">
         <b>
           <Icon name={KIND_ICON[c.kind]} /> {t(`contract.kind.${c.kind}`)}
-          {chain && <Tag tone="accent">{t(`chain.${c.chainId}.title`)} · {(c.chainStep ?? 0) + 1}/{chain.steps.length}</Tag>}
+          {chain && (
+            <Tag tone="accent">
+              {t(`chain.${c.chainId}.title`)} · {(c.chainStep ?? 0) + 1}/{chain.steps.length}
+            </Tag>
+          )}
         </b>
         <span class="mono pos">{money(c.reward)}</span>
       </div>
@@ -55,13 +84,23 @@ export function ContractCard({ c, s, onAccept, onAbandon, here }: { c: Contract;
         <Tag tone={days < 4 ? 'bad' : days < 8 ? 'warn' : ''}>
           <Icon name="clock" size={12} /> {t('contract.deadlineIn', { n: fmt(days, 1) })}
         </Tag>
-        {c.deposit > 0 && c.state === 'offered' && <Tag tone="good">{t('contract.advance', { n: money(c.deposit) })}</Tag>}
+        {c.deposit > 0 && c.state === 'offered' && (
+          <Tag tone="good">{t('contract.advance', { n: money(c.deposit) })}</Tag>
+        )}
         <Tag tone="warn">{t('contract.penalty', { n: money(c.penalty + c.deposit) })}</Tag>
         {c.kind === 'passenger' && <Tag>{t('contract.comfort', { n: c.comfort ?? 1 })}</Tag>}
-        {c.kind === 'supply' && c.goodId && <Tag>{GOODS_BY_ID[c.goodId] ? t(`good.${c.goodId}`) : ''} ×{c.qty}</Tag>}
+        {c.kind === 'supply' && c.goodId && (
+          <Tag>
+            {GOODS_BY_ID[c.goodId] ? t(`good.${c.goodId}`) : ''} ×{c.qty}
+          </Tag>
+        )}
         {sameDest && <Tag tone="accent">{t('contract.sameDest')}</Tag>}
         {ready && <Tag tone="good">{t('contract.ready')}</Tag>}
-        {c.state === 'active' && c.kind === 'survey' && <Tag tone={(c.progress ?? 0) >= 1 ? 'good' : ''}>{(c.progress ?? 0) >= 1 ? t('contract.surveyDone') : t('contract.surveyTodo')}</Tag>}
+        {c.state === 'active' && c.kind === 'survey' && (
+          <Tag tone={(c.progress ?? 0) >= 1 ? 'good' : ''}>
+            {(c.progress ?? 0) >= 1 ? t('contract.surveyDone') : t('contract.surveyTodo')}
+          </Tag>
+        )}
         {c.state === 'active' && c.kind === 'rescue' && <Tag>{t(`contract.rescue${c.progress ?? 0}`)}</Tag>}
       </div>
       <div class="row wrap">
@@ -71,11 +110,25 @@ export function ContractCard({ c, s, onAccept, onAbandon, here }: { c: Contract;
           </Btn>
         )}
         {c.state === 'active' && (
-          <Btn small icon="map" onClick={() => { selectedSystem.value = c.targetSystem !== undefined && c.kind !== 'rescue' && (c.progress ?? 0) < 1 ? c.targetSystem : c.destSystem; screen.value = 'map'; }}>
+          <Btn
+            small
+            icon="map"
+            onClick={() => {
+              selectedSystem.value =
+                c.targetSystem !== undefined && c.kind !== 'rescue' && (c.progress ?? 0) < 1
+                  ? c.targetSystem
+                  : c.destSystem;
+              screen.value = 'map';
+            }}
+          >
             {t('contract.showOnMap')}
           </Btn>
         )}
-        {onAbandon && <Btn small kind="danger" onClick={onAbandon}>{t('contract.abandon')}</Btn>}
+        {onAbandon && (
+          <Btn small kind="danger" onClick={onAbandon}>
+            {t('contract.abandon')}
+          </Btn>
+        )}
         {here && <span class="faint">{here}</span>}
       </div>
     </div>
@@ -95,7 +148,11 @@ export function ContractsTab({ st }: { st: StationStatic }) {
   return (
     <div class="stack">
       <Panel title={t('contract.board')} icon="contract">
-        <p class="explain">{t('contract.boardHelp', { max: 8, n: active.length })} {stats.beds > 0 && t('contract.beds', { free: stats.beds - activePassengers(s), comfort: stats.comfort })}</p>
+        <p class="explain">
+          {t('contract.boardHelp', { max: 8, n: active.length })}{' '}
+          {stats.beds > 0 &&
+            t('contract.beds', { free: stats.beds - activePassengers(s), comfort: stats.comfort })}
+        </p>
         {board.length === 0 && <Empty>{t('contract.none')}</Empty>}
         <div class="stack">
           {board.map((c) => (
@@ -103,7 +160,11 @@ export function ContractsTab({ st }: { st: StationStatic }) {
               key={c.id}
               c={c}
               s={s}
-              here={(counts.get(c.dest) ?? 0) > 1 ? t('contract.bundleHint', { n: counts.get(c.dest)! }) : undefined}
+              here={
+                (counts.get(c.dest) ?? 0) > 1
+                  ? t('contract.bundleHint', { n: counts.get(c.dest)! })
+                  : undefined
+              }
               onAccept={() => {
                 const r = act((x) => acceptContract(x, st.id, c.id));
                 if (report(r)) sfx('success');

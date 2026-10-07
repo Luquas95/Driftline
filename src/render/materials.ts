@@ -1,5 +1,12 @@
 import { Geometry, GlProgram, Mesh, Shader } from 'pixi.js';
-import { MESH_VERTEX, NEBULA_FRAGMENT, STARFIELD_FRAGMENT, STAR_FRAGMENT, planetFragment, type PlanetKind } from './glsl';
+import {
+  MESH_VERTEX,
+  NEBULA_FRAGMENT,
+  STARFIELD_FRAGMENT,
+  STAR_FRAGMENT,
+  planetFragment,
+  type PlanetKind,
+} from './glsl';
 import type { BodyStatic, SpectralClass } from '../core/types';
 import { hashToUnit } from '../core/rng';
 
@@ -54,7 +61,10 @@ export function planetParams(body: Pick<BodyStatic, 'kind' | 'seed' | 'atmospher
   const r = (k: string) => hashToUnit(`${body.seed}:${k}`);
   const kind = (body.kind === 'belt' ? 'dead' : body.kind) as PlanetKind;
   const hue = r('hue');
-  let a: V3, b: V3, c: V3, atmo: V3 = [0.4, 0.65, 1];
+  let a: V3,
+    b: V3,
+    c: V3,
+    atmo: V3 = [0.4, 0.65, 1];
   let atmoAmt = body.atmosphere ? 0.8 : 0.1;
   let cloud = body.atmosphere ? 0.7 : 0;
   switch (kind) {
@@ -181,7 +191,9 @@ export function createStar(spectral: SpectralClass, seed: number): StarMesh {
   const c = STAR_COLORS[spectral];
   const shader = new Shader({
     glProgram: program('star', STAR_FRAGMENT),
-    resources: { u: { uTime: f1(0), uSeed: f1((seed % 1000) / 17), uStarColor: v3(c.core), uHot: v3(c.hot) } },
+    resources: {
+      u: { uTime: f1(0), uSeed: f1((seed % 1000) / 17), uStarColor: v3(c.core), uHot: v3(c.hot) },
+    },
   });
   const mesh = new Mesh({ geometry: quad(), shader });
   mesh.blendMode = 'add';
@@ -195,7 +207,14 @@ export function createStar(spectral: SpectralClass, seed: number): StarMesh {
 
 export interface NebulaMesh {
   mesh: Mesh<Geometry, Shader>;
-  set(o: { time: number; offX: number; offY: number; scale?: number; aspectX: number; aspectY: number }): void;
+  set(o: {
+    time: number;
+    offX: number;
+    offY: number;
+    scale?: number;
+    aspectX: number;
+    aspectY: number;
+  }): void;
   setColors(a: V3, b: V3, c: V3, intensity: number): void;
 }
 
@@ -203,7 +222,16 @@ export function createNebula(a: V3, b: V3, c: V3, intensity = 0.9): NebulaMesh {
   const shader = new Shader({
     glProgram: program('nebula', NEBULA_FRAGMENT),
     resources: {
-      u: { uTime: f1(0), uOffset: v2(0, 0), uScale: f1(2), uColA: v3(a), uColB: v3(b), uColC: v3(c), uIntensity: f1(intensity), uAspect: v2(1, 1) },
+      u: {
+        uTime: f1(0),
+        uOffset: v2(0, 0),
+        uScale: f1(2),
+        uColA: v3(a),
+        uColB: v3(b),
+        uColC: v3(c),
+        uIntensity: f1(intensity),
+        uAspect: v2(1, 1),
+      },
     },
   });
   const mesh = new Mesh({ geometry: quad(), shader });
@@ -229,13 +257,22 @@ export function createNebula(a: V3, b: V3, c: V3, intensity = 0.9): NebulaMesh {
 
 export interface StarfieldMesh {
   mesh: Mesh<Geometry, Shader>;
-  set(o: { time: number; offX: number; offY: number; aspectX: number; aspectY: number; twinkle: number }): void;
+  set(o: {
+    time: number;
+    offX: number;
+    offY: number;
+    aspectX: number;
+    aspectY: number;
+    twinkle: number;
+  }): void;
 }
 
 export function createStarfield(density = 0.55): StarfieldMesh {
   const shader = new Shader({
     glProgram: program('starfield', STARFIELD_FRAGMENT),
-    resources: { u: { uTime: f1(0), uOffset: v2(0, 0), uAspect: v2(1, 1), uDensity: f1(density), uTwinkle: f1(1) } },
+    resources: {
+      u: { uTime: f1(0), uOffset: v2(0, 0), uAspect: v2(1, 1), uDensity: f1(density), uTwinkle: f1(1) },
+    },
   });
   const mesh = new Mesh({ geometry: quad(), shader });
   const u = shader.resources.u.uniforms;

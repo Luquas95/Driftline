@@ -3,7 +3,15 @@ import { MARKET_EVENTS } from '../content/marketEvents';
 import { STATION_TYPES_BY_ID } from '../content/stations';
 import { Rng } from './rng';
 import { T } from './tuning';
-import type { Difficulty, Galaxy, GameState, KnownPrice, MarketEvent, StationDyn, StationStatic } from './types';
+import type {
+  Difficulty,
+  Galaxy,
+  GameState,
+  KnownPrice,
+  MarketEvent,
+  StationDyn,
+  StationStatic,
+} from './types';
 
 export function goodCap(st: StationStatic, goodId: string): number {
   const g = GOODS_BY_ID[goodId];
@@ -88,11 +96,26 @@ export function quoteBuy(st: StationStatic, stock: number, goodId: string, qty: 
     tariff += mid * fees.tariff * block;
     s -= block;
   }
-  return { total, avg: qty > 0 ? total / qty : 0, first, last, tariffPaid: tariff, endMid: midPrice(st, goodId, s), stockAfter: s };
+  return {
+    total,
+    avg: qty > 0 ? total / qty : 0,
+    first,
+    last,
+    tariffPaid: tariff,
+    endMid: midPrice(st, goodId, s),
+    stockAfter: s,
+  };
 }
 
 /** Quote for the player selling `qty` to the station (station stock increases). `fresh` scales the payout. */
-export function quoteSell(st: StationStatic, stock: number, goodId: string, qty: number, fees: Fees, fresh = 1): Quote {
+export function quoteSell(
+  st: StationStatic,
+  stock: number,
+  goodId: string,
+  qty: number,
+  fees: Fees,
+  fresh = 1,
+): Quote {
   const steps = Math.max(1, Math.min(qty, 24));
   const block = qty / steps;
   let total = 0;
@@ -109,7 +132,15 @@ export function quoteSell(st: StationStatic, stock: number, goodId: string, qty:
     tariff += mid * fees.tariff * block * fresh;
     s += block;
   }
-  return { total, avg: qty > 0 ? total / qty : 0, first, last, tariffPaid: tariff, endMid: midPrice(st, goodId, s), stockAfter: s };
+  return {
+    total,
+    avg: qty > 0 ? total / qty : 0,
+    first,
+    last,
+    tariffPaid: tariff,
+    endMid: midPrice(st, goodId, s),
+    stockAfter: s,
+  };
 }
 
 export function initialStock(st: StationStatic, rng: Rng): number[] {
@@ -121,7 +152,13 @@ export function initialStock(st: StationStatic, rng: Rng): number[] {
 }
 
 export function createStationDyn(st: StationStatic, rng: Rng): StationDyn {
-  return { stock: initialStock(st, rng), board: [], boardEpoch: -1, rep: 0, shop: { hulls: [], modules: [], epoch: -1 } };
+  return {
+    stock: initialStock(st, rng),
+    board: [],
+    boardEpoch: -1,
+    rep: 0,
+    shop: { hulls: [], modules: [], epoch: -1 },
+  };
 }
 
 /** Advance the economy by one day. Deterministic per (seed, day) regardless of player actions. */
@@ -173,11 +210,22 @@ export function maybeSpawnEvent(galaxy: Galaxy, state: GameState, day: number): 
   return ev;
 }
 
-export function snapshotPrice(st: StationStatic, stock: number, goodId: string, difficulty: Difficulty, day: number): KnownPrice {
+export function snapshotPrice(
+  st: StationStatic,
+  stock: number,
+  goodId: string,
+  difficulty: Difficulty,
+  day: number,
+): KnownPrice {
   const bm = isBlackMarketGood(goodId);
   const fees = feesFor(st, difficulty, bm);
   const mid = midPrice(st, goodId, stock);
-  return { buy: mid * (1 + fees.spread + fees.tariff), sell: mid * (1 - fees.spread - fees.tariff), stock, day };
+  return {
+    buy: mid * (1 + fees.spread + fees.tariff),
+    sell: mid * (1 - fees.spread - fees.tariff),
+    stock,
+    day,
+  };
 }
 
 export function stationHasShipyard(st: StationStatic): boolean {

@@ -3,21 +3,26 @@ import type { JSX } from 'preact';
 /** Custom vector icon set (24x24 viewBox, stroke based). */
 const P: Record<string, string> = {
   map: 'M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2zM9 4v14M15 6v14',
-  system: 'M12 12m-2.2 0a2.2 2.2 0 1 0 4.4 0a2.2 2.2 0 1 0-4.4 0M12 12m-8 0a8 4 0 1 0 16 0a8 4 0 1 0-16 0M17.5 8.5l.01 0',
-  station: 'M12 3v4M12 17v4M3 12h4M17 12h4M12 12m-4 0a4 4 0 1 0 8 0a4 4 0 1 0-8 0M6 6l2 2M18 6l-2 2M6 18l2-2M18 18l-2-2',
+  system:
+    'M12 12m-2.2 0a2.2 2.2 0 1 0 4.4 0a2.2 2.2 0 1 0-4.4 0M12 12m-8 0a8 4 0 1 0 16 0a8 4 0 1 0-16 0M17.5 8.5l.01 0',
+  station:
+    'M12 3v4M12 17v4M3 12h4M17 12h4M12 12m-4 0a4 4 0 1 0 8 0a4 4 0 1 0-8 0M6 6l2 2M18 6l-2 2M6 18l2-2M18 18l-2-2',
   ship: 'M3 14l7-2 2-8 2 8 7 2-4 2 1 4-6-2-6 2 1-4z',
   cargo: 'M4 8l8-4 8 4v8l-8 4-8-4zM4 8l8 4 8-4M12 12v8',
   journal: 'M6 3h11a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H6zM9 7h6M9 11h6M9 15h4',
-  settings: 'M12 12m-3 0a3 3 0 1 0 6 0a3 3 0 1 0-6 0M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1',
+  settings:
+    'M12 12m-3 0a3 3 0 1 0 6 0a3 3 0 1 0-6 0M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1',
   fuel: 'M6 20V6a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v14M4 20h12M14 9h2a2 2 0 0 1 2 2v5a1.5 1.5 0 0 0 3 0V9l-3-3M8 8h4',
-  credits: 'M12 12m-8 0a8 8 0 1 0 16 0a8 8 0 1 0-16 0M9.5 9.5C10 8.5 11 8 12 8s2.5.6 2.5 1.8c0 2.2-5 1.6-5 4C9.5 15.1 10.8 16 12 16s2-.6 2.5-1.5',
+  credits:
+    'M12 12m-8 0a8 8 0 1 0 16 0a8 8 0 1 0-16 0M9.5 9.5C10 8.5 11 8 12 8s2.5.6 2.5 1.8c0 2.2-5 1.6-5 4C9.5 15.1 10.8 16 12 16s2-.6 2.5-1.5',
   power: 'M13 3L6 13h5l-1 8 8-11h-5z',
   warning: 'M12 4l9 16H3zM12 10v4M12 17.2v.01',
   jump: 'M4 12h10M10 7l5 5-5 5M18 6v12',
   scan: 'M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3M7 12h10M12 7v10',
   mine: 'M5 19l8-8M13 11l-2-6 6 2 3 5-5-1zM4 20l2-2',
   repair: 'M14 6a4 4 0 0 0-5 5l-6 6 3 3 6-6a4 4 0 0 0 5-5l-3 3-2-2z',
-  market: 'M4 9l1.5-5h13L20 9M4 9v10h16V9M4 9a2.7 2.7 0 0 0 5.3 0 2.7 2.7 0 0 0 5.4 0A2.7 2.7 0 0 0 20 9M10 19v-5h4v5',
+  market:
+    'M4 9l1.5-5h13L20 9M4 9v10h16V9M4 9a2.7 2.7 0 0 0 5.3 0 2.7 2.7 0 0 0 5.4 0A2.7 2.7 0 0 0 20 9M10 19v-5h4v5',
   contract: 'M7 3h8l4 4v14H7zM15 3v4h4M10 12h6M10 16h6',
   clock: 'M12 12m-8 0a8 8 0 1 0 16 0a8 8 0 1 0-16 0M12 7v5l3 2',
   shield: 'M12 3l7 3v6c0 4.5-3 7.8-7 9-4-1.2-7-4.5-7-9V6z',
@@ -55,7 +60,17 @@ const P: Record<string, string> = {
 
 export type IconName = keyof typeof P;
 
-export function Icon({ name, size = 18, class: cls, title }: { name: IconName | string; size?: number; class?: string; title?: string }): JSX.Element {
+export function Icon({
+  name,
+  size = 18,
+  class: cls,
+  title,
+}: {
+  name: IconName | string;
+  size?: number;
+  class?: string;
+  title?: string;
+}): JSX.Element {
   return (
     <svg
       class={`icon ${cls ?? ''}`}
@@ -90,7 +105,18 @@ const CAT: Record<string, string> = {
 
 export function CategoryIcon({ cat, size = 16 }: { cat: string; size?: number }): JSX.Element {
   return (
-    <svg class="icon cat" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <svg
+      class="icon cat"
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="1.7"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      aria-hidden="true"
+    >
       <path d={CAT[cat] ?? CAT.raw} />
     </svg>
   );

@@ -87,7 +87,9 @@ describe('cargo grid', () => {
     const items2: CargoItem[] = [];
     expect(addGoods(items2, dims, none, 'gems', 3, 0, 0).reason).toBe('secure');
     expect(addGoods(items2, dims, { chilledCells: 0, secureCells: 2 }, 'gems', 3, 0, 0).added).toBe(3);
-    expect(loadableUnits(items2, dims, { chilledCells: 0, secureCells: 2 }, 'gems', 100)).toBeLessThanOrEqual(5);
+    expect(loadableUnits(items2, dims, { chilledCells: 0, secureCells: 2 }, 'gems', 100)).toBeLessThanOrEqual(
+      5,
+    );
   });
 
   it('rotates, moves and auto-arranges items', () => {

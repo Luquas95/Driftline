@@ -14,7 +14,14 @@ export function createGalleryScene(): Scene {
   const planetLayer = new Container();
   container.addChild(planetLayer);
   kinds.forEach((kind, i) => {
-    const p = createPlanet(planetParams({ kind, seed: 1000 + i * 77, atmosphere: kind !== 'dead' && kind !== 'moon', id: `g${i}` }));
+    const p = createPlanet(
+      planetParams({
+        kind,
+        seed: 1000 + i * 77,
+        atmosphere: kind !== 'dead' && kind !== 'moon',
+        id: `g${i}`,
+      }),
+    );
     planetLayer.addChild(p.mesh);
     planets.push(p);
   });

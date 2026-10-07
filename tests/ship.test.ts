@@ -23,7 +23,17 @@ import {
   slotsOfKind,
 } from '../src/core/ship';
 import { analyze, newUid } from '../src/core/state';
-import { buyHull, buyModule, disassembleModule, installModule, previewHullSwap, refreshShop, removeModuleToInventory, sellModule, toggleModule } from '../src/core/shop';
+import {
+  buyHull,
+  buyModule,
+  disassembleModule,
+  installModule,
+  previewHullSwap,
+  refreshShop,
+  removeModuleToInventory,
+  sellModule,
+  toggleModule,
+} from '../src/core/shop';
 import { dockAt } from '../src/core/game';
 import { addGoods } from '../src/core/cargo';
 import { mk } from './helpers';
@@ -38,7 +48,8 @@ describe('ship', () => {
     expect(HULLS.length).toBeGreaterThanOrEqual(6);
     for (const h of HULLS) {
       const slots = hullSlots(h.id);
-      for (const k of ['reactor', 'engine', 'jump', 'life', 'sensors']) expect(slots.some((s) => s.core === k)).toBe(true);
+      for (const k of ['reactor', 'engine', 'jump', 'life', 'sensors'])
+        expect(slots.some((s) => s.core === k)).toBe(true);
       expect(slots.filter((s) => !s.core).length).toBeGreaterThanOrEqual(3);
     }
   });
@@ -112,7 +123,9 @@ describe('ship', () => {
     const ri = slotsOfKind(better, 'reactor')[0];
     better.slots[ri] = newModule('reactor_s', 'A', uid());
     expect(computeShipStats(better).powerOut).toBeGreaterThan(computeShipStats(base).powerOut);
-    expect(modulePrice(MODULES_BY_ID['reactor_s'], 'A')).toBeGreaterThan(modulePrice(MODULES_BY_ID['reactor_s'], 'E'));
+    expect(modulePrice(MODULES_BY_ID['reactor_s'], 'A')).toBeGreaterThan(
+      modulePrice(MODULES_BY_ID['reactor_s'], 'E'),
+    );
   });
 
   it('wear lowers performance, radiators protect neighbours, broken modules stop working', () => {
@@ -193,7 +206,9 @@ describe('shipyard', () => {
     expect(installModule(s, 'nope', 0).ok).toBe(false);
     expect(toggleModule(s, slots.find((x) => x.core === 'reactor')!.index).ok).toBe(false);
     expect(toggleModule(s, slots.find((x) => x.core === 'sensors')!.index).ok).toBe(true);
-    expect(sellModule(s, stId, s.ship.slots[slots.find((x) => x.core === 'engine')!.index]!.uid).ok).toBe(false);
+    expect(sellModule(s, stId, s.ship.slots[slots.find((x) => x.core === 'engine')!.index]!.uid).ok).toBe(
+      false,
+    );
   });
 
   it('rejects purchases without credits', () => {
@@ -211,7 +226,7 @@ describe('shipyard', () => {
     const target = st.shop.hulls.find((h) => h !== s.ship.hullId)!;
     const gal = (st as unknown as { x?: number }).x;
     void gal;
-    const station = (await_station(s, stId));
+    const station = await_station(s, stId);
     const prev = previewHullSwap(s, station, target);
     expect(prev.cost).toBeGreaterThan(-100000);
     expect(prev.after.coreMissing).toEqual([]);
@@ -231,7 +246,15 @@ describe('shipyard', () => {
     void stats;
     const res = disassembleModule(s, s.inventory[0].uid, (g, q) => {
       const { stats: st, dims } = analyze(s);
-      return addGoods(s.cargo, dims, { chilledCells: st.chilledCells, secureCells: st.secureCells }, g, q, 0, s.day).added;
+      return addGoods(
+        s.cargo,
+        dims,
+        { chilledCells: st.chilledCells, secureCells: st.secureCells },
+        g,
+        q,
+        0,
+        s.day,
+      ).added;
     });
     expect(res.ok).toBe(true);
     expect(s.cargo.length).toBeGreaterThan(0);

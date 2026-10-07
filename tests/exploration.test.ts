@@ -2,7 +2,20 @@ import { describe, expect, it } from 'vitest';
 import { EVENTS } from '../src/content/events';
 import { acceptContract } from '../src/core/contractOps';
 import { makeContract } from '../src/core/contracts';
-import { bodyDyn, depositDecay, exploreAnomaly, mine, mineMethodFor, salvage, scanSurface, scanSystem, sellDiscoveries, systemSurveyValue, travelToBody, bodyAu } from '../src/core/exploration';
+import {
+  bodyDyn,
+  depositDecay,
+  exploreAnomaly,
+  mine,
+  mineMethodFor,
+  salvage,
+  scanSurface,
+  scanSystem,
+  sellDiscoveries,
+  systemSurveyValue,
+  travelToBody,
+  bodyAu,
+} from '../src/core/exploration';
 import { Rng } from '../src/core/rng';
 import { hullSlots, newModule } from '../src/core/ship';
 import { analyze, galaxyOf } from '../src/core/state';
@@ -14,7 +27,12 @@ function equip(s: GameState, ...defs: string[]) {
   for (const d of defs) {
     const kind = d.split('_')[0];
     const size = d.split('_')[1].toUpperCase();
-    const slot = hullSlots(s.ship.hullId).find((x) => !x.core && !s.ship.slots[x.index] && (x.size === size || (size === 'S' && x.size !== 'L') || (size === 'M' && x.size === 'L')));
+    const slot = hullSlots(s.ship.hullId).find(
+      (x) =>
+        !x.core &&
+        !s.ship.slots[x.index] &&
+        (x.size === size || (size === 'S' && x.size !== 'L') || (size === 'M' && x.size === 'L')),
+    );
     if (!slot) throw new Error(`no slot for ${d}`);
     s.ship.slots[slot.index] = newModule(d, 'C', `eq-${kind}-${slot.index}`);
   }
@@ -22,7 +40,9 @@ function equip(s: GameState, ...defs: string[]) {
 
 function findBody(s: GameState, kinds: string[]): { sysId: number; body: BodyStatic } {
   const g = galaxyOf(s);
-  for (const sys of g.systems) for (const b of sys.bodies) if (kinds.includes(b.kind) && b.deposits.length) return { sysId: sys.id, body: b };
+  for (const sys of g.systems)
+    for (const b of sys.bodies)
+      if (kinds.includes(b.kind) && b.deposits.length) return { sysId: sys.id, body: b };
   throw new Error('no body');
 }
 
@@ -157,7 +177,11 @@ describe('exploration', () => {
     const s = mk('REFINE');
     const g = galaxyOf(s);
     let found: { sysId: number; body: BodyStatic; depId: string } | null = null;
-    for (const sys of g.systems) for (const b of sys.bodies) if (b.kind === 'belt') for (const d of b.deposits) if (d.goodId === 'iron_ore' && !found) found = { sysId: sys.id, body: b, depId: d.id };
+    for (const sys of g.systems)
+      for (const b of sys.bodies)
+        if (b.kind === 'belt')
+          for (const d of b.deposits)
+            if (d.goodId === 'iron_ore' && !found) found = { sysId: sys.id, body: b, depId: d.id };
     if (!found) return;
     goTo(s, found.sysId);
     s.detected[found.sysId] = g.systems[found.sysId].bodies.map((b) => b.id);
@@ -189,7 +213,8 @@ describe('exploration', () => {
     const s = mk('ANOM');
     const g = galaxyOf(s);
     let found: { sysId: number; body: BodyStatic } | null = null;
-    for (const sys of g.systems) for (const b of sys.bodies) if (b.anomalies.length && !found) found = { sysId: sys.id, body: b };
+    for (const sys of g.systems)
+      for (const b of sys.bodies) if (b.anomalies.length && !found) found = { sysId: sys.id, body: b };
     expect(found).not.toBeNull();
     goTo(s, found!.sysId);
     s.detected[found!.sysId] = g.systems[found!.sysId].bodies.map((b) => b.id);

@@ -66,7 +66,14 @@ export function createShipScene(initial: Ship, seedStr: string, compact = false)
       if (drawing) exhaust.update(dt, drawing.nozzles, 1, reduced, rand);
       const aspect = W / H;
       nebula.set({ time, offX: 0.1, offY: 0.2, scale: 1.6, aspectX: aspect, aspectY: 1 });
-      stars.set({ time, offX: reduced ? 0 : time * 0.02, offY: 0, aspectX: aspect, aspectY: 1, twinkle: reduced ? 0 : 1 });
+      stars.set({
+        time,
+        offX: reduced ? 0 : time * 0.02,
+        offY: 0,
+        aspectX: aspect,
+        aspectY: 1,
+        twinkle: reduced ? 0 : 1,
+      });
     },
     destroy() {
       container.destroy({ children: true });

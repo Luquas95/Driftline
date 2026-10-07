@@ -5,7 +5,19 @@ import { unlockAudio, sfx } from '../audio/audio';
 import { t, fmt, money, plural } from '../i18n';
 import { Icon } from './Icon';
 import { Modal, Btn } from './components';
-import { act, analysis, game, go, menuOpen, rev, screen, showHelp, toasts, type ScreenId, galaxy } from './store';
+import {
+  act,
+  analysis,
+  game,
+  go,
+  menuOpen,
+  rev,
+  screen,
+  showHelp,
+  toasts,
+  type ScreenId,
+  galaxy,
+} from './store';
 import { settings, updateSettings } from './settings';
 import { MenuScreen } from './screens/MenuScreen';
 import { MapScreen } from './screens/MapScreen';
@@ -96,7 +108,13 @@ function TopBar() {
             <Icon name="power" />
           </span>
         )}
-        <button class="icon-btn" type="button" aria-label={t('ui.help')} onClick={() => (showHelp.value = true)} data-testid="btn-help">
+        <button
+          class="icon-btn"
+          type="button"
+          aria-label={t('ui.help')}
+          onClick={() => (showHelp.value = true)}
+          data-testid="btn-help"
+        >
           <Icon name="help" />
         </button>
       </div>
@@ -152,7 +170,15 @@ function DeathModal() {
   const s = game.value!;
   if (s.dead) {
     return (
-      <Modal title={t('death.permaTitle')} testid="modal-death" footer={<Btn kind="primary" onClick={() => (menuOpen.value = true)}>{t('death.toMenu')}</Btn>}>
+      <Modal
+        title={t('death.permaTitle')}
+        testid="modal-death"
+        footer={
+          <Btn kind="primary" onClick={() => (menuOpen.value = true)}>
+            {t('death.toMenu')}
+          </Btn>
+        }
+      >
         <p>{t('death.permaText')}</p>
         <dl class="kv">
           <dt>{t('stats.days')}</dt>
@@ -167,7 +193,15 @@ function DeathModal() {
   }
   if (s.stats.deaths > lastDeaths.value) {
     return (
-      <Modal title={t('death.title')} testid="modal-respawn" footer={<Btn kind="primary" onClick={() => (lastDeaths.value = s.stats.deaths)}>{t('ui.continue')}</Btn>}>
+      <Modal
+        title={t('death.title')}
+        testid="modal-respawn"
+        footer={
+          <Btn kind="primary" onClick={() => (lastDeaths.value = s.stats.deaths)}>
+            {t('ui.continue')}
+          </Btn>
+        }
+      >
         <p>{s.insurance.active ? t('death.insured') : t('death.uninsured')}</p>
       </Modal>
     );
@@ -179,7 +213,14 @@ function useShortcuts() {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const el = e.target as HTMLElement | null;
-      if (el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.tagName === 'SELECT' || el.isContentEditable)) return;
+      if (
+        el &&
+        (el.tagName === 'INPUT' ||
+          el.tagName === 'TEXTAREA' ||
+          el.tagName === 'SELECT' ||
+          el.isContentEditable)
+      )
+        return;
       if (e.ctrlKey || e.metaKey || e.altKey) return;
       if (menuOpen.value) return;
       const s = game.value;
@@ -218,11 +259,17 @@ export function App() {
   void rev.value;
   const s = game.value;
   void settings.value;
+  // the station screen only makes sense while docked (e.g. after an undock, a tow or a loaded save)
+  if (s && screen.value === 'station' && !s.location.stationId) screen.value = 'system';
   const scr = screen.value;
   return (
     <>
       <StageHost />
-      {stageFailed.value && <div class="toasts"><div class="toast bad">{t('err.webgl')}</div></div>}
+      {stageFailed.value && (
+        <div class="toasts">
+          <div class="toast bad">{t('err.webgl')}</div>
+        </div>
+      )}
       {s && !menuOpen.value && (
         <div class="shell">
           <TopBar />
@@ -236,7 +283,9 @@ export function App() {
               {scr === 'cargo' && <CargoScreen />}
               {scr === 'journal' && <JournalScreen />}
               {scr === 'settings' && <SettingsScreen />}
-              {!s.tutorial.done && settings.value.tutorial && !s.pendingEvent && !eventResult.value && <Tutorial />}
+              {!s.tutorial.done && settings.value.tutorial && !s.pendingEvent && !eventResult.value && (
+                <Tutorial />
+              )}
             </div>
           </div>
           {(s.pendingEvent || eventResult.value) && <EventModal />}

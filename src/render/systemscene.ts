@@ -1,5 +1,14 @@
 import { Container, Graphics, Text } from 'pixi.js';
-import { createNebula, createPlanet, createStar, createStarfield, planetParams, STAR_COLORS, type PlanetMesh, type StarMesh } from './materials';
+import {
+  createNebula,
+  createPlanet,
+  createStar,
+  createStarfield,
+  planetParams,
+  STAR_COLORS,
+  type PlanetMesh,
+  type StarMesh,
+} from './materials';
 import type { Scene } from './stage';
 import type { BodyStatic, SystemStatic } from '../core/types';
 import { hashToUnit } from '../core/rng';
@@ -72,7 +81,15 @@ export function createSystemScene(opts: SystemSceneOptions): SystemScene {
 
   for (const b of sys.bodies) {
     const isBelt = b.kind === 'belt';
-    const label = new Text({ text: '', style: { fontFamily: 'Inter, sans-serif', fontSize: 12, fill: 0xdbe5f5, stroke: { color: 0x070b14, width: 3 } } });
+    const label = new Text({
+      text: '',
+      style: {
+        fontFamily: 'Inter, sans-serif',
+        fontSize: 12,
+        fill: 0xdbe5f5,
+        stroke: { color: 0x070b14, width: 3 },
+      },
+    });
     label.anchor.set(0.5, 0);
     labelLayer.addChild(label);
     const v: BodyView = {
@@ -85,7 +102,9 @@ export function createSystemScene(opts: SystemSceneOptions): SystemScene {
       r: 10,
     };
     if (!isBelt) {
-      const pm = createPlanet(planetParams({ kind: b.kind, seed: b.seed, atmosphere: b.atmosphere, id: b.id }));
+      const pm = createPlanet(
+        planetParams({ kind: b.kind, seed: b.seed, atmosphere: b.atmosphere, id: b.id }),
+      );
       v.mesh = pm;
       planetLayer.addChild(pm.mesh);
     } else v.gfx = belts;
@@ -142,13 +161,24 @@ export function createSystemScene(opts: SystemSceneOptions): SystemScene {
     for (const b of planets) {
       const rad = orbitRadius(b);
       const known = detected.has(b.id);
-      rings.ellipse(cx, cy, rad, rad * 0.62).stroke({ width: 1, color: known ? 0x4a78b8 : 0x2a3858, alpha: known ? 0.4 : 0.18 });
+      rings
+        .ellipse(cx, cy, rad, rad * 0.62)
+        .stroke({ width: 1, color: known ? 0x4a78b8 : 0x2a3858, alpha: known ? 0.4 : 0.18 });
       if (b.kind === 'belt') {
         const n = 90;
         for (let i = 0; i < n; i++) {
-          const a = (i / n) * Math.PI * 2 + hashToUnit(`${b.id}:${i}`) * 0.3 + (prefersReducedMotion() ? 0 : time * 0.01);
+          const a =
+            (i / n) * Math.PI * 2 +
+            hashToUnit(`${b.id}:${i}`) * 0.3 +
+            (prefersReducedMotion() ? 0 : time * 0.01);
           const jr = rad * (0.97 + hashToUnit(`${b.id}:r${i}`) * 0.06);
-          belts.circle(cx + Math.cos(a) * jr, cy + Math.sin(a) * jr * 0.62, 0.8 + hashToUnit(`${b.id}:s${i}`) * 1.6).fill({ color: known ? 0xb9b2a6 : 0x55607a, alpha: known ? 0.75 : 0.45 });
+          belts
+            .circle(
+              cx + Math.cos(a) * jr,
+              cy + Math.sin(a) * jr * 0.62,
+              0.8 + hashToUnit(`${b.id}:s${i}`) * 1.6,
+            )
+            .fill({ color: known ? 0xb9b2a6 : 0x55607a, alpha: known ? 0.75 : 0.45 });
         }
       }
     }
@@ -167,8 +197,12 @@ export function createSystemScene(opts: SystemSceneOptions): SystemScene {
         const len = Math.hypot(dx, dy) || 1;
         v.mesh.setLight(dx / len, -dy / len, 0.55);
         if (b.rings && known) {
-          overlay.ellipse(v.x, v.y, v.r * 1.9, v.r * 0.55).stroke({ width: Math.max(2, v.r * 0.16), color: 0xcdbb9b, alpha: 0.6 });
-          overlay.ellipse(v.x, v.y, v.r * 2.25, v.r * 0.66).stroke({ width: Math.max(1, v.r * 0.07), color: 0xb2a283, alpha: 0.4 });
+          overlay
+            .ellipse(v.x, v.y, v.r * 1.9, v.r * 0.55)
+            .stroke({ width: Math.max(2, v.r * 0.16), color: 0xcdbb9b, alpha: 0.6 });
+          overlay
+            .ellipse(v.x, v.y, v.r * 2.25, v.r * 0.66)
+            .stroke({ width: Math.max(1, v.r * 0.07), color: 0xb2a283, alpha: 0.4 });
         }
       }
       const labelPos = isBelt ? { x: cx + orbitRadius(b), y: cy } : { x: v.x, y: v.y + v.r + 3 };
@@ -191,11 +225,22 @@ export function createSystemScene(opts: SystemSceneOptions): SystemScene {
       if (shipBody === b.index) {
         const pos = isBelt ? { x: cx + orbitRadius(b), y: cy } : { x: v.x, y: v.y };
         const rr = (isBelt ? 8 : v.r) + 12;
-        overlay.poly([pos.x + rr, pos.y - 5, pos.x + rr + 10, pos.y, pos.x + rr, pos.y + 5]).fill({ color: 0x4cc9f0 });
+        overlay
+          .poly([pos.x + rr, pos.y - 5, pos.x + rr + 10, pos.y, pos.x + rr, pos.y + 5])
+          .fill({ color: 0x4cc9f0 });
       }
     }
     if (shipBody < 0) {
-      overlay.poly([cx + maxOrbitPx * 0.98, cy - 6, cx + maxOrbitPx * 0.98 + 12, cy, cx + maxOrbitPx * 0.98, cy + 6]).fill({ color: 0x4cc9f0 });
+      overlay
+        .poly([
+          cx + maxOrbitPx * 0.98,
+          cy - 6,
+          cx + maxOrbitPx * 0.98 + 12,
+          cy,
+          cx + maxOrbitPx * 0.98,
+          cy + 6,
+        ])
+        .fill({ color: 0x4cc9f0 });
     }
   }
 
@@ -243,7 +288,14 @@ export function createSystemScene(opts: SystemSceneOptions): SystemScene {
       star.setTime(time);
       const aspect = W / H;
       nebula.set({ time, offX: 0.3, offY: 0.1, scale: 1.5, aspectX: aspect, aspectY: 1 });
-      starfield.set({ time, offX: 0, offY: 0, aspectX: aspect, aspectY: 1, twinkle: prefersReducedMotion() ? 0 : 1 });
+      starfield.set({
+        time,
+        offX: 0,
+        offY: 0,
+        aspectX: aspect,
+        aspectY: 1,
+        twinkle: prefersReducedMotion() ? 0 : 1,
+      });
     },
     destroy() {
       canvas?.removeEventListener('pointerup', onClick);

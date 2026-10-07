@@ -55,7 +55,13 @@ export function nextId(state: GameState, prefix: string): string {
   return `${prefix}${++state.uidCounter}`;
 }
 
-function pickDest(g: Galaxy, origin: StationStatic, rng: Rng, jumps: number, types?: string[]): Nearby | null {
+function pickDest(
+  g: Galaxy,
+  origin: StationStatic,
+  rng: Rng,
+  jumps: number,
+  types?: string[],
+): Nearby | null {
   const all = stationsNear(g, origin.systemId, jumps).filter((n) => n.station.id !== origin.id);
   const pool = types ? all.filter((n) => types.includes(n.station.type)) : all;
   const choices = pool.length ? pool : all;
@@ -73,7 +79,13 @@ interface MakeOpts {
   originOverride?: StationStatic;
 }
 
-export function makeContract(g: Galaxy, state: GameState, origin: StationStatic, rng: Rng, opts: MakeOpts): Contract | null {
+export function makeContract(
+  g: Galaxy,
+  state: GameState,
+  origin: StationStatic,
+  rng: Rng,
+  opts: MakeOpts,
+): Contract | null {
   const { kind, step } = opts;
   const mult = step?.rewardMult ?? 1;
   const jumps = step?.jumps ?? rng.int(1, 4);
@@ -94,7 +106,10 @@ export function makeContract(g: Galaxy, state: GameState, origin: StationStatic,
       ...base,
       ...c,
       reward,
-      deposit: kind === 'freight' || kind === 'courier' || kind === 'passenger' ? Math.round((reward * 0.2) / 5) * 5 : 0,
+      deposit:
+        kind === 'freight' || kind === 'courier' || kind === 'passenger'
+          ? Math.round((reward * 0.2) / 5) * 5
+          : 0,
       penalty: Math.round((reward * 0.3) / 5) * 5,
       title: opts.chainId ? `chain.${opts.chainId}.${opts.chainStep}.text` : undefined,
       progress: 0,
@@ -107,19 +122,43 @@ export function makeContract(g: Galaxy, state: GameState, origin: StationStatic,
       if (!d) return null;
       const good = step?.goodId
         ? GOODS_BY_ID[step.goodId]
-        : rng.pick(MARKET_GOODS.filter((x) => !x.tags.includes('illegal') && !x.tags.includes('perishable') && (origin.role[x.id] ?? 0) >= 0 && x.basePrice < 400));
+        : rng.pick(
+            MARKET_GOODS.filter(
+              (x) =>
+                !x.tags.includes('illegal') &&
+                !x.tags.includes('perishable') &&
+                (origin.role[x.id] ?? 0) >= 0 &&
+                x.basePrice < 400,
+            ),
+          );
       const cells = rng.int(2, 7);
       const qty = step?.qty ?? cells * good.unitsPerCell;
       const len = pathLength(g, origin.systemId, d.station.systemId);
       const reward = (len * (15 + 9 * Math.ceil(qty / good.unitsPerCell)) + 90) * rng.range(0.9, 1.25);
-      return finalize({ ...base, dest: d.station.id, destSystem: d.station.systemId, goodId: good.id, qty, reward, deadline: state.day + estDays(len, d.jumps) * rng.range(1.7, 2.8) });
+      return finalize({
+        ...base,
+        dest: d.station.id,
+        destSystem: d.station.systemId,
+        goodId: good.id,
+        qty,
+        reward,
+        deadline: state.day + estDays(len, d.jumps) * rng.range(1.7, 2.8),
+      });
     }
     case 'courier': {
       const d = pickDest(g, origin, rng, Math.max(jumps, 2), types);
       if (!d) return null;
       const len = pathLength(g, origin.systemId, d.station.systemId);
       const reward = len * 34 + 200 + rng.range(0, 100);
-      return finalize({ ...base, dest: d.station.id, destSystem: d.station.systemId, goodId: 'data_core', qty: 1, reward, deadline: state.day + estDays(len, d.jumps) * rng.range(1.15, 1.6) });
+      return finalize({
+        ...base,
+        dest: d.station.id,
+        destSystem: d.station.systemId,
+        goodId: 'data_core',
+        qty: 1,
+        reward,
+        deadline: state.day + estDays(len, d.jumps) * rng.range(1.15, 1.6),
+      });
     }
     case 'passenger': {
       const d = pickDest(g, origin, rng, jumps, types);
@@ -128,40 +167,85 @@ export function makeContract(g: Galaxy, state: GameState, origin: StationStatic,
       const comfort = step?.comfort ?? rng.int(1, 3);
       const len = pathLength(g, origin.systemId, d.station.systemId);
       const reward = pax * len * (10 + 6 * comfort) + 120;
-      return finalize({ ...base, dest: d.station.id, destSystem: d.station.systemId, passengers: pax, comfort, reward, deadline: state.day + estDays(len, d.jumps) * rng.range(1.8, 3) });
+      return finalize({
+        ...base,
+        dest: d.station.id,
+        destSystem: d.station.systemId,
+        passengers: pax,
+        comfort,
+        reward,
+        deadline: state.day + estDays(len, d.jumps) * rng.range(1.8, 3),
+      });
     }
     case 'supply': {
       const d = pickDest(g, origin, rng, jumps, types);
       if (!d) return null;
       const dst = d.station;
-      const wanted = MARKET_GOODS.filter((x) => (dst.role[x.id] ?? 0) < 0 && !x.tags.includes('illegal') && !x.tags.includes('perishable'));
-      const good = step?.goodId ? GOODS_BY_ID[step.goodId] : rng.pick(wanted.length ? wanted : MARKET_GOODS.filter((x) => x.category === 'raw'));
-      const qty = step?.qty ?? Math.max(good.unitsPerCell, Math.round((rng.int(2, 8) * good.unitsPerCell) / 2) * 2);
+      const wanted = MARKET_GOODS.filter(
+        (x) => (dst.role[x.id] ?? 0) < 0 && !x.tags.includes('illegal') && !x.tags.includes('perishable'),
+      );
+      const good = step?.goodId
+        ? GOODS_BY_ID[step.goodId]
+        : rng.pick(wanted.length ? wanted : MARKET_GOODS.filter((x) => x.category === 'raw'));
+      const qty =
+        step?.qty ?? Math.max(good.unitsPerCell, Math.round((rng.int(2, 8) * good.unitsPerCell) / 2) * 2);
       const len = pathLength(g, origin.systemId, dst.systemId);
       const reward = qty * good.basePrice * rng.range(1.25, 1.55) + len * 12;
-      return finalize({ ...base, dest: dst.id, destSystem: dst.systemId, goodId: good.id, qty, reward, deadline: state.day + estDays(len, d.jumps) * rng.range(2.2, 3.6) });
+      return finalize({
+        ...base,
+        dest: dst.id,
+        destSystem: dst.systemId,
+        goodId: good.id,
+        qty,
+        reward,
+        deadline: state.day + estDays(len, d.jumps) * rng.range(2.2, 3.6),
+      });
     }
     case 'survey': {
-      const cands = stationsNear(g, origin.systemId, Math.max(jumps, 3)).map((n) => n.station.systemId).filter((s, i, a) => a.indexOf(s) === i && s !== origin.systemId);
+      const cands = stationsNear(g, origin.systemId, Math.max(jumps, 3))
+        .map((n) => n.station.systemId)
+        .filter((s, i, a) => a.indexOf(s) === i && s !== origin.systemId);
       const unseen = cands.filter((s) => !state.visited.includes(s));
-      const pool = unseen.length ? unseen : [...new Set(g.systems[origin.systemId].neighbors.flatMap((n) => [n, ...g.systems[n].neighbors]))].filter((s) => s !== origin.systemId && !state.visited.includes(s));
+      const pool = unseen.length
+        ? unseen
+        : [
+            ...new Set(g.systems[origin.systemId].neighbors.flatMap((n) => [n, ...g.systems[n].neighbors])),
+          ].filter((s) => s !== origin.systemId && !state.visited.includes(s));
       if (!pool.length) return null;
       const sys = g.systems[rng.pick(pool)];
       const body = rng.chance(0.4) ? rng.pick(sys.bodies) : null;
       const len = pathLength(g, origin.systemId, sys.id);
       const reward = (body ? T.survey.body : T.survey.sys) + len * 22 + rng.range(0, 90);
       const jumpsEst = Math.max(1, Math.round(len / 4.5));
-      return finalize({ ...base, dest: origin.id, destSystem: origin.systemId, targetSystem: sys.id, targetBody: body?.id, reward, deadline: state.day + estDays(len, jumpsEst) * rng.range(2, 3) * 2 });
+      return finalize({
+        ...base,
+        dest: origin.id,
+        destSystem: origin.systemId,
+        targetSystem: sys.id,
+        targetBody: body?.id,
+        reward,
+        deadline: state.day + estDays(len, jumpsEst) * rng.range(2, 3) * 2,
+      });
     }
     case 'rescue': {
-      const cands = [...new Set(stationsNear(g, origin.systemId, Math.max(jumps, 3)).map((n) => n.station.systemId))].filter((s) => s !== origin.systemId);
+      const cands = [
+        ...new Set(stationsNear(g, origin.systemId, Math.max(jumps, 3)).map((n) => n.station.systemId)),
+      ].filter((s) => s !== origin.systemId);
       if (!cands.length) return null;
       const sys = g.systems[rng.pick(cands)];
       const body = rng.pick(sys.bodies);
       const len = pathLength(g, origin.systemId, sys.id);
       const reward = 520 + len * 40 + rng.range(0, 160);
       const jumpsEst = Math.max(1, Math.round(len / 4.5));
-      return finalize({ ...base, dest: origin.id, destSystem: origin.systemId, targetSystem: sys.id, targetBody: body.id, reward, deadline: state.day + estDays(len, jumpsEst) * rng.range(2.5, 3.5) * 2 });
+      return finalize({
+        ...base,
+        dest: origin.id,
+        destSystem: origin.systemId,
+        targetSystem: sys.id,
+        targetBody: body.id,
+        reward,
+        deadline: state.day + estDays(len, jumpsEst) * rng.range(2.5, 3.5) * 2,
+      });
     }
   }
 }
@@ -191,7 +275,12 @@ export function refreshBoard(g: Galaxy, state: GameState, st: StationStatic): vo
     if (!chain.offeredAt.includes(st.type)) continue;
     if (state.flags[`chain:${chain.id}`] !== undefined) continue;
     if (!rng.chance(0.22)) continue;
-    const c = makeContract(g, state, st, rng, { kind: chain.steps[0].kind, step: chain.steps[0], chainId: chain.id, chainStep: 0 });
+    const c = makeContract(g, state, st, rng, {
+      kind: chain.steps[0].kind,
+      step: chain.steps[0],
+      chainId: chain.id,
+      chainStep: 0,
+    });
     if (c) {
       board.unshift(c);
       break;
@@ -202,7 +291,12 @@ export function refreshBoard(g: Galaxy, state: GameState, st: StationStatic): vo
 }
 
 /** Continue a story chain after a step is completed at `at`. Returns the new (active) contract or null when finished. */
-export function advanceChain(g: Galaxy, state: GameState, done: Contract, at: StationStatic): Contract | null {
+export function advanceChain(
+  g: Galaxy,
+  state: GameState,
+  done: Contract,
+  at: StationStatic,
+): Contract | null {
   if (!done.chainId) return null;
   const chain = CHAINS_BY_ID[done.chainId];
   const next = (done.chainStep ?? 0) + 1;

@@ -7,7 +7,8 @@ export const QUALITIES: Quality[] = ['E', 'D', 'C', 'B', 'A'];
 export const SIZES: Size[] = ['S', 'M', 'L'];
 
 export type Region = 'core' | 'inner' | 'outer' | 'rim';
-export type GoodCategory = 'raw' | 'food' | 'industry' | 'tech' | 'medical' | 'luxury' | 'illegal' | 'special';
+export type GoodCategory =
+  'raw' | 'food' | 'industry' | 'tech' | 'medical' | 'luxury' | 'illegal' | 'special';
 export type GoodTag = 'chilled' | 'hazardous' | 'illegal' | 'perishable' | 'sensitive';
 
 export interface GoodDef {
@@ -99,13 +100,7 @@ export interface SlotDef {
 }
 
 export type StationTypeId =
-  | 'mining'
-  | 'agricultural'
-  | 'industrial'
-  | 'scientific'
-  | 'trade_hub'
-  | 'research'
-  | 'pirate';
+  'mining' | 'agricultural' | 'industrial' | 'scientific' | 'trade_hub' | 'research' | 'pirate';
 export type StationSize = 'small' | 'medium' | 'large';
 
 export interface StationTypeDef {

@@ -70,16 +70,18 @@ export class SaveStore {
 
   async get(id: string): Promise<GameState | null> {
     const db = await this.open();
-    const row = db ? await this.tx<Row | undefined>('readonly', (s) => s.get(id) as IDBRequest<Row | undefined>) : this.mem.get(id);
+    const row = db
+      ? await this.tx<Row | undefined>('readonly', (s) => s.get(id) as IDBRequest<Row | undefined>)
+      : this.mem.get(id);
     return row ? deserializeState(row.json) : null;
   }
 
   async list(): Promise<SaveMeta[]> {
     const db = await this.open();
-    const rows = db ? ((await this.tx<Row[]>('readonly', (s) => s.getAll() as IDBRequest<Row[]>)) ?? []) : [...this.mem.values()];
-    return rows
-      .map(({ json: _json, ...meta }) => meta)
-      .sort((a, b) => b.savedAt - a.savedAt);
+    const rows = db
+      ? ((await this.tx<Row[]>('readonly', (s) => s.getAll() as IDBRequest<Row[]>)) ?? [])
+      : [...this.mem.values()];
+    return rows.map(({ json: _json, ...meta }) => meta).sort((a, b) => b.savedAt - a.savedAt);
   }
 
   async remove(id: string): Promise<void> {

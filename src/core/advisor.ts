@@ -45,7 +45,15 @@ export function planRoute(state: GameState, to: number): RoutePlan | null {
     const a = g.systems[path[i - 1]];
     const b = g.systems[path[i]];
     const ly = dist(a, b);
-    steps.push({ from: a.id, to: b.id, ly, fuel: jumpFuelCost(stats, ly), days: jumpDays(stats, ly), danger: b.danger, hasStation: b.stations.length > 0 });
+    steps.push({
+      from: a.id,
+      to: b.id,
+      ly,
+      fuel: jumpFuelCost(stats, ly),
+      days: jumpDays(stats, ly),
+      danger: b.danger,
+      hasStation: b.stations.length > 0,
+    });
   }
   const fuel = steps.reduce((s, x) => s + x.fuel, 0);
   const refuelAt = steps.filter((s) => s.hasStation && s.to !== to).map((s) => s.to);
@@ -122,12 +130,20 @@ export function recommendTrades(state: GameState, limit = 5, maxJumps = 5): Trad
       const dk = known[goodId];
       const ok = originPrices?.[goodId];
       if (!dk || !ok) continue;
-      const stock = state.location.stationId === origin.id ? state.stations[origin.id].stock[GOOD_INDEX[goodId]] : ok.stock;
+      const stock =
+        state.location.stationId === origin.id
+          ? state.stations[origin.id].stock[GOOD_INDEX[goodId]]
+          : ok.stock;
       if (stock < 2) continue;
       const feesO = feesFor(origin, state.difficulty, false);
       const feesD = feesFor(d, state.difficulty, false);
       const unitsPerCell = 10;
-      const qMax = Math.min(Math.floor(stock), Math.max(1, Math.floor(cellsFree * unitsPerCell)), 400, Math.floor(state.credits / Math.max(1, ok.buy)));
+      const qMax = Math.min(
+        Math.floor(stock),
+        Math.max(1, Math.floor(cellsFree * unitsPerCell)),
+        400,
+        Math.floor(state.credits / Math.max(1, ok.buy)),
+      );
       if (qMax < 1) continue;
       let best: TradeTip | null = null;
       for (const f of [0.25, 0.5, 0.75, 1]) {
@@ -136,7 +152,21 @@ export function recommendTrades(state: GameState, limit = 5, maxJumps = 5): Trad
         const revenue = quoteSell(d, dk.stock, goodId, q, feesD).total;
         const profit = revenue - cost - fuelCost;
         const perDay = profit / days;
-        if (profit > 50 && (!best || perDay > best.perDay)) best = { from: origin, dest: d, goodId, qty: q, cost, revenue, profit, days, fuel: jumpFuelCost(stats, ly), jumps, age: state.day - dk.day, perDay };
+        if (profit > 50 && (!best || perDay > best.perDay))
+          best = {
+            from: origin,
+            dest: d,
+            goodId,
+            qty: q,
+            cost,
+            revenue,
+            profit,
+            days,
+            fuel: jumpFuelCost(stats, ly),
+            jumps,
+            age: state.day - dk.day,
+            perDay,
+          };
       }
       if (best) tips.push(best);
     }
@@ -155,7 +185,11 @@ export function recommendTrades(state: GameState, limit = 5, maxJumps = 5): Trad
 }
 
 /** Best known sell price for a good among known stations, with distance from the current system. */
-export function bestKnownPrice(state: GameState, goodId: string, side: 'sell' | 'buy' = 'sell'): { stationId: string; price: number; age: number; jumps: number } | null {
+export function bestKnownPrice(
+  state: GameState,
+  goodId: string,
+  side: 'sell' | 'buy' = 'sell',
+): { stationId: string; price: number; age: number; jumps: number } | null {
   const g = galaxyOf(state);
   let best: { stationId: string; price: number; age: number; jumps: number } | null = null;
   const near = new Map<string, number>();
@@ -166,7 +200,8 @@ export function bestKnownPrice(state: GameState, goodId: string, side: 'sell' | 
     const jumps = near.get(sid);
     if (!p || jumps === undefined) continue;
     const price = side === 'sell' ? p.sell : p.buy;
-    if (!best || (side === 'sell' ? price > best.price : price < best.price)) best = { stationId: sid, price, age: state.day - p.day, jumps };
+    if (!best || (side === 'sell' ? price > best.price : price < best.price))
+      best = { stationId: sid, price, age: state.day - p.day, jumps };
   }
   return best;
 }

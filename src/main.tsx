@@ -16,6 +16,10 @@ async function boot() {
     (window as unknown as { __stage: Stage }).__stage = stage;
     return;
   }
+  if (params.has('e2e')) {
+    const { installE2eHooks } = await import('./ui/e2eHooks');
+    installE2eHooks();
+  }
   render(<App />, document.getElementById('app')!);
   if ('serviceWorker' in navigator && import.meta.env.PROD) {
     registerSW({ immediate: true });

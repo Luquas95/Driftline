@@ -34,7 +34,15 @@ import { mk } from './helpers';
 
 function load(s: GameState, goodId: string, qty: number) {
   const { stats, dims } = analyze(s);
-  addGoods(s.cargo, dims, { chilledCells: stats.chilledCells, secureCells: stats.secureCells }, goodId, qty, 0, s.day);
+  addGoods(
+    s.cargo,
+    dims,
+    { chilledCells: stats.chilledCells, secureCells: stats.secureCells },
+    goodId,
+    qty,
+    0,
+    s.day,
+  );
 }
 
 describe('game actions', () => {
@@ -134,7 +142,9 @@ describe('game actions', () => {
   it('refuses impossible jumps', () => {
     const s = mk('JUMP2');
     const g = galaxyOf(s);
-    const far = g.systems.find((x) => !g.systems[s.location.systemId].neighbors.includes(x.id) && x.id !== s.location.systemId)!;
+    const far = g.systems.find(
+      (x) => !g.systems[s.location.systemId].neighbors.includes(x.id) && x.id !== s.location.systemId,
+    )!;
     expect(planJump(s, far.id).reason).toBe('err.noRoute');
     expect(jump(s, far.id).ok).toBe(false);
     s.ship.fuel = 0;
@@ -179,7 +189,8 @@ describe('game actions', () => {
   it('docking moves the ship, learns prices and refreshes boards', () => {
     const s = mk('DOCK');
     const g = galaxyOf(s);
-    const sys = g.systems.find((x) => x.stations.length > 1) ?? g.systems.find((x) => x.stations.length >= 1)!;
+    const sys =
+      g.systems.find((x) => x.stations.length > 1) ?? g.systems.find((x) => x.stations.length >= 1)!;
     s.location = { systemId: sys.id, stationId: null, body: -1 };
     const st = sys.stations[0];
     const d0 = s.day;
@@ -205,7 +216,12 @@ describe('game actions', () => {
     for (let k = 0; k < 60; k++) {
       const s = mk(`CUSTOMS${k}`, 100);
       const g = galaxyOf(s);
-      const lawful = Object.values(g.stationsById).find((st) => STATION_TYPES.find((t) => t.id === st.type)!.lawful && !st.blackMarket && st.systemId !== s.location.systemId)!;
+      const lawful = Object.values(g.stationsById).find(
+        (st) =>
+          STATION_TYPES.find((t) => t.id === st.type)!.lawful &&
+          !st.blackMarket &&
+          st.systemId !== s.location.systemId,
+      )!;
       s.location = { systemId: lawful.systemId, stationId: null, body: -1 };
       load(s, 'narcotics', 30);
       s.credits = 5000;
@@ -227,7 +243,9 @@ describe('game actions', () => {
       for (let k = 0; k < 150; k++) {
         const s = mk(`VAULT${k}`, 80);
         const g = galaxyOf(s);
-        const lawful = Object.values(g.stationsById).find((st) => st.type !== 'pirate' && !st.blackMarket && st.systemId !== s.location.systemId)!;
+        const lawful = Object.values(g.stationsById).find(
+          (st) => st.type !== 'pirate' && !st.blackMarket && st.systemId !== s.location.systemId,
+        )!;
         s.location = { systemId: lawful.systemId, stationId: null, body: -1 };
         if (vault) {
           const free = hullSlots(s.ship.hullId).filter((x) => !x.core && !s.ship.slots[x.index]);

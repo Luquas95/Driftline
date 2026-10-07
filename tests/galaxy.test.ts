@@ -21,7 +21,12 @@ describe('galaxy generator', () => {
     const q = [0];
     while (q.length) {
       const s = q.pop()!;
-      for (const n of g.systems[s].neighbors) if (!seen.has(n)) (seen.add(n), q.push(n));
+      for (const n of g.systems[s].neighbors) {
+        if (!seen.has(n)) {
+          seen.add(n);
+          q.push(n);
+        }
+      }
     }
     expect(seen.size).toBe(300);
     // graph, not complete: average degree is small
@@ -54,7 +59,8 @@ describe('galaxy generator', () => {
   it('station roles reference only traded goods; illegal goods only on black markets', () => {
     for (const st of Object.values(g.stationsById)) {
       for (const k of Object.keys(st.role)) expect(st.goods).toContain(k);
-      if (!st.blackMarket) expect(st.goods.some((x) => ['narcotics', 'contraband_arms', 'stolen_data'].includes(x))).toBe(false);
+      if (!st.blackMarket)
+        expect(st.goods.some((x) => ['narcotics', 'contraband_arms', 'stolen_data'].includes(x))).toBe(false);
     }
   });
 

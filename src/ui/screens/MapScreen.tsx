@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { MARKET_GOODS } from '../../content/goods';
 import { STATION_TYPES_BY_ID } from '../../content/stations';
 import { recommendTrades, planRoute, type RoutePlan } from '../../core/advisor';
-import { jump, planJump, undock } from '../../core/game';
+import { callTow, isStranded, jump, planJump, undock } from '../../core/game';
 import { createMapScene, type MapFilter, type MapScene } from '../../render/mapscene';
 import { stage } from '../../render/instance';
 import { fmt, money, t, plural } from '../../i18n';
@@ -129,12 +129,24 @@ export function MapScreen() {
       <div class="map-overlay">
         <div class="map-tools" role="toolbar" aria-label={t('map.filters')}>
           {FILTERS.map((f) => (
-            <Btn key={f.id} small icon={f.icon} active={filter === f.id} onClick={() => setFilter(f.id)} testid={`filter-${f.id}`}>
+            <Btn
+              key={f.id}
+              small
+              icon={f.icon}
+              active={filter === f.id}
+              onClick={() => setFilter(f.id)}
+              testid={`filter-${f.id}`}
+            >
               {t(f.label)}
             </Btn>
           ))}
           {filter === 'prices' && (
-            <select value={good} onChange={(e) => setGood((e.target as HTMLSelectElement).value)} aria-label={t('map.filter.good')} data-testid="filter-good">
+            <select
+              value={good}
+              onChange={(e) => setGood((e.target as HTMLSelectElement).value)}
+              aria-label={t('map.filter.good')}
+              data-testid="filter-good"
+            >
               {MARKET_GOODS.map((x) => (
                 <option key={x.id} value={x.id}>
                   {t(`good.${x.id}`)}
@@ -149,9 +161,16 @@ export function MapScreen() {
         <div class="map-zoom">
           <Btn icon="plus" title={t('map.zoomIn')} onClick={() => sceneRef?.zoomBy(1.4)} />
           <Btn icon="minus" title={t('map.zoomOut')} onClick={() => sceneRef?.zoomBy(1 / 1.4)} />
-          <Btn icon="target" title={t('map.center')} onClick={() => sceneRef?.centerOn(s.location.systemId)} />
+          <Btn
+            icon="target"
+            title={t('map.center')}
+            onClick={() => sceneRef?.centerOn(s.location.systemId)}
+          />
         </div>
-        {hover && hover.id !== sel && <HoverTip id={hover.id} x={hover.x} y={hover.y} filter={filter} good={good} />}
+        <StrandedNotice />
+        {hover && hover.id !== sel && (
+          <HoverTip id={hover.id} x={hover.x} y={hover.y} filter={filter} good={good} />
+        )}
         {selSys && (
           <aside class="side-panel panel" data-testid="map-panel">
             <SystemPanel
@@ -165,7 +184,7 @@ export function MapScreen() {
           </aside>
         )}
         {!selSys && (
-          <aside class="side-panel panel" style={{ bottom: 'auto' }} data-testid="map-panel-empty">
+          <aside class="side-panel panel empty-hint" style={{ bottom: 'auto' }} data-testid="map-panel-empty">
             <header class="panel-head">
               <h2>
                 <Icon name="map" /> {here.name}
@@ -195,11 +214,15 @@ export function MapScreen() {
                   <span class="mono pos">+{money(tip.profit)}</span>
                 </div>
                 <div class="dim">
-                  {tip.from.name} <Icon name="arrow" size={12} /> {tip.dest.name} · {tip.jumps} {plural(tip.jumps, t('unit.jump1'), t('unit.jump2'), t('unit.jump5'))} · {fmt(tip.days, 1)} {t('unit.days')}
+                  {tip.from.name} <Icon name="arrow" size={12} /> {tip.dest.name} · {tip.jumps}{' '}
+                  {plural(tip.jumps, t('unit.jump1'), t('unit.jump2'), t('unit.jump5'))} · {fmt(tip.days, 1)}{' '}
+                  {t('unit.days')}
                 </div>
                 <div class="row wrap">
                   <Tag tone={tip.age > 12 ? 'warn' : ''}>{t('map.dataAge', { n: Math.round(tip.age) })}</Tag>
-                  <Tag>{money(tip.perDay)}/{t('unit.day')}</Tag>
+                  <Tag>
+                    {money(tip.perDay)}/{t('unit.day')}
+                  </Tag>
                   <span class="grow" />
                   <Btn
                     small
@@ -230,32 +253,100 @@ function RangeInfo() {
         <span class="dim">{t('ship.range')}</span>
         <span class="mono">{fmt(a.stats.range, 1)} ly</span>
       </div>
-      <Bar value={s.ship.fuel} max={a.stats.fuelCap} tone={s.ship.fuel / a.stats.fuelCap < 0.2 ? 'bad' : 'accent'} label={t('top.fuel')} />
-      <p class="faint" style={{ fontSize: 12.5 }}>{t('map.rangeHelp')}</p>
+      <Bar
+        value={s.ship.fuel}
+        max={a.stats.fuelCap}
+        tone={s.ship.fuel / a.stats.fuelCap < 0.2 ? 'bad' : 'accent'}
+        label={t('top.fuel')}
+      />
+      <p class="faint" style={{ fontSize: 12.5 }}>
+        {t('map.rangeHelp')}
+      </p>
     </div>
   );
 }
 
-function HoverTip({ id, x, y, filter, good }: { id: number; x: number; y: number; filter: MapFilter; good: string }) {
+function StrandedNotice() {
+  const s = game.value!;
+  if (!isStranded(s)) return null;
+  return (
+    <div class="hint-card" style={{ borderColor: 'var(--bad)' }} data-testid="stranded">
+      <h3 class="neg">{t('map.strandedTitle')}</h3>
+      <p>{t('map.stranded')}</p>
+      <Btn
+        small
+        kind="danger"
+        testid="btn-tow"
+        onClick={() => {
+          const r = act((x) => callTow(x));
+          if (report(r)) sfx('dock');
+        }}
+      >
+        {t('map.callTow')}
+      </Btn>
+    </div>
+  );
+}
+
+function HoverTip({
+  id,
+  x,
+  y,
+  filter,
+  good,
+}: {
+  id: number;
+  x: number;
+  y: number;
+  filter: MapFilter;
+  good: string;
+}) {
   const s = game.value!;
   const g = galaxy.value!;
   const sys = g.systems[id];
   const visited = s.visited.includes(id);
   const prices = filter === 'prices' ? sys.stations.map((st) => s.prices[st.id]?.[good]).filter(Boolean) : [];
   return (
-    <div class="panel" style={{ position: 'absolute', left: x + 14, top: y + 10, padding: '6px 10px', pointerEvents: 'none', fontSize: 12.5 }}>
+    <div
+      class="panel"
+      style={{
+        position: 'absolute',
+        left: x + 14,
+        top: y + 10,
+        padding: '6px 10px',
+        pointerEvents: 'none',
+        fontSize: 12.5,
+      }}
+    >
       <b>{sys.name}</b> {visited ? '' : <span class="faint">({t('map.unexplored')})</span>}
-      <div class="dim">{t(`region.${sys.region}`)} · {sys.spectral}</div>
+      <div class="dim">
+        {t(`region.${sys.region}`)} · {sys.spectral}
+      </div>
       {prices.map((p, i) => (
         <div key={i} class="mono">
-          {t('map.buyShort')} {fmt(p!.buy)} / {t('map.sellShort')} {fmt(p!.sell)} <span class="faint">({t('map.dataAge', { n: Math.round(s.day - p!.day) })})</span>
+          {t('map.buyShort')} {fmt(p!.buy)} / {t('map.sellShort')} {fmt(p!.sell)}{' '}
+          <span class="faint">({t('map.dataAge', { n: Math.round(s.day - p!.day) })})</span>
         </div>
       ))}
     </div>
   );
 }
 
-function SystemPanel({ s, sysId, route, autopilot, onAutopilot, onClose }: { s: GameState; sysId: number; route: RoutePlan | null; autopilot: { running: boolean } | null; onAutopilot: (r: boolean) => void; onClose: () => void }) {
+function SystemPanel({
+  s,
+  sysId,
+  route,
+  autopilot,
+  onAutopilot,
+  onClose,
+}: {
+  s: GameState;
+  sysId: number;
+  route: RoutePlan | null;
+  autopilot: { running: boolean } | null;
+  onAutopilot: (r: boolean) => void;
+  onClose: () => void;
+}) {
   const g = galaxy.value!;
   const a = analysis.value!;
   const sys = g.systems[sysId];
@@ -265,7 +356,9 @@ function SystemPanel({ s, sysId, route, autopilot, onAutopilot, onClose }: { s: 
   const detected = (s.detected[sysId] ?? []).length;
   const note = s.notes[`sys:${sysId}`] ?? '';
   const plan = adjacent ? planJump(s, sysId) : null;
-  const contractsHere = s.contracts.filter((c) => c.state === 'active' && (c.destSystem === sysId || c.targetSystem === sysId));
+  const contractsHere = s.contracts.filter(
+    (c) => c.state === 'active' && (c.destSystem === sysId || c.targetSystem === sysId),
+  );
   const riskLabel = route ? (route.risk < 0.3 ? 'low' : route.risk < 0.55 ? 'mid' : 'high') : 'low';
   return (
     <>
@@ -287,21 +380,30 @@ function SystemPanel({ s, sysId, route, autopilot, onAutopilot, onClose }: { s: 
         {visited ? (
           <dl class="kv">
             <dt>{t('map.bodies')}</dt>
-            <dd class="mono">{detected}/{sys.bodies.length}</dd>
+            <dd class="mono">
+              {detected}/{sys.bodies.length}
+            </dd>
             <dt>{t('map.stations')}</dt>
-            <dd>{sys.stations.length ? sys.stations.map((st) => `${st.name} (${t(`st.${st.type}`)})`).join(', ') : '—'}</dd>
+            <dd>
+              {sys.stations.length
+                ? sys.stations.map((st) => `${st.name} (${t(`st.${st.type}`)})`).join(', ')
+                : '—'}
+            </dd>
             <dt>{t('map.danger')}</dt>
             <dd class="mono">{Math.round(sys.danger * 100)} %</dd>
           </dl>
         ) : (
           <p class="dim">{t('map.unexploredHelp')}</p>
         )}
-        {visited && sys.stations.some((st) => STATION_TYPES_BY_ID[st.type].cartography) && <Tag>{t('map.cartography')}</Tag>}
+        {visited && sys.stations.some((st) => STATION_TYPES_BY_ID[st.type].cartography) && (
+          <Tag>{t('map.cartography')}</Tag>
+        )}
         {contractsHere.length > 0 && (
           <div class="explain">
             {contractsHere.map((c) => (
               <div key={c.id}>
-                <Icon name="contract" size={14} /> {t(`contract.kind.${c.kind}`)} · {t('contract.deadline')} {fmt(c.deadline - s.day, 1)} {t('unit.days')}
+                <Icon name="contract" size={14} /> {t(`contract.kind.${c.kind}`)} · {t('contract.deadline')}{' '}
+                {fmt(c.deadline - s.day, 1)} {t('unit.days')}
               </div>
             ))}
           </div>
@@ -321,9 +423,13 @@ function SystemPanel({ s, sysId, route, autopilot, onAutopilot, onClose }: { s: 
                 <Delta before={s.ship.fuel} after={s.ship.fuel - route.fuel} digits={1} />
               </dd>
               <dt>{t('map.routeTime')}</dt>
-              <dd class="mono">{fmt(route.days, 1)} {t('unit.days')}</dd>
+              <dd class="mono">
+                {fmt(route.days, 1)} {t('unit.days')}
+              </dd>
               <dt>{t('map.routeRisk')}</dt>
-              <dd class={riskLabel === 'high' ? 'neg' : riskLabel === 'mid' ? 'warn' : 'pos'}>{t(`map.risk.${riskLabel}`)}</dd>
+              <dd class={riskLabel === 'high' ? 'neg' : riskLabel === 'mid' ? 'warn' : 'pos'}>
+                {t(`map.risk.${riskLabel}`)}
+              </dd>
             </dl>
             {route.refuelAt.length > 0 && (
               <p class="faint" style={{ fontSize: 12.5 }}>
@@ -365,7 +471,11 @@ function SystemPanel({ s, sysId, route, autopilot, onAutopilot, onClose }: { s: 
             {adjacent && plan && !plan.ok && <p class="neg">{t(plan.reason ?? 'err.noRoute')}</p>}
             {autopilot && (
               <div class="row">
-                <Btn small icon={autopilot.running ? 'pause' : 'play'} onClick={() => onAutopilot(!autopilot.running)}>
+                <Btn
+                  small
+                  icon={autopilot.running ? 'pause' : 'play'}
+                  onClick={() => onAutopilot(!autopilot.running)}
+                >
                   {autopilot.running ? t('map.pause') : t('map.resume')}
                 </Btn>
                 <span class="faint">{t('map.spaceHint')}</span>
@@ -393,7 +503,8 @@ function SystemPanel({ s, sysId, route, autopilot, onAutopilot, onClose }: { s: 
           </label>
         )}
         <p class="faint" style={{ fontSize: 12 }}>
-          {t('map.distance', { d: fmt(dist(g.systems[s.location.systemId], sys), 1) })} · {t('ship.range')}: {fmt(a.stats.range, 1)} ly
+          {t('map.distance', { d: fmt(dist(g.systems[s.location.systemId], sys), 1) })} · {t('ship.range')}:{' '}
+          {fmt(a.stats.range, 1)} ly
         </p>
       </div>
     </>

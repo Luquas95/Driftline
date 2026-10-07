@@ -81,17 +81,26 @@ const stations: Record<string, string> = {
 
 const chains: Record<string, string> = {
   'chain.vesna.title': 'Doktorka Vesna',
-  'chain.vesna.0.text': 'Doktorka Vesna potřebuje doručit své poznámky o nové chorobě do stanice {dest}. Spěchá.',
-  'chain.vesna.1.text': 'Terénní klinika ve stanici {dest} hlásí epidemii. Dovez jim {qty} jednotek léků ({good}).',
-  'chain.vesna.2.text': 'Doktorka Vesna se vydává do stanice {dest} předat výsledky kolegům. Odvez ji a její asistenty ({pax}) v pohodlí.',
+  'chain.vesna.0.text':
+    'Doktorka Vesna potřebuje doručit své poznámky o nové chorobě do stanice {dest}. Spěchá.',
+  'chain.vesna.1.text':
+    'Terénní klinika ve stanici {dest} hlásí epidemii. Dovez jim {qty} jednotek léků ({good}).',
+  'chain.vesna.2.text':
+    'Doktorka Vesna se vydává do stanice {dest} předat výsledky kolegům. Odvez ji a její asistenty ({pax}) v pohodlí.',
   'chain.expedition.title': 'Ztracená expedice',
-  'chain.expedition.0.text': 'Expedice ztratila kontakt. Naskenuj systém {target}, kde měla naposledy hlásit polohu, a vrať se s hlášením.',
-  'chain.expedition.1.text': 'V systému {target} se podařilo najít vrak. Vyzvedni přeživší a doveď je do stanice {dest}.',
-  'chain.expedition.2.text': 'Přeživší předali černou skříňku s daty. Doruč ji do stanice {dest}; vědci na ni čekají.',
+  'chain.expedition.0.text':
+    'Expedice ztratila kontakt. Naskenuj systém {target}, kde měla naposledy hlásit polohu, a vrať se s hlášením.',
+  'chain.expedition.1.text':
+    'V systému {target} se podařilo najít vrak. Vyzvedni přeživší a doveď je do stanice {dest}.',
+  'chain.expedition.2.text':
+    'Přeživší předali černou skříňku s daty. Doruč ji do stanice {dest}; vědci na ni čekají.',
   'chain.crates.title': 'Zapečetěné bedny',
-  'chain.crates.0.text': 'Nezvyklý zákazník chce přepravit {qty} zapečetěných beden do stanice {dest}. Bez otázek.',
-  'chain.crates.1.text': 'Příjemce v bedně nenašel, co čekal. Jako omluvu žádá {qty} jednotek lihovin ({good}) do stanice {dest}.',
-  'chain.crates.2.text': 'Poslední zásilka: důvěrná data pro obchodního partnera ve stanici {dest}. Kdo ví, co je uvnitř.',
+  'chain.crates.0.text':
+    'Nezvyklý zákazník chce přepravit {qty} zapečetěných beden do stanice {dest}. Bez otázek.',
+  'chain.crates.1.text':
+    'Příjemce v bedně nenašel, co čekal. Jako omluvu žádá {qty} jednotek lihovin ({good}) do stanice {dest}.',
+  'chain.crates.2.text':
+    'Poslední zásilka: důvěrná data pro obchodního partnera ve stanici {dest}. Kdo ví, co je uvnitř.',
 };
 
 const marketMsgs: Record<string, string> = {
@@ -102,7 +111,8 @@ const marketMsgs: Record<string, string> = {
   'msg.market.blockade': 'Blokáda v sektoru {sector}: většina zboží je nedostatková.',
   'msg.market.festival': 'Slavnosti v sektoru {sector}: luxusní zboží a lihoviny jdou na dračku.',
   'msg.market.tech_boom': 'Technologický boom v sektoru {sector}: poptávka po počítačích a robotice.',
-  'msg.market.crackdown': 'Zátah proti pašerákům v sektoru {sector}: nelegální zboží je na černém trhu vzácné.',
+  'msg.market.crackdown':
+    'Zátah proti pašerákům v sektoru {sector}: nelegální zboží je na černém trhu vzácné.',
 };
 
 const base: Record<string, string> = {
@@ -156,7 +166,7 @@ const base: Record<string, string> = {
   'menu.offline': 'Hra běží offline a ukládá jen v tomto zařízení.',
   'menu.noSaves': 'Žádné uložené hry.',
   'menu.shipName': 'Jméno lodi',
-  'menu.defaultShip': 'Poutník',
+  'menu.defaultShip': 'Svítání',
   'menu.seed': 'Semínko galaxie',
   'menu.seedPlaceholder': 'prázdné = náhodné',
   'menu.prices': 'Ceny a poplatky',
@@ -179,11 +189,16 @@ const base: Record<string, string> = {
   'tut.done': 'Rozumím',
   'tut.openStation': 'Otevřít stanici',
   'tut.openMap': 'Otevřít mapu',
-  'tut.step0': 'Vítej, kapitáne. Ve stanici otevři Obchod, klikni na zboží a kup ho. Hledej zboží, které je u vás levné: ve sloupci „jinde“ uvidíš, kde se dá prodat dráž.',
-  'tut.step1': 'Skvěle. Teď otevři Mapu (M), klikni na sousední systém a skoč. Skok stojí palivo a několik dní.',
-  'tut.step2': 'V cíli otevři Systém (Y), přistaň u stanice a v Obchodu zboží prodej. Rozdíl cen je tvůj zisk.',
-  'tut.step3': 'Ve stanici máš nástěnku zakázek. Přijmi jednu a doruč ji do termínu: platí víc než jeden obchod, zálohu dostaneš hned.',
-  'tut.step4': 'Dvě věci na závěr. Loď (L): moduly spotřebovávají energii z reaktoru, takže někdy musíš něco vypnout. Náklad (C): co se nevejde do trupu, jde do varovného řádku navíc. Zvyšuje spotřebu zásob a riziko nehod.',
+  'tut.step0':
+    'Vítej, kapitáne. Ve stanici otevři Obchod, klikni na zboží a kup ho. Hledej zboží, které je u vás levné: ve sloupci „jinde“ uvidíš, kde se dá prodat dráž.',
+  'tut.step1':
+    'Skvěle. Teď otevři Mapu (M), klikni na sousední systém a skoč. Skok stojí palivo a několik dní.',
+  'tut.step2':
+    'V cíli otevři Systém (Y), přistaň u stanice a v Obchodu zboží prodej. Rozdíl cen je tvůj zisk.',
+  'tut.step3':
+    'Ve stanici máš nástěnku zakázek. Přijmi jednu a doruč ji do termínu: platí víc než jeden obchod, zálohu dostaneš hned.',
+  'tut.step4':
+    'Dvě věci na závěr. Loď (L): moduly spotřebovávají energii z reaktoru, takže někdy musíš něco vypnout. Náklad (C): co se nevejde do trupu, jde do varovného řádku navíc. Zvyšuje spotřebu zásob a riziko nehod.',
   /* help */
   'help.title': 'Nápověda a zkratky',
   'help.map': 'Mapa galaxie',
@@ -199,9 +214,11 @@ const base: Record<string, string> = {
   'help.zoom': 'Přiblížit a oddálit mapu',
   'help.help': 'Zobrazit tuto nápovědu',
   'help.touch': 'Dotyk',
-  'help.touchText': 'Tažením posouvej mapu, dvěma prsty přibližuj. Kontejnery v nákladu přetáhni prstem, dalším klepnutím je otočíš.',
+  'help.touchText':
+    'Tažením posouvej mapu, dvěma prsty přibližuj. Kontejnery v nákladu přetáhni prstem, dalším klepnutím je otočíš.',
   'help.basics': 'Jak hrát',
-  'help.basicsText': 'Kup zboží tam, kde je levné, odvez ho tam, kde je drahé, a vydělané kredity investuj do lepší lodi. Zakázky, průzkum a těžba jsou další cesty k penězům. Čas běží ve dnech a každý skok stojí palivo i čas. Ceny jinde znáš jen z doby poslední návštěvy.',
+  'help.basicsText':
+    'Kup zboží tam, kde je levné, odvez ho tam, kde je drahé, a vydělané kredity investuj do lepší lodi. Zakázky, průzkum a těžba jsou další cesty k penězům. Čas běží ve dnech a každý skok stojí palivo i čas. Ceny jinde znáš jen z doby poslední návštěvy.',
   /* map */
   'map.filters': 'Filtry mapy',
   'map.filter.normal': 'Přehled',
@@ -211,7 +228,8 @@ const base: Record<string, string> = {
   'map.filter.good': 'Zboží',
   'map.recommend': 'Doporuč obchod',
   'map.recommendTitle': 'Doporučené obchody',
-  'map.recommendHelp': 'Nejlepší známé trasy nákup → prodej v dosahu. Odhad vychází z posledních známých cen, které mohou být zastaralé.',
+  'map.recommendHelp':
+    'Nejlepší známé trasy nákup → prodej v dosahu. Odhad vychází z posledních známých cen, které mohou být zastaralé.',
   'map.noTips': 'Zatím nic nevím. Navštiv víc stanic nebo kup obchodní data v obchodním uzlu.',
   'map.showOnMap': 'Ukázat na mapě',
   'map.dataAge': 'před {n} d',
@@ -219,6 +237,10 @@ const base: Record<string, string> = {
   'map.zoomOut': 'Oddálit',
   'map.center': 'Vycentrovat na loď',
   'map.hint': 'Klikni na systém. Vidíš jen to, co jsi navštívil nebo co zachytily senzory.',
+  'map.stranded':
+    'Nemáš dost paliva ani na skok do sousedního systému. Odtahová služba tě dopraví do nejbližší stanice, ale zaplatíš.',
+  'map.strandedTitle': 'Uvízl jsi',
+  'map.callTow': 'Zavolat odtah',
   'map.rangeHelp': 'Dolet se zmenšuje s hmotností nákladu.',
   'map.toSystem': 'Do systému',
   'map.buyShort': 'nákup',
@@ -326,7 +348,8 @@ const base: Record<string, string> = {
   'station.news': 'Zprávy',
   'station.blackMarket': 'černý trh',
   'station.blackMarketTitle': 'Černý trh',
-  'station.blackMarketHelp': 'Nelegální zboží bez cla, ale na slušných stanicích tě při přistání může odhalit kontrola: pokuta a zabavení. Zabezpečený prostor šance snižuje.',
+  'station.blackMarketHelp':
+    'Nelegální zboží bez cla, ale na slušných stanicích tě při přistání může odhalit kontrola: pokuta a zabavení. Zabezpečený prostor šance snižuje.',
   'station.services': 'Služby',
   'station.fillUp': 'Doplnit',
   'station.bought': 'Koupeno {n} × {what} za {price}.',
@@ -335,6 +358,7 @@ const base: Record<string, string> = {
   'station.repairHelp': 'Opravárenský modul s náhradními díly opraví i mimo stanici (Loď → modul).',
   'station.goods': 'Zboží',
   /* market */
+  'market.pickGood': 'Vyber zboží v tabulce a uvidíš náhled obchodu.',
   'market.good': 'Zboží',
   'market.buyPrice': 'Nákup',
   'market.sellPrice': 'Prodej',
@@ -360,7 +384,8 @@ const base: Record<string, string> = {
   'market.needCooler': 'Toto zboží vyžaduje chladicí prostor. Nainstaluj modul Chladicí prostor.',
   'market.needVault': 'Citlivé zboží vyžaduje zabezpečený prostor v lodi.',
   'market.noSpace': 'V nákladu není místo. Uvolni mřížku nebo kup větší nákladní prostor.',
-  'market.overloadWarn': 'Pozor: nákup přesáhne kapacitu trupu. Přebytek poletí v přetíženém řádku, spotřebuješ víc zásob a hrozí vyšší riziko nehod.',
+  'market.overloadWarn':
+    'Pozor: nákup přesáhne kapacitu trupu. Přebytek poletí v přetíženém řádku, spotřebuješ víc zásob a hrozí vyšší riziko nehod.',
   'market.currentOverload': 'Už teď vezeš {n} buněk navíc.',
   'market.illegalWarn': 'Nelegální zboží: při přistání ve slušné stanici hrozí kontrola, pokuta a zabavení.',
   'market.hazardWarn': 'Nebezpečné zboží: při nehodě může vážně poškodit loď.',
@@ -383,7 +408,8 @@ const base: Record<string, string> = {
   'yard.effect': 'Účinek',
   'yard.power': 'Energie',
   'yard.price': 'Cena',
-  'yard.hullHelp': 'Při výměně trupu ti započtou starý trup ({trade}). Moduly, které se vejdou, se přenesou automaticky.',
+  'yard.hullHelp':
+    'Při výměně trupu ti započtou starý trup ({trade}). Moduly, které se vejdou, se přenesou automaticky.',
   'yard.slots': 'Sloty',
   'yard.current': 'Tvoje loď',
   'yard.compare': 'Porovnat a koupit',
@@ -399,13 +425,15 @@ const base: Record<string, string> = {
   'yard.newPrice': 'Cena nového trupu',
   'yard.tradeIn': 'Výkup starého trupu',
   'yard.toPay': 'Doplatek',
-  'yard.transferHelp': 'Jádrové moduly se přenesou do nových jádrových slotů, volitelné moduly do slotů, kam se vejdou. Zbytek skončí ve skladu.',
+  'yard.transferHelp':
+    'Jádrové moduly se přenesou do nových jádrových slotů, volitelné moduly do slotů, kam se vejdou. Zbytek skončí ve skladu.',
   'yard.transferred': 'Přenese se modulů: {n}',
   'yard.toInventory': 'Do skladu',
   'yard.changes': 'Změna vlastností',
   /* contracts */
   'contract.board': 'Nástěnka zakázek',
-  'contract.boardHelp': 'Aktivních zakázek můžeš mít nejvýš {max} (teď {n}). Zálohu dostaneš při přijetí, při nesplnění ji ztratíš a platíš pokutu. Zakázky do stejného cíle doručené najednou dostanou bonus.',
+  'contract.boardHelp':
+    'Aktivních zakázek můžeš mít nejvýš {max} (teď {n}). Zálohu dostaneš při přijetí, při nesplnění ji ztratíš a platíš pokutu. Zakázky do stejného cíle doručené najednou dostanou bonus.',
   'contract.beds': 'Ubikace volných lůžek: {free}, komfort {comfort}.',
   'contract.none': 'Dnes tu žádné zakázky nejsou.',
   'contract.active': 'Aktivní zakázky',
@@ -419,13 +447,15 @@ const base: Record<string, string> = {
   'contract.kind.survey': 'Průzkum',
   'contract.kind.supply': 'Dodávka surovin',
   'contract.kind.rescue': 'Záchrana',
-  'contract.desc.freight': 'Doprav {qty} × {good} do stanice {dest} ({destSystem}). Náklad dostaneš při přijetí.',
+  'contract.desc.freight':
+    'Doprav {qty} × {good} do stanice {dest} ({destSystem}). Náklad dostaneš při přijetí.',
   'contract.desc.courier': 'Rychle doruč datové jádro do stanice {dest} ({destSystem}).',
   'contract.desc.passenger': 'Odvez {pax} cestujících do stanice {dest} ({destSystem}).',
   'contract.desc.supply': 'Dodej {qty} × {good} do stanice {dest} ({destSystem}). Zboží si obstarej sám.',
   'contract.desc.survey': 'Naskenuj systém {target} a vrať se do stanice {dest} s hlášením.',
   'contract.desc.surveyBody': 'Naskenuj povrch tělesa {body} v systému {target} a vrať se do stanice {dest}.',
-  'contract.desc.rescue': 'V systému {target} ({body}) je vrak. Najdi ho, vyzvedni přeživší a doveď je do stanice {dest}.',
+  'contract.desc.rescue':
+    'V systému {target} ({body}) je vrak. Najdi ho, vyzvedni přeživší a doveď je do stanice {dest}.',
   'contract.deadline': 'Termín',
   'contract.deadlineIn': 'termín za {n} d',
   'contract.advance': 'záloha {n}',
@@ -440,12 +470,14 @@ const base: Record<string, string> = {
   'contract.rescue2': 'přeživší na palubě',
   'contract.bundleHint': '{n} zakázek do stejného cíle',
   /* cartography */
-  'carto.help': 'Kartografové vykupují data o systémech a tělesech. V neprobádaných oblastech platí víc, v jádru galaxie jsou už zmapované.',
+  'carto.help':
+    'Kartografové vykupují data o systémech a tělesech. V neprobádaných oblastech platí víc, v jádru galaxie jsou už zmapované.',
   'carto.nothing': 'Žádná neprodaná data.',
   'carto.sellAll': 'Prodat všechna data',
   'carto.noService': 'Tato stanice neprodává ani nevykupuje kartografická data.',
   'carto.intelTitle': 'Obchodní data sektoru',
-  'carto.intelHelp': 'Obchodní uzel prodá aktuální ceny všech stanic v sektoru. Jinak vidíš jen poslední známé ceny z doby své návštěvy.',
+  'carto.intelHelp':
+    'Obchodní uzel prodá aktuální ceny všech stanic v sektoru. Jinak vidíš jen poslední známé ceny z doby své návštěvy.',
   'carto.buyIntel': 'Koupit data',
   'carto.intelDone': 'Aktualizováno {n} stanic.',
   /* news / journal */
@@ -467,7 +499,8 @@ const base: Record<string, string> = {
   'journal.noPrices': 'Žádné známé ceny tohoto zboží.',
   'journal.station': 'Stanice',
   'journal.age': 'Stáří',
-  'journal.discoveriesHelp': 'Průzkumná data se prodávají v kartografii. První objevy v neprobádaném prostoru stojí nejvíc.',
+  'journal.discoveriesHelp':
+    'Průzkumná data se prodávají v kartografii. První objevy v neprobádaném prostoru stojí nejvíc.',
   'journal.sold': 'prodáno',
   'journal.log': 'Poslední události',
   'stats.days': 'Dní ve hře',
@@ -505,7 +538,8 @@ const base: Record<string, string> = {
   'ship.actJump': 'Skok (motor + skokový pohon)',
   'ship.actMine': 'Těžba',
   'ship.actScan': 'Skenování a opravy',
-  'ship.powerHelp': 'Trvalé moduly (senzory, štít, chladicí prostor…) berou energii pořád. Motor, skokový pohon, laser a skenery jen při použití. Když činnost nevychází, vypni něco z trvalých modulů, nebo vylepši reaktor.',
+  'ship.powerHelp':
+    'Trvalé moduly (senzory, štít, chladicí prostor…) berou energii pořád. Motor, skokový pohon, laser a skenery jen při použití. Když činnost nevychází, vypni něco z trvalých modulů, nebo vylepši reaktor.',
   'ship.stats': 'Vlastnosti lodi',
   'ship.mass': 'Hmotnost',
   'ship.hullMass': 'trup',
@@ -535,7 +569,8 @@ const base: Record<string, string> = {
   'ship.insuranceActive': 'Pojištění aktivní',
   'ship.insuranceLapsed': 'Pojištění propadlo',
   'ship.premium': '{n} / den',
-  'ship.insuranceHelp': 'Po zničení lodi se probudíš v poslední stanici. Trup a jádrové moduly dostaneš zpět, náklad a ostatní moduly ztratíš, a zaplatíš spoluúčast.',
+  'ship.insuranceHelp':
+    'Po zničení lodi se probudíš v poslední stanici. Trup a jádrové moduly dostaneš zpět, náklad a ostatní moduly ztratíš, a zaplatíš spoluúčast.',
   'ship.fullCover': 'Plné krytí (pojistí i volitelné moduly, vyšší poplatek)',
   'ship.renew': 'Obnovit pojištění',
   'ship.insuranceDocked': 'Změny jsou možné jen ve stanici.',
@@ -546,8 +581,10 @@ const base: Record<string, string> = {
   'cargo.jettison': 'Vyhodit',
   'cargo.nominal': 'uvnitř trupu',
   'cargo.overflowRow': 'přetížení (mimo trup)',
-  'cargo.help': 'Tahem přesouvej kontejnery, klepnutím nebo R otáčej. Chlazené a citlivé zboží má limit podle modulů.',
-  'cargo.overloadWarn': 'Přetížení: {n} buněk je mimo trup. Spotřeba zásob roste na {supplies}/den a stoupá riziko nehod.',
+  'cargo.help':
+    'Tahem přesouvej kontejnery, klepnutím nebo R otáčej. Chlazené a citlivé zboží má limit podle modulů.',
+  'cargo.overloadWarn':
+    'Přetížení: {n} buněk je mimo trup. Spotřeba zásob roste na {supplies}/den a stoupá riziko nehod.',
   'cargo.summary': 'Přehled',
   'cargo.occupancy': 'Obsazenost',
   'cargo.overloadShort': '+{n} přetížení',
@@ -590,7 +627,8 @@ const base: Record<string, string> = {
   'settings.export': 'Exportovat do souboru',
   'settings.exported': 'Soubor stažen.',
   'settings.import': 'Importovat ze souboru',
-  'settings.savesHelp': 'Hry jsou uložené jen v tomto zařízení. Export do souboru slouží jako záloha nebo přenos jinam.',
+  'settings.savesHelp':
+    'Hry jsou uložené jen v tomto zařízení. Export do souboru slouží jako záloha nebo přenos jinam.',
   'settings.game': 'Hra',
   'settings.toMenu': 'Hlavní nabídka',
   'settings.license': 'MIT',
@@ -613,9 +651,11 @@ const base: Record<string, string> = {
   'dock.completed': 'Splněné zakázky',
   'dock.bundleBonus': 'Bonus za více zakázek doručených najednou.',
   'dock.inspection': 'Celní kontrola',
-  'dock.inspectionText': 'Při přistání ti kontrola našla nelegální náklad: zabaveno zboží za {value} a pokuta {fine}.',
+  'dock.inspectionText':
+    'Při přistání ti kontrola našla nelegální náklad: zabaveno zboží za {value} a pokuta {fine}.',
   'death.title': 'Loď zničena',
-  'death.insured': 'Probouzíš se v poslední stanici. Pojišťovna ti vrátila loď, ale náklad a nepojištěné moduly jsou pryč.',
+  'death.insured':
+    'Probouzíš se v poslední stanici. Pojišťovna ti vrátila loď, ale náklad a nepojištěné moduly jsou pryč.',
   'death.uninsured': 'Bez pojištění sis zachránil jen kredity (polovinu) a dostal základní loď.',
   'death.permaTitle': 'Konec cesty',
   'death.permaText': 'Tvoje loď byla zničena a v trvalé smrti se z uložené hry nedá vrátit.',
@@ -650,11 +690,14 @@ const base: Record<string, string> = {
   'msg.boughtHull': 'Nový trup {hull} za doplatek {price} kr.',
   'msg.wreckFound': 'Vrak nalezen! Vyzvedni přeživší.',
   'msg.survivorsAboard': 'Přeživší jsou na palubě. Doveď je do cíle.',
-  'msg.inspection': 'Celní kontrola odhalila nelegální náklad: pokuta {fine} kr, zabaveno zboží za {value} kr.',
+  'msg.inspection':
+    'Celní kontrola odhalila nelegální náklad: pokuta {fine} kr, zabaveno zboží za {value} kr.',
   'msg.insuranceLapsed': 'Pojištění propadlo: nemáš na poplatky. Obnov ho ve stanici.',
   'msg.insuranceRenewed': 'Pojištění obnoveno.',
-  'msg.insuredRespawn': 'Loď zničena. Pojišťovna tě probudila ve stanici {station}; spoluúčast {fee} kr, náklad ztracen.',
-  'msg.uninsuredRespawn': 'Loď zničena a bez pojištění. Zachránili tě ve stanici {station} s prázdnou základní lodí.',
+  'msg.insuredRespawn':
+    'Loď zničena. Pojišťovna tě probudila ve stanici {station}; spoluúčast {fee} kr, náklad ztracen.',
+  'msg.uninsuredRespawn':
+    'Loď zničena a bez pojištění. Zachránili tě ve stanici {station} s prázdnou základní lodí.',
   'msg.permadeath': 'Loď zničena. Trvalá smrt: hra končí.',
   'msg.starving': 'Došly zásoby! Posádka strádá a loď utrpí škody.',
   'msg.spoiled': 'Část zkazitelného zboží se zkazila a byla vyhozena.',

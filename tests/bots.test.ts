@@ -34,7 +34,9 @@ describe('bots (headless play-through)', () => {
     const easy = newGame({ seed: 'DIFF', galaxySize: 80, difficulty: { prices: 'easy' } });
     const hard = newGame({ seed: 'DIFF', galaxySize: 80, difficulty: { prices: 'hard' } });
     const st = stationOf(easy, easy.location.stationId!);
-    expect(feesFor(st, easy.difficulty, false).spread).toBeLessThan(feesFor(st, hard.difficulty, false).spread);
+    expect(feesFor(st, easy.difficulty, false).spread).toBeLessThan(
+      feesFor(st, hard.difficulty, false).spread,
+    );
     expect(feesFor(st, easy.difficulty, true).tariff).toBe(0);
   });
 

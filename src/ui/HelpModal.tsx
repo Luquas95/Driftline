@@ -19,11 +19,22 @@ const KEYS: [string, string][] = [
 
 export function HelpModal() {
   return (
-    <Modal title={t('help.title')} onClose={() => (showHelp.value = false)} testid="modal-help" footer={<Btn kind="primary" onClick={() => (showHelp.value = false)}>{t('ui.close')}</Btn>}>
+    <Modal
+      title={t('help.title')}
+      onClose={() => (showHelp.value = false)}
+      testid="modal-help"
+      footer={
+        <Btn kind="primary" onClick={() => (showHelp.value = false)}>
+          {t('ui.close')}
+        </Btn>
+      }
+    >
       <div class="help-keys">
         {KEYS.map(([k, d]) => (
           <>
-            <span key={`${k}-k`}><kbd>{k}</kbd></span>
+            <span key={`${k}-k`}>
+              <kbd>{k}</kbd>
+            </span>
             <span key={`${k}-d`}>{t(d)}</span>
           </>
         ))}
