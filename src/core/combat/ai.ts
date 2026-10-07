@@ -131,7 +131,8 @@ export function aiControl(c: CombatState, rng: Rng, s: CShip, dt: number): void 
   const outgunned = foes.reduce((n, f) => n + f.weapons.length, 0) > s.weapons.length * 2 && hullPct < 0.6;
   if (!s.fleeing && s.canFlee && s.personality !== 'feral' && s.personality !== 'turret') {
     const limit = s.personality === 'cautious' ? 0.45 : s.personality === 'greedy' ? 0.35 : 0.22;
-    if (hullPct < limit || outgunned) s.fleeing = true;
+    const unarmed = s.weapons.length === 0 && foes.some((f) => f.weapons.length > 0);
+    if (hullPct < limit || outgunned || unarmed) s.fleeing = true;
   }
   if (s.personality === 'cautious' && !s.canFlee && hullPct < 0.2 && s.out === null && s.side === 'enemy') {
     s.out = 'surrendered';

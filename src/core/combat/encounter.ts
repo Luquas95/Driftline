@@ -382,7 +382,7 @@ export function autoResolve(c: CombatState): void {
   while (!c.outcome && guard++ < 10000) {
     if (c.demand !== null) {
       // the AI captain pays up only when badly hurt
-      const hurt = c.player.hull < c.player.hullMax * 0.4;
+      const hurt = c.player.hull < c.player.hullMax * 0.4 || c.player.weapons.length === 0;
       c.demand = hurt ? c.demand : null;
       if (hurt) c.outcome = 'tribute';
       else c.paused = false;

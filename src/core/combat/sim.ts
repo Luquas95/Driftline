@@ -545,10 +545,19 @@ export function stepCombat(c: CombatState, dt = DT): void {
   }
   // greedy demand (pauses until answered)
   if (c.demand === null && !c.enemies[0]?.demanded) {
-    const e = c.enemies.find((x) => x.personality === 'greedy' && x.alive && !x.out && !x.demanded);
+    // greedy captains ask when you are crippled; any raider asks when you cannot even shoot back
+    const defenceless = c.player.weapons.length === 0 && (c.kind === 'pirate' || c.kind === 'hunter');
+    const e = c.enemies.find(
+      (x) =>
+        (x.personality === 'greedy' ||
+          (defenceless && x.personality !== 'feral' && x.personality !== 'turret')) &&
+        x.alive &&
+        !x.out &&
+        !x.demanded,
+    );
     if (e) {
       const er = roomOf(c.player, 'engine');
-      if (c.player.hull < c.player.hullMax * 0.45 || (er && er.sys <= 0)) {
+      if (c.player.hull < c.player.hullMax * (defenceless ? 0.75 : 0.45) || (er && er.sys <= 0)) {
         e.demanded = true;
         c.demand = 0.4;
         c.paused = true;

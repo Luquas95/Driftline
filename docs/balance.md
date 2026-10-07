@@ -4,12 +4,12 @@ Vygenerováno příkazem `npm run balance` (10 semínek × 120 dní na strategii
 
 | Strategie | Příjem/den (medián) | Příjem/den (průměr) | Čistá hodnota po 30 dnech | Dny do +3000 kr | První vylepšení (den) | Nehody/100 dnů | Zničení lodi | Zničení do dne 20 | Skoků |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| trader | 100 | 75 | 2553 | 34 (7/10) | 0 | 2.6 | 15 | 1/10 | 52 |
-| hauler | 67 | 39 | 2367 | 31 (5/10) | 0 | 2.2 | 3 | 0/10 | 40 |
-| miner | 84 | 76 | 2786 | 34 (9/10) | 0 | 3.1 | 7 | 1/10 | 51 |
-| explorer | 7 | 27 | -309 | 38 (5/10) | 0 | 2.3 | 10 | 1/10 | 45 |
-| oracle | 175 | 181 | 9822 | 13 (9/10) | 0 | 2.7 | 11 | 1/10 | 45 |
-| loop | -41 | -39 | -2227 | 11 (1/10) | — | 2.1 | 5 | 0/10 | 20 |
+| trader | 102 | 111 | 2881 | 34 (9/10) | 0 | 2.8 | 8 | 0/10 | 51 |
+| hauler | 69 | 48 | 2787 | 34 (6/10) | 0 | 2.7 | 1 | 0/10 | 43 |
+| miner | 98 | 95 | 2903 | 32 (10/10) | 0 | 2.9 | 6 | 0/10 | 51 |
+| explorer | 41 | 30 | 206 | 41 (6/10) | 0 | 2.6 | 9 | 0/10 | 46 |
+| oracle | 228 | 242 | 9822 | 13 (9/10) | 0 | 2.7 | 8 | 1/10 | 45 |
+| loop | -41 | -42 | -2227 | 11 (1/10) | — | 2.1 | 4 | 0/10 | 21 |
 
 ## Test smyčky zisku (pevná trasa A↔B)
 
@@ -19,9 +19,9 @@ Bot opakuje jedinou nejlepší trasu tam a zpět (okruh = obě cesty). Zisk jedn
 |---:|---:|---:|
 | 1 | 870 | 10 |
 | 2 | 194 | 10 |
-| 3 | -447 | 10 |
-| 4 | -337 | 10 |
-| 5 | -345 | 10 |
+| 3 | -209 | 10 |
+| 4 | -672 | 10 |
+| 5 | -389 | 10 |
 | 6 | -386 | 9 |
 | 7 | -289 | 8 |
 | 8 | -270 | 7 |
@@ -30,19 +30,19 @@ Bot opakuje jedinou nejlepší trasu tam a zpět (okruh = obě cesty). Zisk jedn
 | 11 | -138 | 6 |
 | 12 | -111 | 6 |
 
-Zisk raných okruhů ≈ 532 kr, pozdních ≈ -143 kr (poměr -0.27).
+Zisk raných okruhů ≈ 532 kr, pozdních ≈ -190 kr (poměr -0.36).
 
 ## Nejvýdělečnější trasy (součet přes všechny boty)
 
 | Trasa (stanice>stanice:zboží) | Zisk |
 |---|---:|
+| 68:0>145:0:spare_parts | 21740 |
 | 253:0>154:0:machinery | 20624 |
-| 145:0>68:0:iron_ore | 13063 |
+| 145:0>68:0:iron_ore | 14100 |
 | 272:1>272:0:machinery | 12983 |
 | 253:0>154:0:spare_parts | 10421 |
 | 3:0>113:2:machinery | 9940 |
 | 83:0>83:2:machinery | 9935 |
-| 185:1>38:0:spare_parts | 9909 |
 | 279:1>279:0:machinery | 9612 |
 
 ## Čistě obchodní hra bez zbraní (střety se řeší únikem, úplatkem, vyhnutím)
@@ -51,12 +51,12 @@ Boti nemají zbraně a střetům se vyhýbají (vyhnout se > zaplatit > úplatek
 
 | Strategie | Střety/100 dní | Boje/100 dní | Úplatky (kr/100 dní) | Zničení lodi | Příjem/den (medián) |
 |---|---:|---:|---:|---:|---:|
-| trader | 2.1 | 1.0 | 600 | 15 | 100 |
-| hauler | 1.8 | 0.2 | 381 | 3 | 67 |
-| miner | 2.4 | 0.7 | 604 | 7 | 84 |
-| explorer | 2.3 | 0.9 | 150 | 10 | 7 |
-| oracle | 2.8 | 1.0 | 1195 | 11 | 175 |
-| loop | 1.9 | 1.0 | 69 | 5 | -41 |
+| trader | 2.8 | 0.8 | 635 | 8 | 102 |
+| hauler | 2.2 | 0.2 | 555 | 1 | 69 |
+| miner | 2.8 | 0.7 | 680 | 6 | 98 |
+| explorer | 2.5 | 0.8 | 145 | 9 | 41 |
+| oracle | 2.7 | 0.7 | 1279 | 8 | 228 |
+| loop | 2.1 | 1.0 | 69 | 4 | -41 |
 
 ## Boj: míra výher zbraní (AI proti AI)
 
@@ -64,14 +64,14 @@ Každá kombinace hraje 10 soubojů proti každé jiné na 5 trupech (wayfarer, 
 
 | Výzbroj | energy | kinetic | missile | ion | drones | mixed | Průměr proti poli |
 |---|---:|---:|---:|---:|---:|---:|---:|
-| **energy** | 50 % | 42 % | 45 % | 53 % | 55 % | 30 % | **45 %** |
-| **kinetic** | 64 % | 50 % | 58 % | 37 % | 66 % | 46 % | **54 %** |
-| **missile** | 57 % | 50 % | 50 % | 74 % | 4 % | 48 % | **47 %** |
-| **ion** | 26 % | 67 % | 32 % | 50 % | 66 % | 36 % | **45 %** |
-| **drones** | 32 % | 40 % | 94 % | 40 % | 50 % | 36 % | **48 %** |
-| **mixed** | 73 % | 54 % | 56 % | 55 % | 65 % | 50 % | **61 %** |
+| **energy** | 50 % | 42 % | 43 % | 52 % | 55 % | 33 % | **45 %** |
+| **kinetic** | 64 % | 50 % | 58 % | 37 % | 65 % | 43 % | **53 %** |
+| **missile** | 59 % | 54 % | 50 % | 75 % | 9 % | 53 % | **50 %** |
+| **ion** | 30 % | 66 % | 28 % | 50 % | 64 % | 34 % | **44 %** |
+| **drones** | 32 % | 40 % | 88 % | 42 % | 50 % | 36 % | **48 %** |
+| **mixed** | 75 % | 54 % | 47 % | 57 % | 68 % | 50 % | **60 %** |
 
-Nejsilnější výzbroj: **mixed** (61 %), nejslabší: **energy** (45 %). Cíl je průměr proti poli v rozmezí 40–60 %.
+Nejsilnější výzbroj: **mixed** (60 %), nejslabší: **ion** (44 %). Cíl je průměr proti poli v rozmezí 40–60 %.
 
 ### Míra výher proti vyrovnanému protivníkovi (smíšená výzbroj stejného trupu)
 
@@ -79,11 +79,11 @@ Nejsilnější výzbroj: **mixed** (61 %), nejslabší: **energy** (45 %). Cíl 
 |---|---:|---:|---:|---:|---:|
 | wayfarer | 0 % | 30 % | 90 % | 0 % | 0 % |
 | kestrel | 20 % | 30 % | 50 % | 40 % | 50 % |
-| mule | 20 % | 40 % | 0 % | 20 % | 20 % |
-| swift | 60 % | 30 % | 80 % | 60 % | 20 % |
-| borer | 50 % | 100 % | 20 % | 60 % | 90 % |
+| mule | 20 % | 40 % | 5 % | 20 % | 20 % |
+| swift | 60 % | 30 % | 85 % | 60 % | 20 % |
+| borer | 65 % | 85 % | 35 % | 50 % | 90 % |
 
-Nejsilnější kombinace proti smíšenému protivníkovi: borer + kinetic (100 %), wayfarer + missile (90 %), borer + drones (90 %). Nejslabší: wayfarer + ion (0 %), wayfarer + drones (0 %), mule + missile (0 %).
+Nejsilnější kombinace proti smíšenému protivníkovi: wayfarer + missile (90 %), borer + drones (90 %), swift + missile (85 %). Nejslabší: wayfarer + energy (0 %), wayfarer + ion (0 %), wayfarer + drones (0 %).
 
 ## Boj: kořist proti nákladům
 
@@ -95,7 +95,7 @@ Míra výher 36 %, zničení vlastní lodi 52 %, průměrná kořist na souboj 3
 
 ### Obtížnost rizika: normální
 
-Míra výher 36 %, zničení vlastní lodi 57 %, průměrná kořist na souboj 377 kr, průměrné náklady 2187 kr, čistý výsledek na souboj -1810 kr.
+Míra výher 36 %, zničení vlastní lodi 56 %, průměrná kořist na souboj 377 kr, průměrné náklady 2161 kr, čistý výsledek na souboj -1784 kr.
 
 | Protivník | Úroveň | Výhry | Kořist/souboj | Náklady/souboj | Čisté |
 |---|---:|---:|---:|---:|---:|
@@ -103,7 +103,7 @@ Míra výher 36 %, zničení vlastní lodi 57 %, průměrná kořist na souboj 3
 | scrapper | 2 | 100 % | 870 | 0 | 870 |
 | raider | 1 | 100 % | 1284 | 623 | 661 |
 | raider | 3 | 0 % | 0 | 253 | -253 |
-| corsair | 2 | 0 % | 0 | 0 | 0 |
+| corsair | 2 | 0 % | 0 | 160 | -160 |
 | corsair | 3 | 0 % | 0 | 0 | 0 |
 | warlord | 3 | 0 % | 0 | 498 | -498 |
 | hunter | 1 | 100 % | 1140 | 0 | 1140 |
@@ -113,17 +113,17 @@ Míra výher 36 %, zničení vlastní lodi 57 %, průměrná kořist na souboj 3
 
 ### Obtížnost rizika: vysoké
 
-Míra výher 36 %, zničení vlastní lodi 57 %, průměrná kořist na souboj 394 kr, průměrné náklady 2185 kr, čistý výsledek na souboj -1791 kr.
+Míra výher 36 %, zničení vlastní lodi 56 %, průměrná kořist na souboj 394 kr, průměrné náklady 2160 kr, čistý výsledek na souboj -1766 kr.
 
 ### Míra výher podle výzbroje a obtížnosti (proti střetům)
 
 | Výzbroj | nízké riziko | normální | vysoké |
 |---|---:|---:|---:|
-| energy | 36 % | 36 % | 36 % |
+| energy | 36 % | 34 % | 36 % |
 | kinetic | 36 % | 36 % | 36 % |
 | missile | 48 % | 41 % | 41 % |
-| ion | 36 % | 36 % | 34 % |
+| ion | 32 % | 32 % | 27 % |
 | drones | 36 % | 36 % | 36 % |
 | mixed | 36 % | 36 % | 36 % |
 
-Doba běhu simulace: 87 s.
+Doba běhu simulace: 88 s.
