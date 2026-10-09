@@ -59,7 +59,20 @@ test.describe('visual snapshots', () => {
     await expect
       .poll(() => page.evaluate(() => window.__dl.sys()!.zoom), { timeout: 20_000 })
       .toBeGreaterThan(3);
-    await page.waitForTimeout(800);
+    // the camera eases in with the machine's frame rate: wait until zoom and position stop changing
+    let prev = '';
+    await expect
+      .poll(
+        async () => {
+          const c = await page.evaluate(() => JSON.stringify(window.__dl.sys()!.cam));
+          const same = c === prev;
+          prev = c;
+          await page.waitForTimeout(600);
+          return same;
+        },
+        { timeout: 60_000 },
+      )
+      .toBe(true);
     await page.evaluate(() => window.__dl.freeze(3));
     await page.waitForTimeout(250);
     await expect(page).toHaveScreenshot('system-detail.png', {
