@@ -1,4 +1,5 @@
 import { Container, Graphics, Sprite, Text, Texture } from 'pixi.js';
+import { drawSilhouette } from './shipgen';
 import { createNebula, createStarfield, STAR_COLORS, type V3 } from './materials';
 import type { Scene } from './stage';
 import { dist } from '../core/galaxy';
@@ -22,7 +23,22 @@ export interface MapScene extends Scene {
   zoomBy(f: number): void;
   centerOn(id: number, zoom?: number): void;
   setMarker(from: number | null, to: number | null, progress: number): void;
+  /** Fly the ship silhouette from one system to the next: charge, streak, arrival. `done` runs at the end. */
+  playJump(
+    from: number,
+    to: number,
+    hullId: string,
+    level: 'full' | 'reduced' | 'off',
+    done: () => void,
+  ): void;
+  isJumping(): boolean;
+  skipJump(): void;
+  /** Test hook: put the running jump animation at progress u (0..1) without finishing it. */
+  seekJump(u: number): void;
   getZoom(): number;
+  getCam(): { x: number; y: number; zoom: number };
+  /** Screen position of a system (tests and tutorials). */
+  systemScreenPos(id: number): { x: number; y: number };
 }
 
 const rgbHex = (c: V3): number =>
@@ -75,8 +91,18 @@ export function createMapScene(opts: MapOptions): MapScene {
   const starLayer = new Container();
   const labelLayer = new Container();
   const shipGfx = new Graphics();
+  const jumpIcon = new Graphics();
+  const jumpShip = new Graphics();
+  let jumpAnim: {
+    from: number;
+    to: number;
+    t: number;
+    dur: number;
+    hullId: string;
+    done: () => void;
+  } | null = null;
   const dyn = new Graphics();
-  world.addChild(routes, routeHi, starLayer, markers, labelLayer, shipGfx, dyn);
+  world.addChild(routes, routeHi, starLayer, markers, labelLayer, shipGfx, dyn, jumpIcon, jumpShip);
 
   let W = 800;
   let H = 600;
@@ -277,14 +303,76 @@ export function createMapScene(opts: MapOptions): MapScene {
     }
   }
 
+  /** Timeline of one jump (fractions of the whole): charge 0..0.28, travel 0.28..0.84, arrival 0.84..1. */
+  function drawJump(px: number, time: number): void {
+    jumpIcon.clear();
+    jumpIcon.visible = !!jumpAnim;
+    if (!jumpAnim) return;
+    const a = galaxy.systems[jumpAnim.from];
+    const b = galaxy.systems[jumpAnim.to];
+    const u = Math.min(1, jumpAnim.t / jumpAnim.dur);
+    const ang = Math.atan2(b.y - a.y, b.x - a.x);
+    const charge = Math.min(1, u / 0.28);
+    const travel = Math.max(0, Math.min(1, (u - 0.28) / 0.56));
+    const arrive = Math.max(0, (u - 0.84) / 0.16);
+    const e = travel * travel * (3 - 2 * travel);
+    const x = a.x + (b.x - a.x) * e;
+    const y = a.y + (b.y - a.y) * e;
+    // the ship: its real hull silhouette, scaled to a readable size on screen
+    const len = 30 * px;
+    // streak behind the ship while travelling (motion blur)
+    if (travel > 0 && travel < 1) {
+      const tail = Math.min(e, 0.35) * Math.hypot(b.x - a.x, b.y - a.y);
+      const tx = x - Math.cos(ang) * tail;
+      const ty = y - Math.sin(ang) * tail;
+      jumpIcon
+        .moveTo(tx, ty)
+        .lineTo(x, y)
+        .stroke({ width: 7 * px, color: 0x4cc9f0, alpha: 0.18 });
+      jumpIcon
+        .moveTo(tx, ty)
+        .lineTo(x, y)
+        .stroke({ width: 3 * px, color: 0x9fe8ff, alpha: 0.5 });
+      jumpIcon
+        .moveTo(tx, ty)
+        .lineTo(x, y)
+        .stroke({ width: 1.1 * px, color: 0xffffff, alpha: 0.9 });
+    }
+    // charging: rings collapsing onto the ship at the origin
+    if (charge < 1) {
+      const rr = (26 - 20 * charge) * px;
+      jumpIcon.circle(a.x, a.y, rr).stroke({ width: 2 * px, color: 0x8fe3ff, alpha: 0.9 * charge });
+      jumpIcon.circle(a.x, a.y, rr * 1.7).stroke({ width: 1 * px, color: 0x8fe3ff, alpha: 0.5 * charge });
+      jumpIcon.circle(a.x, a.y, 7 * px * charge).fill({ color: 0xffffff, alpha: 0.4 * charge });
+    }
+    // arrival flash at the destination
+    if (arrive > 0) {
+      jumpIcon
+        .circle(b.x, b.y, (8 + 26 * arrive) * px)
+        .stroke({ width: 2.4 * px * (1 - arrive), color: 0xbfe6ff, alpha: 1 - arrive });
+      jumpIcon.circle(b.x, b.y, 12 * px * (1 - arrive)).fill({ color: 0xffffff, alpha: 0.6 * (1 - arrive) });
+    }
+    // the ship itself: visible once the drive is nearly charged, gone when the arrival flash fades
+    const shown = (charge >= 0.55 || travel > 0) && arrive < 0.85;
+    jumpShip.visible = shown;
+    if (shown) {
+      jumpShip.position.set(travel > 0 ? x : a.x, travel > 0 ? y : a.y);
+      jumpShip.rotation = ang;
+      jumpShip.scale.set((len / 360) * (travel > 0 ? 1 : 0.6 + 0.4 * ((charge - 0.55) / 0.45)));
+      jumpShip.alpha = 1 - arrive * 0.6;
+    }
+    void time;
+  }
+
   function drawDynamic(time: number): void {
     if (!state) return;
     const px = 1 / cam.zoom;
     dyn.clear();
-    const cur = galaxy.systems[state.location.systemId];
+    const cur = galaxy.systems[jumpAnim ? jumpAnim.from : state.location.systemId];
     const pulse = prefersReducedMotion() ? 1 : 1 + 0.14 * Math.sin(time * 3);
     dyn.circle(cur.x, cur.y, 9 * px * pulse).stroke({ width: 2 * px, color: 0x4cc9f0 });
     shipGfx.clear();
+    drawJump(px, time);
     if (shipMarker) {
       const a = galaxy.systems[shipMarker.from];
       const b = galaxy.systems[shipMarker.to];
@@ -363,7 +451,7 @@ export function createMapScene(opts: MapOptions): MapScene {
   /* ----------------------------- input ----------------------------- */
   const pointers = new Map<number, { x: number; y: number }>();
   let dragStart: { x: number; y: number; cx: number; cy: number; moved: boolean } | null = null;
-  let pinchStart: { d: number; zoom: number } | null = null;
+  let pinchStart: { d: number; zoom: number; wx: number; wy: number } | null = null;
   let canvas: HTMLCanvasElement | null = null;
 
   const local = (e: PointerEvent | WheelEvent) => {
@@ -377,7 +465,14 @@ export function createMapScene(opts: MapOptions): MapScene {
     if (pointers.size === 1) dragStart = { x: p.x, y: p.y, cx: target.x, cy: target.y, moved: false };
     if (pointers.size === 2) {
       const [a, b] = [...pointers.values()];
-      pinchStart = { d: Math.hypot(a.x - b.x, a.y - b.y), zoom: target.zoom };
+      const mx = (a.x + b.x) / 2;
+      const my = (a.y + b.y) / 2;
+      pinchStart = {
+        d: Math.hypot(a.x - b.x, a.y - b.y),
+        zoom: target.zoom,
+        wx: (mx - W / 2) / cam.zoom + cam.x,
+        wy: (my - H / 2) / cam.zoom + cam.y,
+      };
       if (dragStart) dragStart.moved = true;
     }
   };
@@ -387,9 +482,18 @@ export function createMapScene(opts: MapOptions): MapScene {
     if (pointers.size === 2 && pinchStart) {
       const [a, b] = [...pointers.values()];
       const d = Math.hypot(a.x - b.x, a.y - b.y);
+      // pinch zooms around the fingers and follows them, so two fingers also pan
+      const mx = (a.x + b.x) / 2;
+      const my = (a.y + b.y) / 2;
       target.zoom = pinchStart.zoom * (d / pinchStart.d);
       clampTarget();
+      target.x = pinchStart.wx - (mx - W / 2) / target.zoom;
+      target.y = pinchStart.wy - (my - H / 2) / target.zoom;
+      clampTarget();
       cam.zoom = target.zoom;
+      cam.x = target.x;
+      cam.y = target.y;
+      dirty = true;
       return;
     }
     if (dragStart && pointers.size === 1) {
@@ -424,6 +528,11 @@ export function createMapScene(opts: MapOptions): MapScene {
       dirty = true;
     }
     if (pointers.size === 0) dragStart = null;
+    else if (pointers.size === 1) {
+      // one finger stays after a pinch: continue panning from where it is now, not from the stale start
+      const rest = [...pointers.values()][0];
+      dragStart = { x: rest.x, y: rest.y, cx: target.x, cy: target.y, moved: true };
+    }
   };
   const onWheel = (e: WheelEvent) => {
     e.preventDefault();
@@ -486,6 +595,16 @@ export function createMapScene(opts: MapOptions): MapScene {
         lastDrawZoom = cam.zoom;
         dirty = false;
       }
+      if (jumpAnim) {
+        jumpAnim.t += dt;
+        if (jumpAnim.t >= jumpAnim.dur) {
+          const f = jumpAnim;
+          jumpAnim = null;
+          jumpShip.visible = false;
+          dirty = true;
+          f.done();
+        }
+      }
       drawDynamic(time);
       const aspect = W / H;
       nebula.set({
@@ -534,12 +653,41 @@ export function createMapScene(opts: MapOptions): MapScene {
       target.zoom *= f;
       clampTarget();
     },
+    getCam: () => ({ x: cam.x, y: cam.y, zoom: cam.zoom }),
+    systemScreenPos(id) {
+      const s = galaxy.systems[id];
+      return { x: (s.x - cam.x) * cam.zoom + W / 2, y: (s.y - cam.y) * cam.zoom + H / 2 };
+    },
     centerOn(id, zoom) {
       const s = galaxy.systems[id];
       target.x = s.x;
       target.y = s.y;
       if (zoom) target.zoom = zoom;
       clampTarget();
+    },
+    playJump(from, to, hullId, level, done) {
+      if (level === 'off') {
+        done();
+        return;
+      }
+      const dist = Math.hypot(
+        galaxy.systems[to].x - galaxy.systems[from].x,
+        galaxy.systems[to].y - galaxy.systems[from].y,
+      );
+      const dur = level === 'reduced' ? 0.4 : Math.min(3, 1.6 + dist * 0.05);
+      drawSilhouette(jumpShip, hullId, 0x3a7fb0, 0x9fe8ff);
+      jumpAnim = { from, to, t: 0, dur, hullId, done };
+      dirty = true;
+    },
+    isJumping: () => !!jumpAnim,
+    skipJump() {
+      if (jumpAnim) jumpAnim.t = jumpAnim.dur;
+    },
+    seekJump(u) {
+      if (jumpAnim) {
+        jumpAnim.t = Math.min(0.98, Math.max(0, u)) * jumpAnim.dur;
+        dirty = true;
+      }
     },
     setMarker(from, to, p) {
       shipMarker = from !== null && to !== null ? { from, to, p } : null;

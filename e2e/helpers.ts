@@ -11,6 +11,21 @@ export interface DL {
   encounter: (enemy: string, tier?: number) => void;
   fightStep: (seconds: number) => void;
   fightAuto: () => void;
+  setAnim: (a: 'full' | 'reduced' | 'off') => void;
+  sys: () => {
+    zoom: number;
+    cam: { zoom: number; x: number; y: number };
+    flying: boolean;
+    ship: { x: number; y: number };
+    body: (i: number) => { x: number; y: number; r: number } | null;
+    station: (id: string) => { x: number; y: number } | null;
+  } | null;
+  map: () => {
+    cam: { x: number; y: number; zoom: number };
+    jumping: boolean;
+    seek: (u: number) => void;
+    pos: (id: number) => { x: number; y: number };
+  } | null;
   roomPos: (side: 'player' | 'enemy', ship: number, room: number) => { x: number; y: number } | null;
 }
 
@@ -20,7 +35,10 @@ declare global {
   }
 }
 
-export async function startGame(page: Page, opts: { seed?: string; tutorial?: boolean } = {}) {
+export async function startGame(
+  page: Page,
+  opts: { seed?: string; tutorial?: boolean; quick?: boolean } = {},
+) {
   await page.addInitScript((tutorial) => {
     try {
       localStorage.setItem(
@@ -31,11 +49,11 @@ export async function startGame(page: Page, opts: { seed?: string; tutorial?: bo
       /* ignore */
     }
   }, opts.tutorial ?? false);
-  await page.goto('/?e2e=1');
+  await page.goto(opts.quick === false ? '/?e2e=1' : '/?e2e=1&quick=1');
   await page.getByTestId('menu-new').click();
   await page.getByTestId('new-seed').fill(opts.seed ?? 'E2E1');
   await page.getByTestId('menu-start').click();
-  await expect(page.getByTestId('screen-station')).toBeVisible();
+  await expect(page.getByTestId(opts.quick === false ? 'screen-firstship' : 'screen-station')).toBeVisible();
   await page.waitForFunction(() => !!window.__dl?.state());
 }
 

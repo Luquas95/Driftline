@@ -43,6 +43,14 @@ import { computeShipStats, hullSlots, moduleFits, modulePrice } from '../core/sh
 import { buyModule, installModule } from '../core/shop';
 import { analyze, galaxyOf, stationOf } from '../core/state';
 import { resolveEvent } from '../core/events';
+import {
+  buyFirstShip,
+  firstShipOffers,
+  previewOffer,
+  suggestShipName,
+  type ShipOffer,
+} from '../core/firstShip';
+import { HULLS_BY_ID } from '../content/hulls';
 import { autoResolve, chooseEncounterOption } from '../core/combat/encounter';
 import { resolveCombat } from '../core/combat/resolve';
 import type { GameState, StationStatic } from '../core/types';
@@ -93,6 +101,7 @@ export class Bot {
   ) {
     this.state = state;
     this.rng = Rng.fromSeed(`${state.seed}:bot:${strategy}`);
+    if (state.noShip) this.pickFirstShip();
     this.run = {
       strategy,
       seed: state.seed,
@@ -114,6 +123,44 @@ export class Bot {
       fightsWon: 0,
       tolls: 0,
     };
+  }
+
+  /**
+   * Buy the first ship like a player of this strategy would: keep a sensible share of the capital for the first
+   * cargo, then take the best fit by role (cargo space for traders, mining hulls for miners, range for explorers).
+   */
+  pickFirstShip(): void {
+    const s = this.state;
+    if (!s.noShip) return;
+    const keep: Record<Strategy, number> = {
+      trader: 0.6,
+      oracle: 0.6,
+      hauler: 0.6,
+      loop: 0.6,
+      miner: 0.5,
+      explorer: 0.5,
+    };
+    const offers = firstShipOffers(s).filter(
+      (o) => previewOffer(s, o).left >= s.credits * keep[this.strategy],
+    );
+    const score = (o: ShipOffer): number => {
+      const h = HULLS_BY_ID[o.hullId];
+      const p = previewOffer(s, o);
+      const wear = o.used ? 0.85 : 1;
+      switch (this.strategy) {
+        case 'miner':
+          return ((h.role === 'mining' ? 40 : 0) + p.cargoCells + h.hp / 10) * wear;
+        case 'explorer':
+          return (
+            ((h.role === 'explorer' || h.role === 'expedition' ? 40 : 0) + p.fuelCap / 4 + h.agility * 5) *
+            wear
+          );
+        default:
+          return (p.cargoCells * 2 + h.hp / 20) * wear;
+      }
+    };
+    const pick = [...offers].sort((a, b) => score(b) - score(a))[0] ?? firstShipOffers(s)[0];
+    buyFirstShip(s, pick.id, suggestShipName(s.seed, pick.hullId));
   }
 
   private g() {

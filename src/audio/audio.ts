@@ -4,6 +4,9 @@ import { settings } from '../ui/settings';
 /** Fully procedural audio (Web Audio): a slow generative ambient pad plus synthesized UI effects. No sound files. */
 type Sfx =
   | 'click'
+  | 'thrust'
+  | 'arrive'
+  | 'probe'
   | 'buy'
   | 'sell'
   | 'jump'
@@ -188,6 +191,16 @@ export function sfx(name: Sfx): void {
     case 'mine':
       noise(0, 0.35, 0.18, 260, d);
       tone(110, 0, 0.3, 0.1, 'sawtooth', d);
+      break;
+    case 'thrust':
+      tone(70, 0, 0.9, 0.06, 'sawtooth', d, 160);
+      noise(0, 0.9, 0.06, 500, d);
+      break;
+    case 'arrive':
+      tone(440, 0, 0.3, 0.05, 'sine', d, 330);
+      break;
+    case 'probe':
+      tone(900, 0, 0.35, 0.06, 'triangle', d, 1500);
       break;
     case 'laser':
       tone(1500, 0, 0.16, 0.05, 'sawtooth', d, 300);

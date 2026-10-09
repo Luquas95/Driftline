@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'preact/hooks';
-import { createSystemScene, type SystemScene } from '../../render/systemscene';
+import { createSystemScene, rememberedCam, type SystemScene } from '../../render/systemscene';
 import { stage } from '../../render/instance';
 import { dockAt, inSystemTravelDays } from '../../core/game';
 import {
@@ -19,12 +19,31 @@ import { fmt, t } from '../../i18n';
 import { sfx } from '../../audio/audio';
 import { Btn, Panel, Tag, Bar } from '../components';
 import { Icon } from '../Icon';
-import { act, analysis, galaxy, game, report, rev, screen, selectedBody, flag, toast } from '../store';
+import {
+  act,
+  analysis,
+  galaxy,
+  game,
+  arrivalFlag,
+  launchFlag,
+  report,
+  rev,
+  screen,
+  selectedBody,
+  flag,
+  toast,
+} from '../store';
+import { animLevel } from '../settings';
 import { dockReport } from '../DockReport';
 import { useScene } from '../useScene';
 import type { BodyStatic } from '../../core/types';
 
 let sceneRef: SystemScene | null = null;
+
+/** The running system scene (test hooks). */
+export function systemScene(): SystemScene | null {
+  return sceneRef;
+}
 
 export function SystemScreen() {
   void rev.value;
@@ -38,11 +57,35 @@ export function SystemScreen() {
   const body: BodyStatic | null = selIdx !== null ? (sys.bodies[selIdx] ?? null) : null;
 
   useScene(() => {
+    const launch = launchFlag.pending;
+    launchFlag.pending = false;
+    const arrive = arrivalFlag.pending;
+    arrivalFlag.pending = false;
     const sc = createSystemScene({
       system: sys,
+      stations: sys.stations,
       detected: [...detected],
-      stationBodies: new Set(sys.stations.map((st) => st.bodyIndex)),
       shipBody: s.location.body,
+      shipStation: s.location.stationId,
+      getShip: () => game.value!.ship,
+      level: animLevel,
+      saved: rememberedCam(sys.id),
+      launch,
+      arrive,
+      onSound: (n) =>
+        sfx(
+          n === 'dock'
+            ? 'dock'
+            : n === 'scan'
+              ? 'scan'
+              : n === 'mine'
+                ? 'mine'
+                : n === 'arrive'
+                  ? 'arrive'
+                  : n === 'probe'
+                    ? 'probe'
+                    : 'thrust',
+        ),
       onSelectBody: (i) => {
         selectedBody.value = i;
         sfx('click');
@@ -56,8 +99,46 @@ export function SystemScreen() {
   useEffect(() => {
     sceneRef?.setDetected([...detected]);
     sceneRef?.setSelected(selIdx);
-    sceneRef?.setShipBody(s.location.body);
+    sceneRef?.setShipLocation(s.location.body, s.location.stationId);
   });
+  useEffect(() => {
+    // keep the picture clear of the side panel on wide screens
+    const fit = () =>
+      sceneRef?.setInsets(
+        window.innerWidth >= 900 ? 350 : 0,
+        0,
+        0,
+        window.innerWidth >= 900 ? 0 : Math.round(window.innerHeight * 0.46),
+      );
+    fit();
+    window.addEventListener('resize', fit);
+    return () => window.removeEventListener('resize', fit);
+  }, [sys.id]);
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const el = e.target as HTMLElement | null;
+      if (el && ['INPUT', 'SELECT', 'TEXTAREA'].includes(el.tagName)) return;
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      if (e.key === '+' || e.key === '=') sceneRef?.zoomBy(1.4);
+      else if (e.key === '-') sceneRef?.zoomBy(1 / 1.4);
+      else if (e.key === '0') sceneRef?.resetView();
+      else if ((e.key === ' ' || e.key === 'Enter') && sceneRef?.isFlying()) {
+        sceneRef.skipFlight();
+        e.preventDefault();
+      } else if (
+        e.key === 'Escape' &&
+        sceneRef &&
+        (sceneRef.getZoom() > 1.05 || selectedBody.value !== null)
+      ) {
+        // first Escape resets the view, the global handler must not leave the screen
+        e.stopImmediatePropagation();
+        sceneRef.resetView();
+        selectedBody.value = null;
+      }
+    };
+    window.addEventListener('keydown', onKey, true);
+    return () => window.removeEventListener('keydown', onKey, true);
+  }, []);
   useEffect(() => {
     selectedBody.value = null;
   }, [sys.id]);
@@ -65,20 +146,22 @@ export function SystemScreen() {
   const doDock = (id: string) => {
     const r = act((st) => dockAt(st, id));
     if (report(r) && r.ok) {
-      sfx('dock');
-      dockReport.value = r.report;
-      screen.value = 'station';
+      const rep = r.report;
+      const finish = () => {
+        sfx('dock');
+        dockReport.value = rep;
+        screen.value = 'station';
+      };
+      // the state is already docked; the scene only shows the ship gliding into the station first
+      if (sceneRef) sceneRef.dockInto(id, finish);
+      else finish();
     }
   };
 
   return (
     <div class="screen overlay" data-testid="screen-system">
       <div class="map-overlay">
-        <aside
-          class="side-panel panel"
-          style={{ left: 10, right: 'auto', width: 330 }}
-          data-testid="system-bodies"
-        >
+        <aside class="side-panel panel sys-side" data-testid="system-bodies">
           <header class="panel-head">
             <h2>
               <Icon name="system" /> {sys.name}
@@ -97,7 +180,7 @@ export function SystemScreen() {
                 onClick={() => {
                   const r = act((st) => scanSystem(st));
                   if (report(r) && r.ok) {
-                    sfx('scan');
+                    sceneRef?.scanPulse();
                     toast(t('sys.scanned', { n: r.found, total: r.total }), 'good');
                   }
                 }}
@@ -158,6 +241,45 @@ export function SystemScreen() {
             </div>
           </aside>
         )}
+        <div class="sys-actions" data-testid="sys-actions">
+          <div class="sys-zoom" role="group" aria-label={t('sys.zoom')}>
+            <Btn
+              icon="plus"
+              title={t('sys.zoomIn')}
+              testid="sys-zoom-in"
+              onClick={() => sceneRef?.zoomBy(1.5)}
+            />
+            <Btn
+              icon="minus"
+              title={t('sys.zoomOut')}
+              testid="sys-zoom-out"
+              onClick={() => sceneRef?.zoomBy(1 / 1.5)}
+            />
+            <Btn
+              icon="target"
+              title={t('sys.zoomReset')}
+              testid="sys-zoom-reset"
+              onClick={() => sceneRef?.resetView()}
+            />
+          </div>
+          {sys.stations.length > 0 && (
+            <div class="sys-dock" data-testid="sys-dock">
+              {sys.stations.map((st) => (
+                <Btn
+                  key={st.id}
+                  kind="primary"
+                  icon="station"
+                  testid={`btn-dock-quick-${st.id}`}
+                  onClick={() => doDock(st.id)}
+                >
+                  {s.location.stationId === st.id
+                    ? t('sys.enterShort', { name: st.name })
+                    : t('sys.dockShort', { name: st.name })}
+                </Btn>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -212,7 +334,7 @@ function BodyPanel({
             onClick={() => {
               const r = act((st) => scanSurface(st, body.index, false));
               if (report(r) && r.ok) {
-                sfx('scan');
+                sceneRef?.scanPulse();
                 toast(t('sys.surfaceResult', { d: r.deposits, a: r.anomalies }), 'good');
               }
             }}
@@ -227,7 +349,7 @@ function BodyPanel({
             onClick={() => {
               const r = act((st) => scanSurface(st, body.index, true));
               if (report(r) && r.ok) {
-                sfx('scan');
+                sceneRef?.launchProbe(body.index);
                 toast(t('sys.surfaceResult', { d: r.deposits, a: r.anomalies }), 'good');
               }
             }}
@@ -344,7 +466,7 @@ function BodyPanel({
                   onClick={() => {
                     const r = act((st) => mine(st, body.index, d.id, intensity));
                     if (report(r) && r.ok) {
-                      sfx('mine');
+                      sceneRef?.mineBeam(body.index, intensity);
                       flag('tut:mined');
                       toast(
                         t('sys.mined', { n: r.out.units, good: t(`good.${r.out.goodId}`) }) +

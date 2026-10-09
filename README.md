@@ -2,7 +2,7 @@
 
 Klidná obchodně-průzkumná hra o malé lodi v procedurálně generované galaxii. Obchoduješ, plníš zakázky, zkoumáš neznámé systémy, těžíš a vylepšuješ loď. Běží **v prohlížeči** (PC, tablet i mobil), jde nainstalovat jako aplikace a hrát **úplně offline**. Všechno, co vidíš a slyšíš, vzniká v kódu: planety jsou shadery, lodě vektorové siluety, zvuk se syntetizuje za běhu.
 
-> Verze **2 ze 3**: loď, náklad, obchod, průzkum (v1) a **boj a posádka** (v2). Verze 3 přidá základnu, frakce, hrozbu a konce. Architektura na to počítá (viz [docs/DECISIONS.md](docs/DECISIONS.md)).
+> Verze **3 (oživení a nový start)**: loď, náklad, obchod, průzkum (v1), **boj a posádka** (v2) a nyní **živá scéna systému** (tvoje loď, provoz, zoom a posun), **animace** (skok, sken, těžba, sonda, obchod) a **nový začátek s výběrem první lodi**. Základna, frakce a konce přijdou později (viz [docs/DECISIONS.md](docs/DECISIONS.md)).
 
 ![Mapa galaxie](docs/screenshots/desktop-map.png)
 
@@ -13,6 +13,18 @@ Klidná obchodně-průzkumná hra o malé lodi v procedurálně generované gala
 | Náklad | Mobil: mapa | Mobil: obchod |
 |---|---|---|
 | ![Náklad](docs/screenshots/desktop-cargo.png) | ![Mobil mapa](docs/screenshots/mobile-map.png) | ![Mobil stanice](docs/screenshots/mobile-station.png) |
+
+**Oživení a nový start (v3)**
+
+![Ukázka: výběr lodi, let v systému, skok](docs/screenshots/v3-demo.gif)
+
+| Výběr první lodi | Systém s lodí a provozem | Detail planety po přiblížení |
+|---|---|---|
+| ![První loď](docs/screenshots/desktop-first-ship.png) | ![Systém](docs/screenshots/desktop-system-ship.png) | ![Detail](docs/screenshots/desktop-system-detail.png) |
+
+| Skok na mapě | Mobil: výběr lodi | Mobil: systém |
+|---|---|---|
+| ![Skok](docs/screenshots/desktop-map-jump.png) | ![Mobil první loď](docs/screenshots/mobile-first-ship.png) | ![Mobil systém](docs/screenshots/mobile-system-ship.png) |
 
 **Boj a posádka (v2)**
 
@@ -26,6 +38,7 @@ Klidná obchodně-průzkumná hra o malé lodi v procedurálně generované gala
 
 ## Jak hrát
 
+0. **Začátek:** nová hra začíná ve stanici s kapitálem podle obtížnosti (snadná 60 000, normální 40 000, těžká 25 000 kr) a **bez lodi**. Na obrazovce první lodi vybíráš z 14 trupů seřazených od nejlevnějšího (nové i ojeté kusy s opotřebovanými moduly), vidíš, kolik ti po koupi zbude (a varování, když to na první náklad nestačí), a loď pojmenuješ. Tutoriál je přizpůsobený.
 1. **Obchod:** ve stanici otevři *Obchod*, vyber zboží, které je u vás levné, a kup ho. Sloupec „Nejlepší prodej jinde“ ukazuje nejvyšší známou cenu v okolí (a jak je stará).
 2. **Skok:** na *Mapě* klikni na sousední systém a skoč. Plánovač trasy ukáže palivo, čas a riziko. Víc skoků najednou zvládne autopilot (mezerník ho pozastaví).
 3. **Prodej:** v cíli přistaň (*Systém → Přistát*) a zboží prodej. Velké objemy posouvají cenu, rozdíl cen se po čase srovná, takže opakovat jednu trasu donekonečna se nevyplatí.
@@ -37,6 +50,10 @@ Klidná obchodně-průzkumná hra o malé lodi v procedurálně generované gala
 9. **Smrt:** s pojištěním se probudíš v poslední stanici (ztratíš náklad a nepojištěné moduly). Při nové hře můžeš zapnout **trvalou smrt**.
 
 ### Ovládání
+
+**Scéna systému (zoom a posun):** kolečko myši přibližuje k ukazateli, dva prsty (pinch) přibližují a posouvají, tažení posouvá pohled s setrvačností, klepnutí vybere těleso, dvojklik nebo dvojité klepnutí na těleso na něj zaostří (planeta se při přiblížení dokresluje detailněji). Tlačítka `+` `−` ◎ na obrazovce, klávesy `+`, `-`, `0` (vše zpět) a `Esc`. Kamera si pamatuje pozici pro každý systém. Lety uvnitř systému (1–3 s) jdou přeskočit klikem, mezerníkem nebo Enterem. Ve stanici i v systému je velké tlačítko **Přistát** (i pro tablet).
+
+**Animace:** *Nastavení → Animace*: plné / omezené / vypnuté (a respektuje se `prefers-reduced-motion`). Animace jsou jen prezentace a nikdy nemění stav hry. V dev režimu je vidět měřič FPS.
 
 | Akce | Myš | Klávesnice | Dotyk |
 |---|---|---|---|
