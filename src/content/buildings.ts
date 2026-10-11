@@ -137,7 +137,7 @@ export const BUILDINGS_BY_ID: Record<BuildingId, BuildingDef> = Object.fromEntri
 
 /** Founding the base: credits and goods carried in the ship's hold. */
 export const FOUNDING = {
-  credits: 18000,
+  credits: 14000,
   goods: { construction: 40, machinery: 12 } as Record<string, number>,
   baseStorage: 250,
   perWarehouseLevel: 350,

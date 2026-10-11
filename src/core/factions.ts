@@ -241,7 +241,7 @@ export function onContractDone(
   const f = c.faction;
   if (!f) return;
   addRep(state, f, Math.min(6, 1.2 + payout / 2600) * (c.facOnly ? 1.4 : 1));
-  addMerit(state, f, Math.ceil(payout / 320) * (c.facOnly ? 2 : 1));
+  addMerit(state, f, Math.ceil(payout / 110) * (c.facOnly ? 2 : 1));
 }
 
 export function onContractFailed(state: GameState, c: { faction?: FactionId; penalty: number }): void {

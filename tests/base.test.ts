@@ -124,7 +124,7 @@ describe('base: founding', () => {
     const here = s.location.systemId;
     s.location = { systemId: hostile.id, stationId: null, body: -1 };
     s.detected[hostile.id] = hostile.bodies.map((b) => b.id);
-    s.fac.rep.directorate = -50;
+    s.fac.rep.directorate = -70;
     expect(foundBase(s, 0, 'X')).toMatchObject({ ok: false, error: 'err.baseOwner' });
     s.location = { systemId: here, stationId: null, body: -1 };
     const ok = foundBase(s, 0, 'Domov');

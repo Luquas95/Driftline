@@ -75,7 +75,7 @@ describe('research: progress', () => {
       stats: { produced: 0, sold: 0, fleetIncome: 0, upkeep: 0, attacks: 0, repelled: 0 },
     };
     s.credits = 1e6;
-    expect(labRate(s)).toBeGreaterThan(4);
+    expect(labRate(s)).toBeGreaterThan(8);
     startResearch(s, 'deep_scan');
     for (let i = 0; i < 40; i++) {
       s.ship.supplies = 1000;

@@ -325,7 +325,7 @@ export const HULLS: HullDef[] = [
     fuel: 260,
     supplies: 300,
     hp: 400,
-    price: 160000,
+    price: 118000,
     crew: 8,
     coreSize: 'M',
     agility: 0.4,

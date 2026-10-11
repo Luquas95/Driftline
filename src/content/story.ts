@@ -99,7 +99,7 @@ export const STORY_BEATS: Beat[] = [
       { t: 'owner', f: 'consortium' },
       { t: 'fMember', f: 'consortium' },
       { t: 'fRank', min: 5 },
-      { t: 'creditsMin', n: 600000 },
+      { t: 'creditsMin', n: 350000 },
       { t: 'building', id: 'port', min: 3 },
     ],
     cooldown: 25,

@@ -35,7 +35,7 @@ export function techBonus(state: GameState, key: 'rp' | 'fleet' | 'defense' | 'm
 export function labRate(state: GameState): number {
   const lvl = state.base?.buildings.lab ?? 0;
   if (lvl <= 0) return 0;
-  return 1.6 * Math.pow(lvl, 1.1) * (1 + techBonus(state, 'rp'));
+  return 4 * Math.pow(lvl, 1.2) * (1 + techBonus(state, 'rp'));
 }
 
 export function addResearchPoints(state: GameState, n: number): void {

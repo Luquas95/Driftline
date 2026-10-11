@@ -105,7 +105,7 @@ export function checkFounding(state: GameState, bodyIndex: number): FoundCheck {
   if (!body) return { ok: false, error: 'err.noBody' };
   if (!(state.detected[sys.id] ?? []).includes(body.id)) return { ok: false, error: 'err.bodyUnknown' };
   const owner = ownerOf(state, sys.id);
-  if (owner && state.fac.member !== owner && !['friendly', 'ally'].includes(tierOf(repOf(state, owner))))
+  if (owner && state.fac.member !== owner && ['enemy', 'hostile'].includes(tierOf(repOf(state, owner))))
     return { ok: false, error: 'err.baseOwner' };
   if (state.credits < FOUNDING.credits) return { ok: false, error: 'err.noCredits' };
   for (const [gid, n] of Object.entries(FOUNDING.goods))
@@ -450,7 +450,7 @@ export function checkHullOrder(
   if (!base) return { ok: false, error: 'err.noBase', ...z };
   if (!h) return { ok: false, error: 'err.noHull', ...z };
   const res = {
-    credits: Math.round(h.price * 0.55),
+    credits: Math.round(h.price * 0.5),
     days: Math.max(2, Math.ceil(h.price / 2000)),
     materials: hullMaterials(h.price),
   };
@@ -659,5 +659,38 @@ export function repairAtBase(state: GameState): Result<{ paid: number }> {
   state.credits -= cost;
   state.ship.hp = stats.hpMax;
   for (const m of state.ship.slots) if (m) m.condition = 100;
+  return ok({ paid: cost });
+}
+
+/* ------------------------------ services of the base ------------------------------ */
+
+/** Fuel and supplies at the base cost a little less than at a station (no margin), but only in the base system. */
+export function baseServiceCost(state: GameState): { fuel: number; supplies: number } {
+  const { stats } = analyze(state);
+  return {
+    fuel: Math.round(Math.max(0, stats.fuelCap - state.ship.fuel) * T.fuelPrice * 0.8),
+    supplies: Math.round(Math.max(0, stats.suppliesCap - state.ship.supplies) * T.suppliesPrice * 0.8),
+  };
+}
+
+export function refuelAtBase(state: GameState): Result<{ paid: number }> {
+  if (!state.base) return fail('err.noBase');
+  if (!inBaseSystem(state)) return fail('err.notAtBase');
+  const cost = baseServiceCost(state).fuel;
+  if (cost <= 0) return fail('err.nothingToMove');
+  if (state.credits < cost) return fail('err.noCredits');
+  state.credits -= cost;
+  state.ship.fuel = analyze(state).stats.fuelCap;
+  return ok({ paid: cost });
+}
+
+export function resupplyAtBase(state: GameState): Result<{ paid: number }> {
+  if (!state.base) return fail('err.noBase');
+  if (!inBaseSystem(state)) return fail('err.notAtBase');
+  const cost = baseServiceCost(state).supplies;
+  if (cost <= 0) return fail('err.nothingToMove');
+  if (state.credits < cost) return fail('err.noCredits');
+  state.credits -= cost;
+  state.ship.supplies = analyze(state).stats.suppliesCap;
   return ok({ paid: cost });
 }
