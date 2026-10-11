@@ -2961,6 +2961,7 @@ html[data-anim='off'] *::after {
   color: #b9a3ff;
 }
 .ending-screen {
+  pointer-events: auto;
   position: fixed;
   inset: 0;
   z-index: 50;

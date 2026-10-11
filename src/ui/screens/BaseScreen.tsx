@@ -33,6 +33,7 @@ import { BaseResearch } from './BaseResearch';
 type Tab = 'overview' | 'buildings' | 'production' | 'storage' | 'research' | 'fleet';
 
 function Overview() {
+  void rev.value;
   const s = game.value!;
   const base = s.base!;
   const here = inBaseSystem(s);
@@ -105,6 +106,7 @@ function Overview() {
 }
 
 function Buildings() {
+  void rev.value;
   const s = game.value!;
   const base = s.base!;
   const here = inBaseSystem(s);
@@ -158,6 +160,7 @@ function Buildings() {
 }
 
 function Storage() {
+  void rev.value;
   const s = game.value!;
   const base = s.base!;
   const here = inBaseSystem(s);

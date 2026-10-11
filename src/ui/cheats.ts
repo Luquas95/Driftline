@@ -6,6 +6,10 @@ import { addResearchPoints } from '../core/research';
 import { passTime } from '../core/time';
 import { analyze } from '../core/state';
 import { rev } from './store';
+import { galaxyOf } from '../core/state';
+import { feesFor, quoteSell } from '../core/economy';
+import { tariffMult } from '../core/territory';
+import { GOOD_INDEX } from '../content/goods';
 import type { FactionId } from '../core/worldTypes';
 import { game } from './store';
 
@@ -60,6 +64,35 @@ export function cheatApi() {
       for (let i = 0; i < n && !st.dead; i++) {
         st.ship.supplies = Math.max(st.ship.supplies, 20);
         passTime(st, 1);
+      }
+      bump();
+    },
+    /** Reveal every body of the current system (as if scanned). */
+    detectHere: () => {
+      const st = s();
+      const sys = galaxyOf(st).systems[st.location.systemId];
+      st.detected[sys.id] = sys.bodies.map((b) => b.id);
+      bump();
+    },
+    /** Proceeds of selling one unit of a good at the docked station (shows the tariff effect). */
+    sellQuote: (goodId: string) => {
+      const st = s();
+      const stn = galaxyOf(st).stationsById[st.location.stationId ?? ''];
+      if (!stn) return null;
+      const fees = feesFor(stn, st.difficulty, false, tariffMult(st, stn));
+      return quoteSell(stn, st.stations[stn.id].stock[GOOD_INDEX[goodId]], goodId, 1, fees).total;
+    },
+    tariff: () => {
+      const st = s();
+      const stn = galaxyOf(st).stationsById[st.location.stationId ?? ''];
+      return stn ? tariffMult(st, stn) : null;
+    },
+    /** Finish all construction and orders now. */
+    finishBuilds: () => {
+      const b = s().base;
+      if (b) {
+        for (const q of b.queue) q.done = s().day;
+        for (const o of b.orders) o.done = s().day;
       }
       bump();
     },
