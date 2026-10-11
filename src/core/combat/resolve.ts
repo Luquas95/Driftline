@@ -4,6 +4,7 @@ import { MODULES_BY_ID } from '../../content/modules';
 import { SKILLS } from '../../content/crew';
 import { addGoods, removeGoods, unitsOf } from '../cargo';
 import { gainXp, maxHp } from '../crew';
+import { onFightEnded } from '../factions';
 import { Rng } from '../rng';
 import { newModule } from '../ship';
 import { analyze, destroyShip, msg, newUid } from '../state';
@@ -157,6 +158,7 @@ export function resolveCombat(state: GameState, c: CombatState): CombatSummary {
       state.inventory.push(inst);
     }
     state.ship.fuel = Math.min(stats.fuelCap, state.ship.fuel + sum.fuel);
+    onFightEnded(state, c.kind, outcome, state.location.systemId);
     const dRep = repFor(c.kind, outcome);
     if (dRep) {
       const st = state.stations[state.home];

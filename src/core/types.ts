@@ -96,6 +96,10 @@ export interface HullDef {
   /** Hull speed trait multiplier for sublight. */
   agility: number;
   tier: number;
+  /** v4: sold only by this faction (see content/factions.ts). */
+  faction?: import('./worldTypes').FactionId;
+  /** v4: needs this technology to be researched before it appears in shops. */
+  tech?: string;
 }
 
 export interface SlotDef {
@@ -268,6 +272,11 @@ export interface Contract {
   state: 'offered' | 'active' | 'done' | 'failed';
   chainId?: string;
   chainStep?: number;
+  /** v4: issuing faction (owner of the origin station's system) and whether the job is for members only. */
+  faction?: import('./worldTypes').FactionId;
+  facOnly?: boolean;
+  /** v4: evacuation job from a system consumed by the threat. */
+  evac?: boolean;
   acceptedDay?: number;
   /** Progress flags (e.g. survey completed, wreck found). */
   progress?: number;
@@ -403,9 +412,20 @@ export interface GameState {
   encounter: import('./combat/types').Encounter | null;
   /** Officer ids already met (each appears once per game). */
   officersMet: string[];
+  /** v4: factions, base, research, threat, language, story, achievements. */
+  fac: import('./worldTypes').FactionState;
+  base: import('./worldTypes').Base | null;
+  research: import('./worldTypes').ResearchState;
+  threat: import('./worldTypes').ThreatState;
+  lang: import('./worldTypes').LangState;
+  story: import('./worldTypes').StoryState;
+  /** Achievement id -> day it was earned in this run. */
+  ach: Record<string, number>;
+  ending: import('./worldTypes').EndingState | null;
+  run: import('./worldTypes').RunInfo;
 }
 
-export const SAVE_VERSION = 3;
+export const SAVE_VERSION = 4;
 
 /* ------------------------------ v2: crew & combat ------------------------------ */
 

@@ -4,7 +4,10 @@ import { GOODS_BY_ID } from '../../content/goods';
 import { HULLS_BY_ID } from '../../content/hulls';
 import { unitsOf } from '../cargo';
 import { bestSkill, crewHasOfficer, tradeBonus } from '../crew';
+import { warDanger } from '../factions';
 import { Rng } from '../rng';
+import { inspectionAtSystem, ownerOf, repOf, tierOf } from '../territory';
+import { threatDanger } from '../threat';
 import { buildStarterShip, hullSlots, moduleFits, newModule } from '../ship';
 import { analyze, fail, galaxyOf, ok, withRng, type Result } from '../state';
 import { T, riskFactor } from '../tuning';
@@ -182,6 +185,17 @@ export function threatLevel(state: GameState, systemId: number, days = 3): numbe
   if (typeof last === 'number' && state.day - last < 3) p *= 0.3;
   if (hasIllegal && sys.region !== 'rim') p += 0.03;
   if (wanted) p += 0.05;
+  // v4: faction space, wars and the Grey
+  const owner = ownerOf(state, systemId);
+  if (owner) {
+    const tier = tierOf(repOf(state, owner));
+    if (owner === 'corsairs')
+      p *=
+        tier === 'ally' ? 0.25 : tier === 'friendly' ? 0.5 : tier === 'hostile' || tier === 'enemy' ? 1.4 : 1;
+    else if (tier === 'enemy' || tier === 'hostile') p *= 1.15;
+  }
+  p *= 1 + warDanger(state, systemId);
+  p += threatDanger(state, systemId);
   return Math.min(0.5, p);
 }
 
@@ -282,9 +296,13 @@ export function rollEncounter(state: GameState, systemId: number, days = 3): boo
     );
     const wanted = isWanted(state);
     const weights: [EncounterKind, number][] = [
-      ['pirate', 3],
+      ['pirate', ownerOf(state, systemId) === 'corsairs' && repOf(state, 'corsairs') >= 25 ? 0.6 : 3],
       ['fauna', sys.region === 'rim' || sys.region === 'outer' ? 1.2 : 0.2],
-      ['customs', hasIllegal ? 3 : sys.region === 'core' || sys.region === 'inner' ? 0.6 : 0],
+      [
+        'customs',
+        (hasIllegal ? 3 : sys.region === 'core' || sys.region === 'inner' ? 0.6 : 0) *
+          (ownerOf(state, systemId) === 'corsairs' ? 0 : Math.max(0.3, inspectionAtSystem(state, systemId))),
+      ],
       ['hunter', wanted ? 4 : 0.3],
     ];
     const kind = rng.weighted(weights, (w) => w[1])[0];

@@ -1,4 +1,5 @@
 import { csV2 } from './cs-v2';
+import { csV3 } from './cs-v3';
 /** Czech UI dictionary. Event texts live next to their definitions (content/events.ts) and are merged in i18n/index.ts. */
 const goods: Record<string, string> = {
   missiles: 'Rakety',
@@ -832,7 +833,7 @@ const base: Record<string, string> = {
   'err.towNotNeeded': 'Odtah nepotřebuješ: palivo na skok máš.',
 };
 
-const dict: Record<string, string> = { ...base, ...chains, ...marketMsgs, ...csV2 };
+const dict: Record<string, string> = { ...base, ...chains, ...marketMsgs, ...csV2, ...csV3 };
 for (const [k, v] of Object.entries(goods)) dict[`good.${k}`] = v;
 for (const [k, v] of Object.entries(mods)) dict[`mod.${k}`] = v;
 for (const [k, [name, desc]] of Object.entries(hulls)) {

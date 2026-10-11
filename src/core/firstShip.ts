@@ -33,7 +33,7 @@ export function firstShipOffers(state: Pick<GameState, 'seed' | 'difficulty'>): 
   const rng = Rng.fromSeed(`${state.seed}:firstships`);
   const k = priceFactor(state.difficulty.prices);
   const out: ShipOffer[] = [];
-  for (const h of HULLS) {
+  for (const h of HULLS.filter((x) => !x.faction && !x.tech)) {
     const base = h.price * k;
     const usedChance = h.id === 'shuttle' ? 1 : h.tier >= 3 ? 0.35 : 0.6;
     const isUsed = rng.chance(usedChance);

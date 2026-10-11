@@ -4,6 +4,7 @@ import { analyze, galaxyOf, type NewGameOptions, type Result } from '../core/sta
 import { SaveStore } from '../persist/store';
 import { importSave, exportSave } from '../core/save';
 import { t } from '../i18n';
+import { FACTION_IDS } from '../core/worldTypes';
 import { sfx } from '../audio/audio';
 import { settings } from './settings';
 import type { GameState } from '../core/types';
@@ -101,6 +102,15 @@ export function describeMessage(key: string, params?: Record<string, string | nu
       t(`mod.${String(p.module).replace(/_[sml]$/, '')}`) + ' ' + String(p.module).slice(-1).toUpperCase();
   if (typeof p.hull === 'string') p.hull = t(`hull.${p.hull}`);
   if (typeof p.good === 'string') p.good = t(`good.${p.good}`);
+  // v4 ids: factions, ranks, tiers, buildings, technologies
+  const fid = typeof p.faction === 'string' ? p.faction : null;
+  for (const k of ['faction', 'a', 'b'] as const)
+    if (typeof p[k] === 'string' && (FACTION_IDS as string[]).includes(p[k] as string))
+      p[k] = t(`fac.${p[k]}`);
+  if (typeof p.rank === 'number' && fid) p.rank = t(`fac.${fid}.rank.${p.rank}`);
+  if (typeof p.tier === 'string') p.tier = t(`fac.tier.${p.tier}`);
+  if (typeof p.building === 'string') p.building = t(`bld.${p.building}`);
+  if (typeof p.tech === 'string') p.tech = t(`tech.${p.tech}`);
   return t(key, p);
 }
 

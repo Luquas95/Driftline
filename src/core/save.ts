@@ -10,6 +10,8 @@ import { OFFICERS_BY_ID, RACES_BY_ID, ROLE_SKILL, SKILLS } from '../content/crew
 import { ENEMIES_BY_ID } from '../content/enemies';
 import { POWER_GROUPS, WEAPON_KINDS, type CShip, type CombatOutcome, type CombatState } from './combat/types';
 import { QUALITIES } from './types';
+import { newWorld } from './world';
+import { FACTION_IDS } from './worldTypes';
 
 /**
  * Save format: the game state is plain JSON. The galaxy is NOT stored: it is regenerated from the seed,
@@ -68,6 +70,34 @@ export const MIGRATIONS: Record<number, Migration> = {
     s.v = 3;
     s.noShip = false;
     s.captain ??= 'Kapitán';
+    return s;
+  },
+  // v3 -> v4: factions, threat and the rest are generated deterministically from the seed; no base is built yet.
+  3: (s) => {
+    s.v = 4;
+    // malformed saves are rejected later by validate(); do not generate a world for them
+    if (typeof s.seed !== 'string' || !s.seed || !Number.isInteger(s.galaxySize)) return s;
+    const loc = s.location as { systemId?: number } | undefined;
+    const w = newWorld(
+      String(s.seed),
+      Number(s.galaxySize),
+      (s.difficulty as GameState['difficulty']) ?? {
+        prices: 'normal',
+        risk: 'normal',
+        insurance: true,
+        permadeath: false,
+      },
+      loc?.systemId ?? 0,
+    );
+    s.fac ??= w.fac;
+    s.base ??= null;
+    s.research ??= w.research;
+    s.threat ??= w.threat;
+    s.lang ??= w.lang;
+    s.story ??= w.story;
+    s.ach ??= {};
+    s.ending ??= null;
+    s.run ??= w.run;
     return s;
   },
 };
@@ -308,10 +338,73 @@ function repair(state: GameState): void {
     dyn.board ??= [];
     dyn.shop ??= { hulls: [], modules: [], epoch: -1 };
   }
+  repairWorld(state);
   if (state.pendingEvent && !EVENTS_BY_ID[state.pendingEvent.eventId]) state.pendingEvent = null;
   state.inventory = state.inventory.filter((m) => m && MODULES_BY_ID[m.defId]);
   state.contracts = state.contracts.filter((c) => c && (!c.goodId || GOODS_BY_ID[c.goodId]));
   state.messages = state.messages.slice(-120);
+}
+
+/** v4 sections: fill in anything missing or malformed with deterministic defaults, drop unknown content ids. */
+function repairWorld(state: GameState): void {
+  const w = newWorld(state.seed, state.galaxySize, state.difficulty, state.location.systemId);
+  const f = state.fac;
+  if (!f || typeof f !== 'object') state.fac = w.fac;
+  else {
+    f.rep ??= w.fac.rep;
+    for (const id of FACTION_IDS) if (!finite(f.rep[id], -100, 100)) f.rep[id] = 0;
+    if (f.member !== null && !FACTION_IDS.includes(f.member as never)) f.member = null;
+    f.rank = finite(f.rank, 0, 5) ? Math.floor(f.rank) : 0;
+    if (!finite(f.merit, 0, 1e6)) f.merit = 0;
+    if (!f.owner || typeof f.owner !== 'object') f.owner = {};
+    f.wars = Array.isArray(f.wars)
+      ? f.wars.filter(
+          (x) =>
+            x &&
+            FACTION_IDS.includes(x.a) &&
+            FACTION_IDS.includes(x.b) &&
+            x.a !== x.b &&
+            finite(x.start) &&
+            finite(x.end) &&
+            finite(x.front, -1, 1),
+        )
+      : [];
+    if (!finite(f.nextWarCheck)) f.nextWarCheck = state.day;
+    f.history = Array.isArray(f.history) ? f.history.slice(-80) : [];
+  }
+  state.base = state.base && typeof state.base === 'object' ? state.base : null;
+  if (!state.research || typeof state.research !== 'object') state.research = w.research;
+  else {
+    if (!Array.isArray(state.research.done)) state.research.done = [];
+    if (!finite(state.research.points, 0, 1e9)) state.research.points = 0;
+    if (!finite(state.research.progress, 0, 1e9)) state.research.progress = 0;
+    if (!finite(state.research.totalEarned, 0, 1e9)) state.research.totalEarned = 0;
+    if (typeof state.research.active !== 'string') state.research.active = null;
+  }
+  const th = state.threat;
+  if (!th || typeof th !== 'object' || !Array.isArray(th.foci) || !th.grip) state.threat = w.threat;
+  else {
+    th.foci = th.foci.filter((id) => Number.isInteger(id) && id >= 0 && id < state.galaxySize);
+    if (!th.foci.length) th.foci = w.threat.foci;
+    for (const [k, v] of Object.entries(th.grip))
+      if (!finite(v, 0, 100) || Number(k) >= state.galaxySize) delete th.grip[Number(k)];
+    th.consumed = Object.values(th.grip).filter((v) => v >= 100).length;
+    if (!finite(th.mitigation, 0, 1)) th.mitigation = 0;
+    if (!finite(th.start, 0, 1e5)) th.start = w.threat.start;
+    th.stopped = th.stopped === true;
+    if (!finite(th.lastTick, 0, 1e7)) th.lastTick = 0;
+  }
+  if (!state.lang || !finite(state.lang.learned, 0, 1000)) state.lang = w.lang;
+  if (!state.story || typeof state.story !== 'object') state.story = w.story;
+  else {
+    if (!finite(state.story.stage, 0, 1000)) state.story.stage = 0;
+    if (!finite(state.story.artifacts, 0, 100)) state.story.artifacts = 0;
+    state.story.log = Array.isArray(state.story.log) ? state.story.log.slice(-200) : [];
+  }
+  if (!state.ach || typeof state.ach !== 'object') state.ach = {};
+  if (state.ending && (typeof state.ending.id !== 'string' || !finite(state.ending.day))) state.ending = null;
+  state.ending ??= null;
+  if (!state.run || typeof state.run.start !== 'string') state.run = w.run;
 }
 
 export function deserializeState(json: string): GameState {

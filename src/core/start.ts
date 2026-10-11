@@ -6,6 +6,7 @@ import { createStationDyn } from './economy';
 import { findStartSystem, getGalaxy } from './galaxy';
 import { Rng, randomSeedFrom } from './rng';
 import { buildStarterShip, newModule } from './ship';
+import { newWorld } from './world';
 import { refreshShop } from './shop';
 import { DEFAULT_DIFFICULTY, arrive, learnStation, msg, newUid, type NewGameOptions } from './state';
 import { SAVE_VERSION, type Difficulty, type GameState } from './types';
@@ -77,6 +78,7 @@ export function newGame(opts: NewGameOptions = {}): GameState {
     combat: null,
     encounter: null,
     officersMet: [],
+    ...newWorld(seed, galaxySize, difficulty, startSys.id),
   };
   state.ship = buildStarterShip(T.startHull, opts.shipName ?? 'Poutník', () => newUid(state, 'm'));
   // starter loadout: a cargo pod in the first free medium slot

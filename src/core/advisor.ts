@@ -1,4 +1,5 @@
 /** Read-only planning helpers for the player: route planner and trade recommendations (use only known information). */
+import { tariffMult } from './territory';
 import { feesFor, isBlackMarketGood, quoteBuy, quoteSell } from './economy';
 import { dist, shortestPath } from './galaxy';
 import { stationsNear } from './contracts';
@@ -135,8 +136,8 @@ export function recommendTrades(state: GameState, limit = 5, maxJumps = 5): Trad
           ? state.stations[origin.id].stock[GOOD_INDEX[goodId]]
           : ok.stock;
       if (stock < 2) continue;
-      const feesO = feesFor(origin, state.difficulty, false);
-      const feesD = feesFor(d, state.difficulty, false);
+      const feesO = feesFor(origin, state.difficulty, false, tariffMult(state, origin));
+      const feesD = feesFor(d, state.difficulty, false, tariffMult(state, d));
       const unitsPerCell = 10;
       const qMax = Math.min(
         Math.floor(stock),

@@ -54,11 +54,17 @@ export interface Fees {
   tariff: number;
 }
 
-export function feesFor(st: StationStatic, difficulty: Difficulty, blackMarketDeal: boolean): Fees {
+export function feesFor(
+  st: StationStatic,
+  difficulty: Difficulty,
+  blackMarketDeal: boolean,
+  /** v4: faction tariff multiplier at this station (see `tariffMult` in territory.ts). */
+  tariffMult = 1,
+): Fees {
   const k = difficulty.prices === 'easy' ? 0.6 : difficulty.prices === 'hard' ? 1.5 : 1;
   if (blackMarketDeal) return { spread: 0.09 * k, tariff: 0 };
   void st;
-  return { spread: T.spread * k, tariff: T.tariff * k };
+  return { spread: T.spread * k, tariff: T.tariff * k * tariffMult };
 }
 
 export function isBlackMarketGood(goodId: string): boolean {
@@ -172,6 +178,9 @@ export function tickEconomy(galaxy: Galaxy, state: GameState, day: number): void
         const gi = GOOD_INDEX[gid];
         const good = GOODS_BY_ID[gid];
         let target = targetStock(st, gid, eventMod(state.events, day, sys.sector, gid));
+        // v4: the Grey empties the shelves of systems it grips
+        const grip = state.threat?.grip[sys.id] ?? 0;
+        if (grip > 0) target *= Math.max(0.02, 1 - (grip / 100) * 0.88);
         // production chains: a producer short on inputs makes less
         if (good.inputs && (st.role[gid] ?? 0) > 0) {
           let eff = 1;
@@ -216,9 +225,10 @@ export function snapshotPrice(
   goodId: string,
   difficulty: Difficulty,
   day: number,
+  tariffMult = 1,
 ): KnownPrice {
   const bm = isBlackMarketGood(goodId);
-  const fees = feesFor(st, difficulty, bm);
+  const fees = feesFor(st, difficulty, bm, tariffMult);
   const mid = midPrice(st, goodId, stock);
   return {
     buy: mid * (1 + fees.spread + fees.tariff),

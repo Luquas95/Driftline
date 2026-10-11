@@ -5,6 +5,7 @@
 import { MODULES, MODULES_BY_ID } from '../content/modules';
 import { GOODS_BY_ID, MARKET_GOODS } from '../content/goods';
 import { STATION_TYPES_BY_ID } from '../content/stations';
+import { tariffMult } from '../core/territory';
 import { quoteBuy, quoteSell, feesFor, isBlackMarketGood } from '../core/economy';
 import { acceptContract } from '../core/contractOps';
 import { stationsNear } from '../core/contracts';
@@ -395,8 +396,8 @@ export class Bot {
         if (stock < 2) continue;
         const qMax = maxBuy(s, here.id, goodId);
         if (qMax <= 0) continue;
-        const feesH = feesFor(here, s.difficulty, false);
-        const feesD = feesFor(d, s.difficulty, false);
+        const feesH = feesFor(here, s.difficulty, false, tariffMult(s, here));
+        const feesD = feesFor(d, s.difficulty, false, tariffMult(s, d));
         const dStock = oracle ? stockOf(s, d.id, goodId) : known[goodId]?.stock;
         if (dStock === undefined) continue;
         // pick qty maximising profit under slippage (coarse search)

@@ -5,6 +5,7 @@ import { snapshotPrice } from './economy';
 import { crewHasOfficer, crewSupplyPerDay } from './crewBase';
 import { defaultCrew } from './crew';
 import { getGalaxy } from './galaxy';
+import { tariffMult } from './territory';
 import { Rng } from './rng';
 import { buildStarterShip, computeShipStats, insuredValue, type ShipStats } from './ship';
 import { T } from './tuning';
@@ -128,6 +129,7 @@ export function learnStation(state: GameState, st: StationStatic): void {
       gid,
       state.difficulty,
       state.day,
+      tariffMult(state, st),
     );
   }
 }

@@ -1,3 +1,4 @@
+import { onContractDone, onContractFailed } from './factions';
 import { CHAINS_BY_ID } from '../content/chains';
 import { addGoods, removeGoods, unitsOf, loadableUnits } from './cargo';
 import { advanceChain, isChainFinal } from './contracts';
@@ -21,6 +22,7 @@ export function acceptContract(state: GameState, stationId: string, contractId: 
   if (!dyn || state.location.stationId !== stationId) return fail('err.notDocked');
   const c = dyn.board.find((x) => x.id === contractId);
   if (!c || c.deadline <= state.day) return fail('err.contractGone');
+  if (c.facOnly && state.fac.member !== c.faction) return fail('err.facOnly');
   if (state.contracts.filter((x) => x.state === 'active').length >= MAX_ACTIVE_CONTRACTS)
     return fail('err.tooManyContracts');
   const { stats, dims } = analyze(state);
@@ -88,6 +90,7 @@ export function completeContractsAt(state: GameState, g: Galaxy, stationId: stri
     state.stations[st.id].rep += isChainFinal(c) ? 3 : 1;
     if (state.stations[c.origin]) state.stations[c.origin].rep += 1;
     msg(state, 'msg.contractDone', { id: c.id, reward: Math.round(c.reward * bundle) }, 'good');
+    onContractDone(state, c, Math.round(c.reward * bundle));
     const comp: Completion = { contract: c, payout: Math.round(c.reward * bundle) };
     if (c.chainId) {
       const chain = CHAINS_BY_ID[c.chainId];
@@ -130,6 +133,7 @@ export function failContract(state: GameState, c: Contract, reasonKey: string): 
   state.stats.contractsFailed++;
   if (state.stations[c.origin]) state.stations[c.origin].rep -= 2;
   if (c.chainId) state.flags[`chain:${c.chainId}`] = 'failed';
+  onContractFailed(state, c);
   msg(state, reasonKey, { id: c.id, fee: owed }, 'bad');
 }
 

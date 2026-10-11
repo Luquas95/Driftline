@@ -48,6 +48,8 @@ import {
   type Result,
 } from './state';
 import { passTime } from './time';
+import { addRep } from './factions';
+import { inspectionMult, ownerOfStation, tariffMult } from './territory';
 import { T, riskFactor } from './tuning';
 import type { Contract, GameState, StationStatic } from './types';
 
@@ -115,7 +117,8 @@ function inspect(state: GameState, st: StationStatic): { fine: number; confiscat
       security *
       riskFactor(state.difficulty.risk) *
       (1 - concealment) *
-      (1 + (st.blackMarket ? 0.3 : 0)),
+      (1 + (st.blackMarket ? 0.3 : 0)) *
+      inspectionMult(state, st),
   );
   const caught = withRng(state, (rng) => rng.chance(p));
   if (!caught) return null;
@@ -125,6 +128,8 @@ function inspect(state: GameState, st: StationStatic): { fine: number; confiscat
   state.cargo = state.cargo.filter((c) => !(isIllegal(c.goodId) && !c.contractId));
   state.credits -= fine;
   state.stations[st.id].rep -= 3;
+  const owner = ownerOfStation(state, st);
+  if (owner) addRep(state, owner, -4);
   state.stats.fines++;
   msg(state, 'msg.inspection', { fine, value: Math.round(value) }, 'bad');
   return { fine, confiscated: Math.round(value) };
@@ -340,7 +345,7 @@ export function quoteFor(
   qty: number,
 ): Quote {
   const st = stationOf(state, stationId);
-  const fees = feesFor(st, state.difficulty, isBlackMarketGood(goodId));
+  const fees = feesFor(st, state.difficulty, isBlackMarketGood(goodId), tariffMult(state, st));
   const stock = stockOf(state, stationId, goodId);
   if (side === 'buy') return quoteBuy(st, stock, goodId, qty, fees);
   return quoteSell(st, stock, goodId, qty, fees);
@@ -427,7 +432,7 @@ export function sellGoods(
   if (!Number.isFinite(qty)) return fail('err.badAmount');
   qty = Math.min(Math.floor(qty), have);
   if (qty <= 0) return fail('err.badAmount');
-  const fees = feesFor(st, state.difficulty, isBlackMarketGood(goodId));
+  const fees = feesFor(st, state.difficulty, isBlackMarketGood(goodId), tariffMult(state, st));
   const items = state.cargo
     .filter((c) => c.goodId === goodId && !c.contractId)
     .sort((a, b) => a.acquiredDay - b.acquiredDay);
@@ -449,6 +454,7 @@ export function sellGoods(
   state.credits += revenue;
   state.stations[stationId].stock[GOOD_INDEX[goodId]] = stock;
   state.stats.tradesProfit += revenue - cost;
+  if (isBlackMarketGood(goodId) && st.blackMarket) addRep(state, 'corsairs', 0.4, false);
   learnStation(state, st);
   return ok({ qty, revenue, profit: Math.round(revenue - cost) });
 }
@@ -694,7 +700,14 @@ export function refuelNeeded(state: GameState): number {
 }
 
 export function snapshotAt(state: GameState, st: StationStatic, goodId: string) {
-  return snapshotPrice(st, stockOf(state, st.id, goodId), goodId, state.difficulty, state.day);
+  return snapshotPrice(
+    st,
+    stockOf(state, st.id, goodId),
+    goodId,
+    state.difficulty,
+    state.day,
+    tariffMult(state, st),
+  );
 }
 
 /* ------------------------------ insurance ----------------------------- */
