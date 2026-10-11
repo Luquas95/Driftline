@@ -147,6 +147,7 @@ const marketMsgs: Record<string, string> = {
   'msg.market.crop_failure': 'Neúroda v sektoru {sector}: potraviny jsou vzácné.',
   'msg.market.mining_boom': 'Boom těžby v sektoru {sector}: surovin je dost, stroje chybí.',
   'msg.market.strike': 'Stávka v sektoru {sector}: průmysl stojí, průmyslové zboží chybí.',
+  'msg.market.panic': 'Panika v sektoru {sector}: lidé se zásobují a utíkají před Šedí.',
   'msg.market.blockade': 'Blokáda v sektoru {sector}: většina zboží je nedostatková.',
   'msg.market.festival': 'Slavnosti v sektoru {sector}: luxusní zboží a lihoviny jdou na dračku.',
   'msg.market.tech_boom': 'Technologický boom v sektoru {sector}: poptávka po počítačích a robotice.',

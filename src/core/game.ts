@@ -48,6 +48,8 @@ import {
   type Result,
 } from './state';
 import { passTime } from './time';
+import { rollStory } from './story';
+import { greyArrival, isConsumed } from './threat';
 import { addRep } from './factions';
 import { inspectionMult, ownerOfStation, tariffMult } from './territory';
 import { T, riskFactor } from './tuning';
@@ -65,6 +67,7 @@ export function dockAt(state: GameState, stationId: string): Result<{ report: Do
   const st = g.stationsById[stationId];
   if (!st || st.systemId !== state.location.systemId) return fail('err.noStation');
   if (state.pendingEvent) return fail('err.eventPending');
+  if (isConsumed(state, st.systemId)) return fail('err.consumed');
   if (state.location.stationId === stationId) return ok({ report: { completed: [] } });
   const { stats } = analyze(state);
   if (stats.speedAuDay <= 0 || stats.powerFree < -0.001) return fail('err.noEngine');
@@ -87,7 +90,8 @@ export function dockAt(state: GameState, stationId: string): Result<{ report: Do
   report.completed = done.map((d) => ({ contract: d.contract, payout: d.payout }));
   // repair modules / shield recharge at dock
   state.ship.shield = Math.max(state.ship.shield, analyze(state).stats.shieldCap);
-  rollEvent(state, 'dock', 0.12, { systemId: st.systemId });
+  if (!rollStory(state, 'dock', { systemId: st.systemId }))
+    rollEvent(state, 'dock', 0.12, { systemId: st.systemId });
   return ok({ report });
 }
 
@@ -224,7 +228,10 @@ export function jump(state: GameState, toId: number): Result<{ report: JumpRepor
     if (state.dead || state.location.stationId !== null) return ok({ report });
   }
   arrive(state, toId);
-  if (!rollEncounter(state, toId, plan.days)) rollEvent(state, 'jump', 0.42, { systemId: toId });
+  greyArrival(state, toId);
+  if (!rollEncounter(state, toId, plan.days)) {
+    if (!rollStory(state, 'arrival', { systemId: toId })) rollEvent(state, 'jump', 0.42, { systemId: toId });
+  }
   if (!state.pendingEvent) rollEvent(state, 'arrival', 0.12, { systemId: toId });
   void stats;
   return ok({ report });
@@ -330,7 +337,8 @@ export function wait(state: GameState, days: number): Result {
 
 function atStation(state: GameState, stationId: string): StationStatic | null {
   if (state.location.stationId !== stationId) return null;
-  return stationOf(state, stationId);
+  const st = stationOf(state, stationId);
+  return isConsumed(state, st.systemId) ? null : st;
 }
 
 export function stockOf(state: GameState, stationId: string, goodId: string): number {

@@ -190,10 +190,10 @@ export interface CombatState {
   systemId: number;
 }
 
-export type EncounterKind = 'pirate' | 'hunter' | 'customs' | 'wreck' | 'fauna';
+export type EncounterKind = 'pirate' | 'hunter' | 'customs' | 'wreck' | 'fauna' | 'grey';
 
 export interface EncounterOption {
-  id: 'fight' | 'flee' | 'bribe' | 'negotiate' | 'pay' | 'evade';
+  id: 'fight' | 'flee' | 'bribe' | 'negotiate' | 'pay' | 'evade' | 'listen';
   /** Credits needed (bribe, pay). */
   cost?: number;
   /** Success chance estimate shown to the player (0..1). */

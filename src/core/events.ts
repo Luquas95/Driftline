@@ -23,6 +23,13 @@ import {
   type Result,
 } from './state';
 import { passTime } from './time';
+import { addMerit, addRep } from './factions';
+import { triggerEnding } from './endings';
+import { learnWords, understanding } from './lang';
+import { addResearchPoints } from './research';
+import { ownerOf, repOf } from './territory';
+import { consumedShare } from './threat';
+import { T } from './tuning';
 import type { GameState, Quality } from './types';
 
 export interface EventContext {
@@ -91,6 +98,45 @@ export function evalCond(state: GameState, c: Cond): boolean {
       return state.crew.some((m) => m.morale < c.n);
     case 'officer':
       return crewHasOfficer(state, c.id);
+    case 'fRep': {
+      const f = c.f === 'here' ? ownerOf(state, sys.id) : c.f;
+      if (!f) return false;
+      const r = repOf(state, f);
+      return (c.min === undefined || r >= c.min) && (c.max === undefined || r <= c.max);
+    }
+    case 'fMember':
+      return c.f ? state.fac.member === c.f : state.fac.member !== null;
+    case 'fRank':
+      return state.fac.member !== null && state.fac.rank >= c.min;
+    case 'owner':
+      return ownerOf(state, sys.id) === c.f;
+    case 'hasBase':
+      return state.base !== null;
+    case 'building':
+      return (state.base?.buildings[c.id] ?? 0) >= c.min;
+    case 'tech':
+      return state.research.done.includes(c.id);
+    case 'gripHere':
+      return (state.threat.grip[sys.id] ?? 0) >= c.min;
+    case 'consumedMin':
+      return consumedShare(state) >= c.share;
+    case 'langMin':
+      return understanding(state) >= c.frac;
+    case 'artifactsMin':
+      return state.story.artifacts >= c.n;
+    case 'story':
+      return (
+        (c.min === undefined || state.story.stage >= c.min) &&
+        (c.max === undefined || state.story.stage <= c.max)
+      );
+    case 'decided':
+      return state.story.log.some((x) => x.key === c.key);
+    case 'fleetMin':
+      return (state.base?.hangar.length ?? 0) >= c.n;
+    case 'hasHull':
+      return state.ship.hullId === c.id || !!state.base?.hangar.some((f) => f.ship.hullId === c.id);
+    case 'atBase':
+      return !!state.base && state.base.systemId === sys.id;
     case 'not':
       return !evalCond(state, c.c);
     case 'ext':
@@ -99,7 +145,9 @@ export function evalCond(state: GameState, c: Cond): boolean {
 }
 
 export function eligibleEvents(state: GameState, trigger: EventTrigger): EventDef[] {
-  return EVENTS.filter((e) => e.trigger === trigger && e.conditions.every((c) => evalCond(state, c)));
+  return EVENTS.filter(
+    (e) => e.trigger === trigger && e.weight > 0 && e.conditions.every((c) => evalCond(state, c)),
+  );
 }
 
 /** Roll for an event of the given trigger; sets `pendingEvent` on success. */
@@ -299,6 +347,38 @@ export function applyEffect(state: GameState, e: Effect, ctx?: EventContext): vo
     }
     case 'fight':
       spawnEncounter(state, e.enemy, e.tier);
+      break;
+    case 'fRep': {
+      const f = e.f === 'here' ? ownerOf(state, state.location.systemId) : e.f;
+      if (f) addRep(state, f, e.n, e.ripple ?? true);
+      break;
+    }
+    case 'fMerit':
+      if (state.fac.member) addMerit(state, state.fac.member, e.n);
+      break;
+    case 'langLearn':
+      learnWords(state, e.n);
+      break;
+    case 'research':
+      addResearchPoints(state, e.n);
+      break;
+    case 'artifact':
+      state.story.artifacts++;
+      state.threat.mitigation = Math.min(T.threat.mitigationCap, state.threat.mitigation + 0.04);
+      addResearchPoints(state, 25);
+      msg(state, 'msg.artifact', undefined, 'good');
+      break;
+    case 'slow':
+      state.threat.mitigation = Math.min(T.threat.mitigationCap, state.threat.mitigation + e.n);
+      break;
+    case 'story':
+      state.story.stage = Math.max(state.story.stage, e.to);
+      break;
+    case 'decide':
+      if (!state.story.log.some((x) => x.key === e.key)) state.story.log.push({ day: state.day, key: e.key });
+      break;
+    case 'ending':
+      triggerEnding(state, e.id);
       break;
     case 'death':
       destroyShip(state);

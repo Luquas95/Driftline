@@ -1,5 +1,6 @@
 import type { OfficerId, RaceId, Role, Skill } from '../content/crew';
 import type { GoodTag, ModuleKind, Quality, Region } from './types';
+import type { FactionId } from './worldTypes';
 
 /**
  * Event condition. The union is deliberately open: v2 adds crew/combat conditions, v3 faction/threat
@@ -24,6 +25,23 @@ export type Cond =
   | { t: 'crewSkill'; skill: Skill; min: number }
   | { t: 'crewMoraleBelow'; n: number }
   | { t: 'officer'; id: OfficerId }
+  /** v4: standing with a faction (`here` = owner of the current system). */
+  | { t: 'fRep'; f: FactionId | 'here'; min?: number; max?: number }
+  | { t: 'fMember'; f?: FactionId }
+  | { t: 'fRank'; min: number }
+  | { t: 'owner'; f: FactionId }
+  | { t: 'hasBase' }
+  | { t: 'building'; id: string; min: number }
+  | { t: 'tech'; id: string }
+  | { t: 'gripHere'; min: number }
+  | { t: 'consumedMin'; share: number }
+  | { t: 'langMin'; frac: number }
+  | { t: 'artifactsMin'; n: number }
+  | { t: 'story'; min?: number; max?: number }
+  | { t: 'decided'; key: string }
+  | { t: 'fleetMin'; n: number }
+  | { t: 'hasHull'; id: string }
+  | { t: 'atBase' }
   | { t: 'not'; c: Cond }
   | { t: 'ext'; key: string; args?: Record<string, unknown> };
 
@@ -49,6 +67,15 @@ export type Effect =
   | { t: 'crewLeave'; role?: Role }
   | { t: 'crewJoin'; role?: Role; race?: RaceId; level: number }
   | { t: 'fight'; enemy: string; tier: number }
+  | { t: 'fRep'; f: FactionId | 'here'; n: number; ripple?: boolean }
+  | { t: 'fMerit'; n: number }
+  | { t: 'langLearn'; n: number }
+  | { t: 'research'; n: number }
+  | { t: 'artifact' }
+  | { t: 'slow'; n: number }
+  | { t: 'story'; to: number }
+  | { t: 'decide'; key: string }
+  | { t: 'ending'; id: string }
   | { t: 'death' }
   | { t: 'ext'; key: string; args?: Record<string, unknown> };
 
@@ -65,7 +92,7 @@ export interface EventChoice {
   outcomes: EventOutcome[];
 }
 
-export type EventTrigger = 'jump' | 'arrival' | 'anomaly' | 'dock' | 'mine';
+export type EventTrigger = 'jump' | 'arrival' | 'anomaly' | 'dock' | 'mine' | 'artifact' | 'story';
 
 export interface EventDef {
   id: string;

@@ -45,7 +45,7 @@ export const T = {
   threat: {
     startDay: { low: 40, normal: 28, high: 18 },
     foci: { low: 1, normal: 2, high: 3 },
-    rate: { low: 0.34, normal: 0.46, high: 0.62 },
+    rate: { low: 0.94, normal: 0.8, high: 0.855 },
     /** The rate grows with time: x(1 + t / growthDays). */
     growthDays: { low: 260, normal: 200, high: 160 },
     spreadMin: 28,

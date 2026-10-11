@@ -8,6 +8,7 @@ import { crewDaily } from './crew';
 import { Rng } from './rng';
 import { factionDaily } from './factions';
 import { threatDaily } from './threat';
+import { checkAutoEndings } from './endings';
 import { baseDaily } from './base';
 import { researchDaily } from './research';
 import type { Galaxy, GameState } from './types';
@@ -17,6 +18,7 @@ import type { Galaxy, GameState } from './types';
  */
 export function passTime(state: GameState, days: number): void {
   if (!Number.isFinite(days) || days <= 0 || state.dead || state.noShip) return;
+  if (state.ending && !state.ending.freePlay) return;
   const g = galaxyOf(state);
   const { stats } = analyze(state);
   state.day += days;
@@ -43,6 +45,7 @@ export function passTime(state: GameState, days: number): void {
     tickEconomy(g, state, state.lastEconDay);
     factionDaily(state, state.lastEconDay);
     threatDaily(state, state.lastEconDay);
+    checkAutoEndings(state);
     baseDaily(state, state.lastEconDay);
     researchDaily(state);
     const ev = maybeSpawnEvent(g, state, state.lastEconDay);

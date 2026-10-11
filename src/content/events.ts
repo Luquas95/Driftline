@@ -1,80 +1,40 @@
-import type { Cond, Effect, EventChoice, EventDef, EventTrigger } from '../core/eventTypes';
-import type { OfficerId, RaceId, Role, Skill } from './crew';
-import type { GoodTag, ModuleKind, Quality, Region } from '../core/types';
-
-/**
- * Event authoring: structure and Czech text are written together, then split into the data-driven
- * definition (EVENTS, referencing i18n keys) and the dictionary entries (EVENT_TEXTS_CS).
- */
-export const EVENT_TEXTS_CS: Record<string, string> = {};
-
-interface OutIn {
-  text: string;
-  fx: Effect[];
-  w: number;
-}
-interface ChIn {
-  text: string;
-  req?: Cond[];
-  outs: OutIn[];
-}
-
-const out = (text: string, fx: Effect[] = [], w = 1): OutIn => ({ text, fx, w });
-const ch = (text: string, outs: OutIn[], req?: Cond[]): ChIn => ({ text, outs, req });
-
-export const EVENTS: EventDef[] = [];
-
-function ev(
-  id: string,
-  trigger: EventTrigger,
-  weight: number,
-  conditions: Cond[],
-  title: string,
-  text: string,
-  choices: ChIn[],
-): void {
-  EVENT_TEXTS_CS[`ev.${id}.title`] = title;
-  EVENT_TEXTS_CS[`ev.${id}.text`] = text;
-  const cs: EventChoice[] = choices.map((c, ci) => {
-    EVENT_TEXTS_CS[`ev.${id}.c${ci}`] = c.text;
-    return {
-      textKey: `ev.${id}.c${ci}`,
-      requires: c.req,
-      outcomes: c.outs.map((o, oi) => {
-        EVENT_TEXTS_CS[`ev.${id}.c${ci}.o${oi}`] = o.text;
-        return { weight: o.w, effects: o.fx, textKey: `ev.${id}.c${ci}.o${oi}` };
-      }),
-    };
-  });
-  EVENTS.push({
-    id,
-    trigger,
-    weight,
-    conditions,
-    titleKey: `ev.${id}.title`,
-    textKey: `ev.${id}.text`,
-    choices: cs,
-  });
-}
-
-const cr = (n: number): Effect => ({ t: 'credits', n });
-const hull = (n: number): Effect => ({ t: 'hull', n });
-const fuel = (n: number): Effect => ({ t: 'fuel', n });
-const sup = (n: number): Effect => ({ t: 'supplies', n });
-const days = (n: number): Effect => ({ t: 'days', n });
-const wear = (n: number, kind?: ModuleKind): Effect => ({ t: 'wear', n, kind });
-const goods = (goodId: string, qty: number): Effect => ({ t: 'goods', goodId, qty });
-const rep = (n: number): Effect => ({ t: 'rep', n });
-const reveal = (radius: number): Effect => ({ t: 'reveal', radius });
-const discover = (value: number): Effect => ({ t: 'discover', value });
-const flag = (key: string, value: number | string | boolean = true): Effect => ({ t: 'flag', key, value });
-const lose = (frac: number): Effect => ({ t: 'loseCargo', frac });
-const mod = (quality?: Quality, kind?: ModuleKind): Effect => ({ t: 'module', quality, kind });
-const probes = (n: number): Effect => ({ t: 'probes', n });
-const regionIn = (...r: Region[]): Cond => ({ t: 'region', in: r });
-const hasMod = (kind: ModuleKind): Cond => ({ t: 'hasModule', kind });
-const tag = (t: GoodTag): Cond => ({ t: 'cargoTag', tag: t });
-const dangerMin = (n: number): Cond => ({ t: 'dangerMin', n });
+import type { Cond, EventDef } from '../core/eventTypes';
+export { EVENTS, EVENT_TEXTS_CS } from './eventKit';
+import {
+  EVENTS,
+  ch,
+  cr,
+  dangerMin,
+  days,
+  discover,
+  ev,
+  fight,
+  flag,
+  fuel,
+  goods,
+  hasMod,
+  hasOfficer,
+  hasRace,
+  hasRole,
+  hull,
+  hurt,
+  join,
+  leave,
+  lose,
+  mod,
+  morale,
+  out,
+  probes,
+  regionIn,
+  rep,
+  reveal,
+  skillMin,
+  sup,
+  tag,
+  wear,
+  xp,
+} from './eventKit';
+import './storyEvents';
 
 /* ------------------------------- jump -------------------------------- */
 
@@ -905,16 +865,6 @@ ev('quiet_space', 'jump', 12, [], 'Klidný skok', 'Skok proběhne bez komplikac�
 
 /* ------------------------------- crew (v2) ------------------------------- */
 
-const hurt = (n: number, all = false): Effect => ({ t: 'crewHurt', n, all });
-const xp = (skill: Skill, n: number): Effect => ({ t: 'crewXp', skill, n });
-const morale = (n: number): Effect => ({ t: 'crewMorale', n });
-const leave = (role?: Role): Effect => ({ t: 'crewLeave', role });
-const join = (level: number, role?: Role, race?: RaceId): Effect => ({ t: 'crewJoin', level, role, race });
-const fight = (enemy: string, tier: number): Effect => ({ t: 'fight', enemy, tier });
-const hasRole = (role: Role): Cond => ({ t: 'crewRole', role });
-const hasRace = (race: RaceId): Cond => ({ t: 'crewRace', race });
-const skillMin = (skill: Skill, min: number): Cond => ({ t: 'crewSkill', skill, min });
-const hasOfficer = (id: OfficerId): Cond => ({ t: 'officer', id });
 const never: Cond = { t: 'flag', key: '__never__' };
 
 // triggered directly by the crew model (morale), never rolled

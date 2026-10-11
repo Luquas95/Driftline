@@ -9,7 +9,9 @@ import { Rng } from '../rng';
 import { inspectionAtSystem, ownerOf, repOf, tierOf } from '../territory';
 import { threatDanger } from '../threat';
 import { buildStarterShip, hullSlots, moduleFits, newModule } from '../ship';
-import { analyze, fail, galaxyOf, ok, withRng, type Result } from '../state';
+import { analyze, damageHull, fail, galaxyOf, ok, withRng, type Result } from '../state';
+import { learnWords } from '../lang';
+import { addResearchPoints } from '../research';
 import { T, riskFactor } from '../tuning';
 import type { GameState, Ship } from '../types';
 import { buildCombatShip, crewToCombat, placeCrew } from './build';
@@ -272,6 +274,10 @@ export function makeEncounter(
   }
   if (kind === 'wreck' || kind === 'fauna')
     options.push({ id: 'evade', chance: Math.min(0.85, 0.35 + 0.07 * pilot) });
+  if (kind === 'grey') {
+    options.push({ id: 'evade', chance: Math.min(0.8, 0.3 + 0.06 * pilot) });
+    options.push({ id: 'listen', chance: 1 });
+  }
   return {
     kind,
     enemyDefs: defs,
@@ -295,7 +301,9 @@ export function rollEncounter(state: GameState, systemId: number, days = 3): boo
       (c) => GOODS_BY_ID[c.goodId]?.tags.includes('illegal') && !c.contractId,
     );
     const wanted = isWanted(state);
+    const grip = state.threat.grip[systemId] ?? 0;
     const weights: [EncounterKind, number][] = [
+      ['grey', grip >= 30 ? 4 + grip / 25 : 0],
       ['pirate', ownerOf(state, systemId) === 'corsairs' && repOf(state, 'corsairs') >= 25 ? 0.6 : 3],
       ['fauna', sys.region === 'rim' || sys.region === 'outer' ? 1.2 : 0.2],
       [
@@ -370,6 +378,15 @@ export function chooseEncounterOption(
       if (state.cargo.length < before) state.stats.fines++;
       state.encounter = null;
       return ok({ fight: false, text: 'enc.result.paid' });
+    }
+    case 'listen': {
+      // let the Grey speak: a few words in exchange for a shock to ship and crew
+      const learned = learnWords(state, roll < 0.4 ? 2 : 1);
+      addResearchPoints(state, 5);
+      for (const m of state.crew) m.morale = Math.max(0, m.morale - 6);
+      damageHull(state, Math.round(4 + roll * 8));
+      state.encounter = null;
+      return ok({ fight: false, text: `enc.result.listened${learned.length > 1 ? 'Two' : ''}` });
     }
     case 'evade':
       if (roll < (opt.chance ?? 0.5)) {

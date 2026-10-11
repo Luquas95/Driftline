@@ -5,6 +5,8 @@ import { SKILLS } from '../../content/crew';
 import { addGoods, removeGoods, unitsOf } from '../cargo';
 import { gainXp, maxHp } from '../crew';
 import { onBaseFightEnded } from '../base';
+import { learnWords } from '../lang';
+import { addResearchPoints } from '../research';
 import { onFightEnded } from '../factions';
 import { Rng } from '../rng';
 import { newModule } from '../ship';
@@ -161,6 +163,10 @@ export function resolveCombat(state: GameState, c: CombatState): CombatSummary {
     }
     state.ship.fuel = Math.min(stats.fuelCap, state.ship.fuel + sum.fuel);
     onFightEnded(state, c.kind, outcome, state.location.systemId);
+    if (c.kind === 'grey') {
+      learnWords(state, 1);
+      addResearchPoints(state, 6);
+    }
     const dRep = repFor(c.kind, outcome);
     if (dRep) {
       const st = state.stations[state.home];

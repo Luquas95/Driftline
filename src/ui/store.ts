@@ -111,6 +111,7 @@ export function describeMessage(key: string, params?: Record<string, string | nu
   if (typeof p.tier === 'string') p.tier = t(`fac.tier.${p.tier}`);
   if (typeof p.building === 'string') p.building = t(`bld.${p.building}`);
   if (typeof p.tech === 'string') p.tech = t(`tech.${p.tech}`);
+  if (typeof p.ending === 'string') p.ending = t(`ending.${p.ending}`);
   return t(key, p);
 }
 

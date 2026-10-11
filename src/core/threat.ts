@@ -5,7 +5,8 @@
 import { dist } from './galaxy';
 import { hashToUnit } from './rng';
 import { Rng } from './rng';
-import { galaxyOf } from './state';
+import { galaxyOf, msg, withRng } from './state';
+import { wearModule } from './ship';
 import { T } from './tuning';
 import type { Galaxy, GameState, SystemStatic } from './types';
 import type { ThreatState } from './worldTypes';
@@ -144,16 +145,78 @@ export function threatDaily(state: GameState, day: number): void {
   for (const v of Object.values(th.grip)) if (v >= T.threat.consumeAt) n++;
   th.consumed = n;
   th.lastTick = day;
+  threatMilestones(state, day);
 }
 
 /** How many days an unopposed spread needs to consume `share` of the galaxy (simulation, for calibration and tests). */
-export function simulateSpread(state: GameState, share: number, maxDays = 900): number {
+export function simulateSpread(
+  state: GameState,
+  share: number,
+  maxDays = 900,
+  keepMitigation = false,
+): number {
   const copy = JSON.parse(JSON.stringify(state)) as GameState;
-  copy.threat.mitigation = 0;
+  if (!keepMitigation) copy.threat.mitigation = 0;
   copy.ending = null;
   for (let d = copy.threat.start; d <= maxDays; d++) {
     threatDaily(copy, d);
     if (consumedShare(copy) >= share) return d;
   }
   return Infinity;
+}
+
+/** Arriving in a dying system: the Grey eats at the electronics. */
+export function greyArrival(state: GameState, systemId: number): void {
+  if (gripOf(state, systemId) < 70) return;
+  withRng(state, (rng) => {
+    const idx = state.ship.slots.map((m, i) => (m ? i : -1)).filter((i) => i >= 0);
+    if (!idx.length) return;
+    const i = rng.pick(idx);
+    wearModule(state.ship, i, Math.round(rng.range(6, 16)));
+  });
+  msg(state, 'msg.greyArrival', undefined, 'warn');
+}
+
+/** Reactions of the world as the Grey advances (once per threshold). */
+const MILESTONES = [0.05, 0.12, 0.25, 0.5, 0.7];
+
+export function threatMilestones(state: GameState, day: number): void {
+  const share = consumedShare(state);
+  for (const m of MILESTONES) {
+    const key = `thm:${m}`;
+    if (share < m || state.flags[key]) continue;
+    state.flags[key] = day;
+    const g = galaxyOf(state);
+    const gripped = g.systems.filter((s) => (state.threat.grip[s.id] ?? 0) >= 25);
+    const sectors = [...new Set(gripped.map((s) => s.sector))];
+    msg(state, `msg.threatStage.${MILESTONES.indexOf(m) + 1}`, undefined, 'warn');
+    if (m === 0.05) {
+      // quarantine: the neighbours close their borders around the affected sectors
+      for (const sector of sectors)
+        state.events.push({
+          id: `grey-q${sector}-${day}`,
+          kind: 'blockade',
+          sector,
+          start: day,
+          end: day + 40,
+          mods: { food: 0.35, medical: 0.4, industry: 0.55, tech: 0.55, raw: 0.6 },
+        });
+    }
+    if (m === 0.12) {
+      // cooperation: the wars stop
+      for (const w of state.fac.wars) if (w.end > day) w.end = day;
+    }
+    if (m === 0.25) {
+      for (const sector of sectors)
+        state.events.push({
+          id: `grey-p${sector}-${day}`,
+          kind: 'panic',
+          sector,
+          start: day,
+          end: day + 60,
+          mods: { food: 0.3, medical: 0.3 },
+        });
+    }
+    if (m === 0.5) state.flags['corsairRaids'] = 1;
+  }
 }

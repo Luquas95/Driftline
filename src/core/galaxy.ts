@@ -164,7 +164,35 @@ export function generateGalaxy(seed: string, n = T.galaxySystems): Galaxy {
     for (const st of s.stations) stationsById[st.id] = st;
   }
   guaranteeStartingStation(systems, stationsById, rng);
+  placeArtifacts(systems, seed, n);
   return { seed, systems, stationsById, sectors, radius: R };
+}
+
+/** Event ids of the Grey's artifacts (trigger `artifact`, not part of the random anomaly pool). */
+export const ARTIFACT_EVENTS = ['artifact_mirror', 'artifact_thread', 'artifact_echo'];
+
+/**
+ * v4: a few artifacts of the Grey lie hidden on bodies of inner, outer and rim systems. They use their own random
+ * stream, so everything else about an existing galaxy stays exactly as it was.
+ */
+function placeArtifacts(systems: SystemStatic[], seed: string, n: number): void {
+  const rng = Rng.fromSeed(`${seed}:artifacts`);
+  const want = Math.max(4, Math.round((n / T.galaxySystems) * 9));
+  const pool = systems.filter((s) => s.region !== 'core' && s.bodies.some((b) => b.kind !== 'belt'));
+  const used = new Set<number>();
+  for (let k = 0; k < want && pool.length; k++) {
+    let sys = rng.pick(pool);
+    let guard = 0;
+    while (used.has(sys.id) && guard++ < 40) sys = rng.pick(pool);
+    used.add(sys.id);
+    const cands = sys.bodies.filter((b) => b.kind !== 'belt');
+    const body = rng.pick(cands);
+    body.anomalies.push({
+      id: `${body.id}!A${k}`,
+      eventId: ARTIFACT_EVENTS[k % ARTIFACT_EVENTS.length],
+      hidden: rng.int(2, 3),
+    });
+  }
 }
 
 function clamp01(x: number): number {
