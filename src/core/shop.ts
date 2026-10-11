@@ -3,6 +3,7 @@ import { MODULES, MODULES_BY_ID } from '../content/modules';
 import { STATION_TYPES_BY_ID } from '../content/stations';
 import { serviceMult } from './economy';
 import { exclusiveHullFor } from './factions';
+import { moduleUnlocked } from './research';
 import { Rng } from './rng';
 import { autoArrange, cargoMass, gridDims } from './cargo';
 import {
@@ -62,7 +63,8 @@ export function refreshShop(state: GameState, st: StationStatic): void {
   for (const id of ['cargo_s', 'cargo_m', 'fuel_s', 'fuel_m']) push(id, 'C');
   const count = 6 + tier * 3;
   const pool = MODULES.filter(
-    (m) => (m.size !== 'L' || tier >= 2) && !(tier === 1 && m.kind === 'amplifier'),
+    (m) =>
+      (m.size !== 'L' || tier >= 2) && !(tier === 1 && m.kind === 'amplifier') && moduleUnlocked(state, m.id),
   );
   for (let i = 0; i < count; i++) {
     const def = rng.pick(pool);

@@ -60,8 +60,8 @@ export interface FleetShip {
   crew: CrewMember[];
   order: 'idle' | 'trade' | 'escort' | 'guard';
   route: { from: string; to: string; goodId: string | null } | null;
-  /** Current trip of an auto trader (profit is booked when it ends). */
-  trip: { start: number; end: number; profit: number; lost: boolean } | null;
+  /** Current trip of an auto trader: `profit` is the cash returned when it ends (capital + gain), `cost` the outlay. */
+  trip: { start: number; end: number; profit: number; cost: number; lost: boolean } | null;
   earned: number;
   trips: number;
   /** Day the ship is available again (lost ships need repairs). */

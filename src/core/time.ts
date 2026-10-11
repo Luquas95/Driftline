@@ -8,6 +8,8 @@ import { crewDaily } from './crew';
 import { Rng } from './rng';
 import { factionDaily } from './factions';
 import { threatDaily } from './threat';
+import { baseDaily } from './base';
+import { researchDaily } from './research';
 import type { Galaxy, GameState } from './types';
 
 /**
@@ -41,6 +43,8 @@ export function passTime(state: GameState, days: number): void {
     tickEconomy(g, state, state.lastEconDay);
     factionDaily(state, state.lastEconDay);
     threatDaily(state, state.lastEconDay);
+    baseDaily(state, state.lastEconDay);
+    researchDaily(state);
     const ev = maybeSpawnEvent(g, state, state.lastEconDay);
     if (ev && sectorKnown(state, g, ev.sector))
       msg(state, `msg.market.${ev.kind}`, { sector: g.sectors[ev.sector].name }, 'info');
