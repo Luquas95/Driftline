@@ -131,3 +131,17 @@ describe('language', () => {
     expect(understanding(a)).toBe(0);
   });
 });
+
+describe('research: switching', () => {
+  it('returns the work already invested to the pool instead of losing it', () => {
+    const s = mk('SWITCH', 120);
+    addResearchPoints(s, 60);
+    expect(startResearch(s, 'deep_scan').ok).toBe(true);
+    s.research.progress = 40;
+    s.research.points = 10;
+    expect(startResearch(s, 'fusion_2').ok).toBe(true);
+    expect(s.research.active).toBe('fusion_2');
+    expect(s.research.progress).toBe(0);
+    expect(s.research.points).toBe(50);
+  });
+});

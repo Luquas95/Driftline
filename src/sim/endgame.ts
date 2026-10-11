@@ -10,6 +10,7 @@ import { GOODS_BY_ID } from '../content/goods';
 import { TECHS } from '../content/tech';
 import {
   checkBuilding,
+  checkHullOrder,
   collectTreasury,
   commissionHull,
   defendBase,
@@ -70,29 +71,41 @@ const RESEARCH_PLAN: Record<Target, string[]> = {
   dominion: ['deep_scan', 'xeno_1', 'mass_prod', 'logistics', 'xeno_2', 'precision_fab'],
 };
 
-const BUILD_PLAN: BuildingId[] = [
-  'warehouse',
-  'mine',
-  'lab',
-  'port',
-  'refinery',
-  'lab',
-  'shipyard',
-  'hangar',
-  'factory',
-  'warehouse',
-  'mine',
-  'lab',
-  'port',
-  'defense',
-  'shipyard',
-  'hangar',
-  'anchor',
-  'shipyard',
-  'hangar',
-  'port',
-  'hangar',
-];
+const BUILD_PLANS: Record<Target, BuildingId[]> = {
+  science: [
+    'warehouse',
+    'lab',
+    'mine',
+    'lab',
+    'port',
+    'lab',
+    'refinery',
+    'anchor',
+    'lab',
+    'anchor',
+    'anchor',
+    'defense',
+  ],
+  accord: ['warehouse', 'lab', 'mine', 'lab', 'port', 'lab', 'defense', 'refinery', 'lab'],
+  exodus: [
+    'warehouse',
+    'mine',
+    'lab',
+    'shipyard',
+    'hangar',
+    'shipyard',
+    'lab',
+    'hangar',
+    'shipyard',
+    'refinery',
+    'factory',
+    'hangar',
+    'shipyard',
+    'hangar',
+  ],
+
+  dominion: ['warehouse', 'port', 'lab', 'port', 'mine', 'port', 'refinery', 'lab', 'port', 'port'],
+};
 
 /** Artifacts needed by each target. */
 const ARTIFACTS_NEEDED: Record<Target, number> = { science: 3, accord: 2, exodus: 1, dominion: 1 };
@@ -211,8 +224,9 @@ export class EndgameBot extends Bot {
     const s = this.state;
     this.storyErrands();
     if (s.ending || s.dead) return;
+    if (s.base) this.pickResearch();
     if (!s.base) this.tryFoundBase();
-    else if (s.day - this.lastVisit >= 22 || (s.base.attack && s.day < s.base.attack.resolve - 1))
+    else if (s.day - this.lastVisit >= 9 || (s.base.attack && s.day < s.base.attack.resolve - 1))
       this.visitBase();
     if (s.ending || s.dead) return;
     this.factionTasks();
@@ -411,8 +425,13 @@ export class EndgameBot extends Bot {
     this.pickResearch();
     // buildings: the first affordable steps of the plan
     let started = 0;
-    for (const id of BUILD_PLAN) {
-      if (started >= 2) break;
+    const plan = BUILD_PLANS[this.target];
+    for (let i = 0; i < plan.length; i++) {
+      const id = plan[i];
+      if (started >= 3) break;
+      // the plan lists a building once per level: the n-th entry is level n
+      const wanted = plan.slice(0, i + 1).filter((x) => x === id).length;
+      if (levelOf(base, id) + (base.queue.some((q) => q.id === id) ? 1 : 0) >= wanted) continue;
       const def = BUILDINGS_BY_ID[id];
       let chk = checkBuilding(s, id);
       if (!chk.ok && chk.error === 'err.baseMaterials') {
@@ -479,15 +498,22 @@ export class EndgameBot extends Bot {
       want.push('ark');
     want.push('mule');
     for (const hull of want) {
-      const r = commissionHull(s, hull);
-      if (!r.ok && r.error === 'err.baseMaterials') {
-        // buy materials for the order, then retry
-        const need = { construction: 400, machinery: 150, alloys: 120, electronics: 60 };
-        const scale = hull === 'ark' ? 12 : 1;
-        const mats = Object.fromEntries(
-          Object.entries(need).map(([k, v]) => [k, Math.round((v * scale) / (hull === 'ark' ? 3 : 8))]),
+      const chk = checkHullOrder(s, hull);
+      if (!chk.ok && chk.error === 'err.baseMaterials') {
+        // buy exactly the materials of the order (when affordable), then commission
+        const mats = Object.entries(chk.materials).reduce(
+          (sum, [gid, n]) =>
+            sum + Math.max(0, n - (base.storage[gid] ?? 0)) * GOODS_BY_ID[gid].basePrice * 1.3,
+          0,
         );
-        if (this.supply(mats) >= 0) commissionHull(s, hull);
+        if (s.credits - chk.credits - mats < 5000) continue;
+        if (this.supply(chk.materials) >= 0) {
+          const r = commissionHull(s, hull);
+          if (r.ok) this.base_spent += chk.credits;
+        }
+      } else if (chk.ok) {
+        const r = commissionHull(s, hull);
+        if (r.ok) this.base_spent += chk.credits;
       }
     }
     // routes
@@ -627,6 +653,8 @@ export interface PlayOptions {
   risk?: 'low' | 'normal' | 'high';
   prices?: 'easy' | 'normal' | 'hard';
   maxDays?: number;
+  /** Extra credits per day: models a player who earns more than the bots (reported as such). */
+  incomeBoost?: number;
 }
 
 /** Play one whole game with a strategy until an ending, death or the day limit. */
@@ -645,6 +673,7 @@ export function playGame(seed: string, strategy: Strategy, opts: PlayOptions = {
     bot.play(Math.min(14, max - state.day));
     bot.manage();
     if (state.day === d0) wait(state, 1);
+    if (opts.incomeBoost) state.credits += opts.incomeBoost * (state.day - d0);
   }
   return bot.result();
 }

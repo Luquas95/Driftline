@@ -21,7 +21,7 @@ import { Btn, Panel, Tag, Bar } from '../components';
 import { Icon } from '../Icon';
 import { checkFounding, foundBase } from '../../core/base';
 import { FOUNDING } from '../../content/buildings';
-import { money } from '../../i18n';
+import { unitsOf } from '../../core/cargo';
 import { go } from '../store';
 import {
   act,
@@ -530,17 +530,28 @@ function FoundBase({ body }: { body: BodyStatic }) {
     ) : null;
   }
   const chk = checkFounding(s, body.index);
+  const needs = [
+    { label: t('ui3.credits'), have: Math.floor(s.credits), need: FOUNDING.credits },
+    ...Object.entries(FOUNDING.goods).map(([g, n]) => ({
+      label: t(`good.${g}`),
+      have: unitsOf(s.cargo, g),
+      need: n,
+    })),
+  ];
   return (
     <section class="stack" style={{ gap: 6 }}>
       <h3>{t('ui3.foundTitle')}</h3>
-      <p class="explain">
-        {t('ui3.foundHelp', {
-          credits: money(FOUNDING.credits),
-          goods: Object.entries(FOUNDING.goods)
-            .map(([g, n]) => `${n}× ${t(`good.${g}`)}`)
-            .join(', '),
-        })}
-      </p>
+      <p class="explain">{t('ui3.foundHelp')}</p>
+      <ul class="checklist" data-testid="found-checklist">
+        {needs.map((n) => (
+          <li key={n.label} class={n.have >= n.need ? 'pos' : 'neg'}>
+            <Icon name={n.have >= n.need ? 'check' : 'close'} size={14} /> {n.label}:{' '}
+            <span class="mono">
+              {fmt(n.have)} / {fmt(n.need)}
+            </span>
+          </li>
+        ))}
+      </ul>
       {!chk.ok && chk.error && <div class="neg">{t(chk.error)}</div>}
       <Btn
         small

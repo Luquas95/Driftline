@@ -35,7 +35,7 @@ export function techBonus(state: GameState, key: 'rp' | 'fleet' | 'defense' | 'm
 export function labRate(state: GameState): number {
   const lvl = state.base?.buildings.lab ?? 0;
   if (lvl <= 0) return 0;
-  return 4 * Math.pow(lvl, 1.2) * (1 + techBonus(state, 'rp'));
+  return 6 * Math.pow(lvl, 1.2) * (1 + techBonus(state, 'rp'));
 }
 
 export function addResearchPoints(state: GameState, n: number): void {
@@ -48,6 +48,8 @@ export function startResearch(state: GameState, id: string): Result {
   if (!TECHS_BY_ID[id]) return fail('err.noTech');
   if (hasTech(state, id)) return fail('err.techDone');
   if (!canResearch(state, id)) return fail('err.techLocked');
+  // switching never loses work: what was already invested returns to the pool
+  if (state.research.active && state.research.active !== id) state.research.points += state.research.progress;
   state.research.active = id;
   state.research.progress = 0;
   return ok();
@@ -71,7 +73,7 @@ export function researchDaily(state: GameState): void {
   const t = rs.active ? TECHS_BY_ID[rs.active] : null;
   if (!t) return;
   const need = t.cost - rs.progress;
-  const take = Math.min(need, rs.points, Math.max(8, t.cost / 12));
+  const take = Math.min(need, rs.points, Math.max(12, t.cost / 8));
   if (take > 0) {
     rs.points -= take;
     rs.progress += take;

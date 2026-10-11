@@ -71,8 +71,8 @@ const NAV: { id: ScreenId; icon: string; label: string; key: string }[] = [
   { id: 'ship', icon: 'ship', label: 'nav.ship', key: 'L' },
   { id: 'cargo', icon: 'cargo', label: 'nav.cargo', key: 'C' },
   { id: 'crew', icon: 'crew', label: 'nav.crew', key: 'P' },
-  { id: 'factions', icon: 'star', label: 'nav.factions', key: 'F' },
-  { id: 'base', icon: 'station', label: 'nav.base', key: 'B' },
+  { id: 'factions', icon: 'flag', label: 'nav.factions', key: 'F' },
+  { id: 'base', icon: 'base', label: 'nav.base', key: 'B' },
   { id: 'journal', icon: 'journal', label: 'nav.journal', key: 'J' },
   { id: 'settings', icon: 'settings', label: 'nav.settings', key: 'O' },
 ];
@@ -126,14 +126,17 @@ function TopBar() {
           <span class="mono">{Math.round(hullPct * 100)}%</span>
         </span>
         {s.day >= s.threat.start && (
-          <span
+          <button
+            type="button"
             class={`top-stat threat t${gripLevel(s.threat.grip[s.location.systemId] ?? 0)}`}
             title={t('threat.chip', { n: Math.round(consumedShare(s) * 100) })}
+            aria-label={t('threat.chip', { n: Math.round(consumedShare(s) * 100) })}
             data-testid="top-threat"
+            onClick={() => go('journal')}
           >
             <Icon name="warning" />
             <span class="mono">{Math.round(consumedShare(s) * 100)}%</span>
-          </span>
+          </button>
         )}
         {noPower && (
           <span class="top-stat neg" title={t('top.noPower')}>
@@ -171,6 +174,7 @@ function Nav() {
             disabled={disabled}
             style={disabled ? { opacity: 0.35 } : undefined}
             title={`${t(n.label)} (${n.key})`}
+            aria-label={t(n.label)}
             data-testid={`nav-${n.id}`}
             onClick={() => {
               unlockAudio();
@@ -269,6 +273,7 @@ function useShortcuts() {
         else if (screen.value !== 'map') go(s.location.stationId ? 'station' : 'map');
         return;
       }
+      if (s.ending && (!s.ending.freePlay || !s.flags['endingSeen'])) return;
       if (s.pendingEvent || s.combat || s.encounter) return;
       const nav = NAV.find((n) => n.key.toLowerCase() === k.toLowerCase());
       if (nav) {

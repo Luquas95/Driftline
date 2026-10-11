@@ -28,8 +28,11 @@ export interface BuildingDef {
   techFromLevel?: number;
 }
 
+/** Overall price level of the buildings (tuned with the balance simulator). */
+const COST_SCALE = 0.62;
+
 const grow = (base: number, level: number, k = 1.45): number =>
-  Math.round((base * Math.pow(level, k)) / 50) * 50;
+  Math.round((base * COST_SCALE * Math.pow(level, k)) / 50) * 50;
 
 const mats =
   (c: number, m: number, extra: Record<string, number> = {}) =>

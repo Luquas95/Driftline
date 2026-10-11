@@ -23,7 +23,7 @@ import { galaxyOf } from '../../core/state';
 import { createBackdropScene } from '../../render/backdrop';
 import { t, fmt, money } from '../../i18n';
 import { Bar, Btn, Empty, Panel, Stat, Tabs, Tag } from '../components';
-import { act, describeMessage, game, report, rev, screen } from '../store';
+import { act, describeMessage, game, report, rev, screen, toast } from '../store';
 import { useScene } from '../useScene';
 import { BaseView } from './BaseView';
 import { BaseFleet } from './BaseFleet';
@@ -56,7 +56,10 @@ function Overview() {
           kind="good"
           disabled={!here || base.treasury < 1}
           testid="base-collect"
-          onClick={() => report(act((st) => collectTreasury(st)))}
+          onClick={() => {
+            const r = act((st) => collectTreasury(st));
+            if (report(r) && r.ok) toast(t('ui3.collected', { n: money(r.amount) }), 'good');
+          }}
         >
           {t('ui3.collect')}
         </Btn>
@@ -147,7 +150,10 @@ function Buildings() {
               <div class="faint" style={{ fontSize: 12 }}>
                 {money(chk.credits)} · {chk.days} {t('ui3.daysShort')} ·{' '}
                 {Object.entries(chk.materials)
-                  .map(([g, n]) => `${n}× ${t(`good.${g}`)}`)
+                  .map(
+                    ([g, n]) =>
+                      `${n}× ${t(`good.${g}`)} (${t('ui3.stock', { n: Math.floor(base.storage[g] ?? 0) })})`,
+                  )
                   .join(', ')}
                 {!chk.ok && chk.error && <span class="neg"> · {t(chk.error)}</span>}
               </div>
@@ -157,6 +163,10 @@ function Buildings() {
       })}
     </div>
   );
+}
+
+function moved(r: ReturnType<typeof transferGoods>): void {
+  if (report(r) && r.ok) toast(t('ui3.moved', { n: r.moved }), 'good');
 }
 
 function Storage() {
@@ -193,7 +203,7 @@ function Storage() {
                 small
                 disabled={!here}
                 testid={`to-base-${g}`}
-                onClick={() => report(act((st) => transferGoods(st, g, qty, 'toBase')))}
+                onClick={() => moved(act((st) => transferGoods(st, g, qty, 'toBase')))}
               >
                 →
               </Btn>
@@ -208,7 +218,7 @@ function Storage() {
               <Btn
                 small
                 disabled={!here}
-                onClick={() => report(act((st) => transferGoods(st, g, qty, 'toShip')))}
+                onClick={() => moved(act((st) => transferGoods(st, g, qty, 'toShip')))}
               >
                 ←
               </Btn>
@@ -256,6 +266,11 @@ export function BaseScreen() {
             onChange={setTab}
           />
           <div class="panel-body">
+            {!inBaseSystem(s) && tab !== 'overview' && tab !== 'research' && (
+              <p class="explain" data-testid="base-away">
+                {t('ui3.notAtBase', { sys: galaxyOf(s).systems[base.systemId].name })}
+              </p>
+            )}
             {tab === 'overview' && <Overview />}
             {tab === 'buildings' && <Buildings />}
             {tab === 'production' && <BaseProduction />}

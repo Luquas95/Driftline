@@ -33,6 +33,7 @@ export function BaseResearch() {
         )}
       </div>
       {active && <Bar value={rs.progress} max={active.cost} />}
+      {labRate(s) <= 0 && <p class="explain">{t('ui3.needLab')}</p>}
       <div class="tech-grid">
         {BRANCHES.map((br) => (
           <div key={br} class="tech-col">

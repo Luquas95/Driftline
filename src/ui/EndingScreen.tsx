@@ -1,3 +1,4 @@
+import { Fragment } from 'preact';
 import { endingSummary, markEndingSeen } from '../core/endings';
 import { t, fmt } from '../i18n';
 import { Btn } from './components';
@@ -12,19 +13,25 @@ export function EndingScreen() {
   const sum = endingSummary(s);
   if (!sum) return null;
   return (
-    <div class={`ending-screen ${sum.tone}`} role="dialog" aria-modal="true" data-testid="ending-screen">
+    <div
+      class={`ending-screen ${sum.tone}`}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="ending-title"
+      data-testid="ending-screen"
+    >
       <div class="ending-card stack">
-        <h1 data-testid="ending-title">{t(`ending.${sum.id}`)}</h1>
+        <h1 id="ending-title" data-testid="ending-title">
+          {t(`ending.${sum.id}`)}
+        </h1>
         <p class="ending-text">{t(`ending.${sum.id}.text`)}</p>
         <h3>{t('ending.stats')}</h3>
         <dl class="kv ending-stats">
           {sum.stats.map((x) => (
-            <>
-              <dt key={`k${x.key}`}>{t(`ending.stat.${x.key}`)}</dt>
-              <dd key={`v${x.key}`} class="mono">
-                {fmt(x.value)}
-              </dd>
-            </>
+            <Fragment key={x.key}>
+              <dt>{t(`ending.stat.${x.key}`)}</dt>
+              <dd class="mono">{fmt(x.value)}</dd>
+            </Fragment>
           ))}
         </dl>
         <h3>{t('ending.decisions')}</h3>
@@ -56,28 +63,30 @@ export function EndingScreen() {
             </span>
           ))}
         </div>
-        <p class="explain">{sum.freePlay ? t('ending.freePlayHelp') : t('ending.noFreePlay')}</p>
-        <div class="row">
-          {sum.freePlay && (
+        <div class="ending-footer">
+          <p class="explain">{sum.freePlay ? t('ending.freePlayHelp') : t('ending.noFreePlay')}</p>
+          <div class="row ending-actions">
+            {sum.freePlay && (
+              <Btn
+                kind="primary"
+                testid="ending-continue"
+                onClick={() => {
+                  markEndingSeen(s);
+                  rev.value++;
+                  scheduleAutosave(s);
+                }}
+              >
+                {t('ending.continue')}
+              </Btn>
+            )}
             <Btn
-              kind="primary"
-              testid="ending-continue"
-              onClick={() => {
-                markEndingSeen(s);
-                rev.value++;
-                scheduleAutosave(s);
-              }}
+              kind={sum.freePlay ? undefined : 'primary'}
+              testid="ending-new"
+              onClick={() => (menuOpen.value = true)}
             >
-              {t('ending.continue')}
+              {t('ending.newGame')}
             </Btn>
-          )}
-          <Btn
-            kind={sum.freePlay ? undefined : 'primary'}
-            testid="ending-new"
-            onClick={() => (menuOpen.value = true)}
-          >
-            {t('ending.newGame')}
-          </Btn>
+          </div>
         </div>
       </div>
     </div>

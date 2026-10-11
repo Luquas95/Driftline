@@ -195,6 +195,11 @@ export function MapScreen() {
             {t('map.recommend')}
           </Btn>
         </div>
+        {(filter === 'factions' || filter === 'threat') && (
+          <div class="map-legend" data-testid="map-legend">
+            {t(`map.legend.${filter}`)}
+          </div>
+        )}
         <div class="map-zoom">
           <Btn icon="plus" title={t('map.zoomIn')} onClick={() => sceneRef?.zoomBy(1.4)} />
           <Btn icon="minus" title={t('map.zoomOut')} onClick={() => sceneRef?.zoomBy(1 / 1.4)} />

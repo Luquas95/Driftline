@@ -40,11 +40,13 @@ export const csUi3: Record<string, string> = {
   'ui3.none': 'Zatím nic.',
   'ui3.baseTitle': 'Základna',
   'ui3.noBaseHelp':
-    'Nemáš základnu. Najdi volné nebo přátelské těleso (naskenuj systém), vyber ho v pohledu na systém a založ ji. Potřebuješ kredity a stavební materiál v nákladu.',
+    'Nemáš základnu. Naskenuj systém, vyber těleso v pohledu na systém a založ ji tlačítkem Založit základnu (14 000 kr, 40 stavebního materiálu a 12 strojů v nákladu).',
   'ui3.baseSuffix': 'Základna',
   'ui3.yourBase': 'Tvoje základna',
   'ui3.foundTitle': 'Založit základnu',
-  'ui3.foundHelp': 'Založení stojí {credits} a v nákladu musíš mít: {goods}.',
+  'ui3.foundHelp':
+    'Stavební materiál a stroje kup na průmyslových stanicích a převez je v nákladu. Základna ti pak pracuje i bez tebe.',
+  'ui3.credits': 'Kredity',
   'ui3.found': 'Založit základnu',
   'ui3.tab.overview': 'Přehled',
   'ui3.tab.buildings': 'Budovy',
@@ -122,6 +124,14 @@ export const csUi3: Record<string, string> = {
     'Lodě v hangáru mohou samy obchodovat, hlídat základnu nebo tě doprovázet. Obchodní lodě používají peníze z pokladny základny.',
   'ui3.noFleet': 'Hangár je prázdný. Postav hangár a objednej loď v loděnici.',
   'ui3.fleetIncome': 'Příjem flotily celkem: {n}',
+  'ui3.collected': 'Vybráno z pokladny: {n}',
+  'ui3.moved': 'Přesunuto: {n}',
+  'ui3.needLab': 'Bez laboratoře se body výzkumu nehromadí. Postav ji v záložce Budovy.',
+  'ui3.stock': 've skladu {n}',
+  'ui3.all': 'Vše',
+  'map.legend.factions': 'Barvy ukazují území frakcí, bílé body na hranicích označují střet zájmů.',
+  'map.legend.threat':
+    'Fialová značí sevření Šedi: čím sytější, tím blíž k pohlcení. Černý kruh je mrtvý systém.',
 };
 Object.assign(csUi3, {
   'map.filter.factions': 'Frakce',

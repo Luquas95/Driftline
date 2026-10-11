@@ -112,7 +112,7 @@ function ShipCard({ fs }: { fs: FleetShip }) {
         <Btn
           small
           testid="fleet-set-route"
-          disabled={!plan}
+          disabled={!plan?.ok}
           onClick={() => report(act((st) => setFleetOrder(st, fs.id, 'trade', route)))}
         >
           {t('ui3.setRoute')}
@@ -128,6 +128,7 @@ function ShipCard({ fs }: { fs: FleetShip }) {
           aria-label={t('menu.shipName')}
           onInput={(e) => setName((e.target as HTMLInputElement).value)}
           onBlur={() => name !== fs.name && report(act((st) => renameFleetShip(st, fs.id, name)))}
+          onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
         />
       </div>
     </div>

@@ -3010,3 +3010,71 @@ html[data-anim='off'] *::after {
     grid-template-columns: 70px 60px 1fr;
   }
 }
+
+/* ---- v3 review fixes ---- */
+.rep-mid {
+  position: absolute;
+  left: 50%;
+  top: -2px;
+  bottom: -2px;
+  width: 1px;
+  background: rgba(255, 255, 255, 0.4);
+}
+.checklist {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.map-legend {
+  position: absolute;
+  left: 12px;
+  bottom: 12px;
+  max-width: min(420px, calc(100% - 90px));
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  font-size: 12px;
+  color: var(--text-dim);
+  pointer-events: none;
+}
+.ending-footer {
+  position: sticky;
+  bottom: -24px;
+  margin: 0 -24px -24px;
+  padding: 12px 24px;
+  background: var(--panel-solid);
+  border-top: 1px solid var(--line-strong);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.top-stat.threat {
+  background: none;
+  border: 0;
+  font: inherit;
+  cursor: pointer;
+}
+.tech-node.locked {
+  opacity: 0.7;
+}
+@media (max-width: 899px) {
+  .map-legend {
+    bottom: calc(var(--nav-h) + 70px);
+  }
+  .panel-body .tabs,
+  .panel.flush .tabs {
+    flex-wrap: wrap;
+  }
+}
+@media (max-width: 480px) {
+  .nav button span {
+    display: none;
+  }
+  .nav button {
+    min-height: 48px;
+  }
+}

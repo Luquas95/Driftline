@@ -1,8 +1,9 @@
 import { FACTIONS, RANK_MERIT } from '../../content/factions';
 import { activeWars, joinFaction, leaveFaction, rankName } from '../../core/factions';
 import { repOf, territorySizes, tierOf } from '../../core/territory';
+import { galaxyOf } from '../../core/state';
 import { createBackdropScene } from '../../render/backdrop';
-import { t } from '../../i18n';
+import { plural, t } from '../../i18n';
 import { Btn, Empty, Panel, Tag } from '../components';
 import { FactionCrest } from '../FactionCrest';
 import { act, describeMessage, game, report, rev } from '../store';
@@ -56,7 +57,9 @@ export function FactionsScreen() {
                     <div class="grow">
                       <b>{t(`fac.${f.id}`)}</b>
                       <div class="dim" style={{ fontSize: 12.5 }}>
-                        {t('fac.territory', { n: sizes[f.id] })}
+                        {t('fac.territory', {
+                          n: `${sizes[f.id]} ${plural(sizes[f.id], 'systém', 'systémy', 'systémů')}`,
+                        })}
                       </div>
                     </div>
                     <Tag tone={TIER_TONE[tier]}>{t(`fac.tier.${tier}`)}</Tag>
@@ -128,7 +131,12 @@ export function FactionsScreen() {
               .map((h, i) => (
                 <li key={i} class="dim">
                   <span class="mono">{Math.floor(h.day)}</span> ·{' '}
-                  {describeMessage(`fac.hist.${h.key}`, h.params)}
+                  {describeMessage(
+                    `fac.hist.${h.key}`,
+                    typeof h.params?.system === 'number'
+                      ? { ...h.params, system: galaxyOf(s).systems[h.params.system]?.name ?? '?' }
+                      : h.params,
+                  )}
                 </li>
               ))}
           </ul>

@@ -2,6 +2,23 @@
 
 Formát vychází z [Keep a Changelog](https://keepachangelog.com/cs/1.1.0/), verze podle [SemVer](https://semver.org/lang/cs/).
 
+## [1.0.0] – základna, frakce, hrozba a konce
+
+### Přidáno
+- **Frakce a reputace:** 5 originálních frakcí s vektorovými erby, územím a hranicemi na mapě, volitelným členstvím s hodnostmi 0 až 5, válkami a příměřími. Reputace mění clo, celní kontroly, zakázky i nabídku lodí; 6 nových trupů (exkluzivní lodě frakcí a exodová archa).
+- **Základna:** založení na prozkoumaném tělese, 10 budov s úrovněmi (důl, rafinerie, továrna, sklad, loděnice, hangár, laboratoř, obrana, přístav, kotva), výroba v čase, sklad, zakázky na moduly a lodě, opravy a doplňování u základny, nájezdy a obrana. Obrazovka základny s vektorovým pohledem, který roste.
+- **Výzkum:** 26 technologií v 5 větvích odemykají moduly, zpomalují Šeď, učí slova.
+- **Flotila:** lodě v hangáru obchodují samy po trasách ze skutečných cen, eskortují nebo hlídají; výměna lodi na základně.
+- **Šeď:** hrozba, která se pomalu šíří po trasách a pohlcuje galaxii za asi 320 až 520 dní podle obtížnosti; lze ji zpomalit a zastavit. Pohlcené systémy jsou mrtvé. Zobrazení na mapě a v deníku.
+- **Cizí řeč:** slovník v deníku, překlad po slovech, zápis deterministicky ze semínka.
+- **Příběh a 5 konců** (věda, dohoda, exodus, nadvláda, pohlcení) se závěrečnou obrazovkou (statistiky, rozhodnutí, osudy posádky) a volnou hrou po záchraně galaxie.
+- **41 úspěchů**, 4 odemykatelné začátky, **denní výzva** s místním žebříčkem (profil v `localStorage`).
+- Balanční simulátor rozšířen o koncovou hru (`docs/balance.md`), E2E a vizuální snímky nových obrazovek, vývojářské cheaty jen při `VITE_E2E=1`.
+
+### Změněno
+- `SAVE_VERSION` 4 (`fac`, `base`, `research`, `threat`, `lang`, `story`, `ending`, `run`, `ach`); uložené hry se migrují.
+- Mapa má filtry *Frakce* a *Šeď*; autopilot a plánovač se vyhýbají pohlceným systémům.
+
 ## [0.3.0] – živější svět a nový začátek
 
 ### Přidáno

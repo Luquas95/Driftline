@@ -24,6 +24,9 @@ src/core/       čistá simulace (bez DOM a Pixi), deterministická podle semín
   shop.ts       loděnice (nabídka, nákup, instalace, výměna trupu)
   advisor.ts    plánovač trasy a doporučení obchodů (jen čtení)
   save.ts       serializace, migrace, export/import
+  factions.ts   reputace, členství, války (territory.ts: majitelé systémů, clo)    base.ts  základna, budovy, výroba, nájezdy
+  fleet.ts      flotila a automatické obchodní trasy   research.ts  technologie   threat.ts  Šeď   lang.ts  cizí řeč
+  story.ts / endings.ts  příběhové zastávky a konce   achievements.ts / daily.ts / profile.ts / starts.ts  úspěchy, denní výzva, začátky
 src/content/    data: goods, hulls, modules, stations, events, chains, marketEvents, crew (rasy, role, důstojníci), weapons, enemies
 src/render/     Pixi: glsl.ts (shadery), materials.ts, mapscene/systemscene/shipscene/backdrop, shipgen.ts, stationgen.ts (stanice), sysmath.ts (čistá matematika kamery a letů), hullThumb.ts, combatscene.ts (boj)
 src/ui/         Preact: App, anim.ts (animace UI: plynulé hodnoty, probliknutí, letící ikony), screens/* (CrewScreen, CombatScreen), components, Portrait.tsx, combatCtl.ts (řízení boje), store.ts (signály), settings.ts
@@ -81,6 +84,22 @@ docs/           DESIGN.md, DECISIONS.md, balance.md, REVIEW-v1.md, screenshots/
 **Trup k výběru první lodi:** objekt v `HULLS` (`src/content/hulls.ts`): `role` (klíč `hull.role.<role>` v `cs.ts`), `layout` (5 jádrových slotů `r e j l n` + volné `S/M/L`), cena, náklad, palivo, trup, kajuty, obratnost, `tier` (obchody ho nabízejí od úrovně loděnice). Cena rozhoduje o pořadí v nabídce a o tom, zda ji hráč na dané obtížnosti dosáhne (`T.startCapital`); drž ceny rozložené od levných po nedosažitelné. Nová loď potřebuje siluetu: `shape({ … })` nebo ručně v `SHAPES` (`render/shipgen.ts`), texty `hull.<id>` a `hull.<id>.desc` v `cs.ts`. Test `firstShip.test.ts` ověří letuschopnost každé nabídky.
 
 **Animaci:** vždy jen ve vrstvě vykreslování, jako funkci času nebo `dt`, nikdy ve stavu jádra. Úroveň čti z `animLevel()` (`full` / `reduced` / `off`) a při `off` ji vynech, při `reduced` zkrať. Čistý výpočet (dráha, easing, kamera) patří do `render/sysmath.ts` s unit testem. Efekty ve scéně systému jsou metody `SystemScene` (`scanPulse`, `mineBeam`, `launchProbe`, `dockInto`) volané z UI po úspěšné akci; efekty UI (probliknutí, plynulé počítadlo, letící ikona) jsou v `ui/anim.ts`. Každá animace jde přeskočit (klik, mezerník, Enter) a má zvuk přes `sfx` v `audio.ts`.
+
+## Jak přidat… (v4: frakce, základna, hrozba a konce)
+
+**Frakci:** položka v `FACTIONS` (`src/content/factions.ts`: barva, erb `CrestSpec`, oblast hlavního města a úhel, dosah území, vztahy k ostatním, clo, kontroly, preference zakázek, exkluzivní trup) a `FactionId` + `FACTION_IDS` v `core/worldTypes.ts`. Texty `fac.<id>`, `fac.<id>.desc` a `fac.<id>.rank.0…5` v `cs-v3.ts`; exkluzivní trup (`faction`, `minRank`) v `hulls.ts`. Mění se tím území a počty frakcí v uloženém stavu: zvyš `SAVE_VERSION`, uprav migraci (`fac.rep`) a test.
+
+**Budovu:** položka v `BUILDINGS` (`content/buildings.ts`: `maxLevel`, `cost`, `materials`, `days`, `upkeep`, volitelně `tech` a `techFromLevel`) a `BuildingId`. Účinek implementuj tam, kde se používá (`produce`, `portSales`, `defenseRating`, `storageCapacity`, `hangarSlots` v `core/base.ts`). Pravidla pořadí staveb jsou v `checkBuilding`. Texty `bld.<id>` a `bld.<id>.desc`. Ceny drží `COST_SCALE`; po změně `npm run balance`.
+
+**Technologii:** položka v `TECHS` (`content/tech.ts`: větev, cena v bodech, `requires`, `modules` k odemčení, `effect`). Odemknutí modulu zapíše `MODULE_TECH` samo. Texty `tech.<id>` a `tech.<id>.desc`. Technologie, kterou vyžaduje konec nebo budova, doplň také do plánu bota (`RESEARCH_PLAN` v `sim/endgame.ts`).
+
+**Příběhovou zastávku:** událost v `content/storyEvents.ts` (váha 0, spouštěč `story`; stádium `stage(n)`, rozhodnutí `decide('klic')`) a položka `STORY_BEATS` v `content/story.ts` s podmínkami. Texty `ev.<id>.*` v `EVENT_TEXTS_CS` a `story.dec.<klic>` pro záznam rozhodnutí. Slovo cizí řeči zapiš jako `⟦pojem⟧` (pojmy v `content/lexicon.ts`).
+
+**Konec:** `EndingDef` v `core/endings.ts` (`saves`, `tone`), událost `end_<id>` s efektem `ending` a beat v `STORY_BEATS`. Texty `ending.<id>`, `ending.<id>.text`, `fate.<id>.0…2`, úspěch `ending_<id>` v `achievements.ts`. Konec musí projít skriptovaným testem v `tests/story.test.ts`.
+
+**Úspěch:** `a(id, kategorie, (s) => …)` v `content/achievements.ts` + `ach.<id>` a `ach.<id>.desc`. **Začátek:** položka v `STARTS` (`content/starts.ts`) + `start.<id>`, `start.<id>.desc`.
+
+**Vývojářské háčky:** `window.__dl.cheat` (`ui/cheats.ts`) přidává jen věci pro E2E; existuje pouze při `VITE_E2E=1`. Nikdy z něj nevolej nic, co mění pravidla hry mimo testy.
 
 ## Příkazy
 

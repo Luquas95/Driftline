@@ -264,7 +264,7 @@ const base: Record<string, string> = {
     'Tažením posouvej mapu, dvěma prsty přibližuj. Kontejnery v nákladu přetáhni prstem, dalším klepnutím je otočíš.',
   'help.basics': 'Jak hrát',
   'help.basicsText':
-    'Kup zboží tam, kde je levné, odvez ho tam, kde je drahé, a vydělané kredity investuj do lepší lodi. Zakázky, průzkum a těžba jsou další cesty k penězům. Čas běží ve dnech a každý skok stojí palivo i čas. Ceny jinde znáš jen z doby poslední návštěvy.',
+    'Kup zboží tam, kde je levné, odvez ho tam, kde je drahé, a vydělané kredity investuj do lepší lodi. Zakázky, průzkum a těžba jsou další cesty k penězům. Čas běží ve dnech a každý skok stojí palivo i čas. Ceny jinde znáš jen z doby poslední návštěvy. Postupem hry založíš základnu (v pohledu na systém), vstoupíš do frakce a zjistíš, co je Šeď: stav najdeš v Deníku.',
   /* map */
   'map.filters': 'Filtry mapy',
   'map.filter.normal': 'Přehled',

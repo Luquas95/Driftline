@@ -55,7 +55,7 @@ export const csV3: Record<string, string> = {
   'fac.help':
     'Reputace mění clo, kontroly, zakázky a nabídku lodí. Pomoc jedné frakci zhoršuje vztahy s jejími nepřáteli.',
   'fac.neutralSpace': 'Volný prostor',
-  'fac.territory': 'Území: {n} systémů',
+  'fac.territory': 'Území: {n}',
   'fac.standing': 'Vztah',
   'fac.join': 'Přidat se',
   'fac.leave': 'Odejít',
@@ -293,7 +293,7 @@ export const csV3: Record<string, string> = {
   'ending.continue': 'Pokračovat ve volné hře',
   'ending.newGame': 'Nová hra',
   'ending.freePlayHelp': 'Galaxie je zachráněna. Můžeš v ní dál obchodovat a zkoumat, ale už bez hrozby.',
-  'ending.noFreePlay': 'Tenhle konec je definitivní. Začni novou hru.',
+  'ending.noFreePlay': 'Tenhle konec je definitivní. Začni novou hru, nebo si načti dřívější uloženou hru.',
   'ending.stat.days': 'Dnů na cestě',
   'ending.stat.jumps': 'Skoků',
   'ending.stat.visited': 'Navštívených systémů',
