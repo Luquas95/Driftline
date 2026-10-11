@@ -6,6 +6,8 @@ import { addResearchPoints } from '../core/research';
 import { passTime } from '../core/time';
 import { analyze } from '../core/state';
 import { rev } from './store';
+import { foundBase } from '../core/base';
+import { threatDaily } from '../core/threat';
 import { galaxyOf } from '../core/state';
 import { feesFor, quoteSell } from '../core/economy';
 import { tariffMult } from '../core/territory';
@@ -94,6 +96,44 @@ export function cheatApi() {
         for (const q of b.queue) q.done = s().day;
         for (const o of b.orders) o.done = s().day;
       }
+      bump();
+    },
+    /** Make every system known (for map snapshots). */
+    revealGalaxy: () => {
+      const st = s();
+      const g = galaxyOf(st);
+      st.seen = g.systems.map((x) => x.id);
+      bump();
+    },
+    /** Run the Grey's spread up to a given day without advancing the game clock. */
+    grey: (untilDay: number) => {
+      const st = s();
+      for (let d = st.threat.start; d <= untilDay; d++) threatDaily(st, d);
+      bump();
+    },
+    /** Found a base here with some buildings (snapshots and demos). */
+    quickBase: (levels: Record<string, number>) => {
+      const st = s();
+      const sys = galaxyOf(st).systems[st.location.systemId];
+      st.detected[sys.id] = sys.bodies.map((b) => b.id);
+      st.credits += 100000;
+      for (const [g, n] of [
+        ['construction', 40],
+        ['machinery', 12],
+      ] as const) {
+        const { dims, stats } = analyze(st);
+        addGoods(
+          st.cargo,
+          dims,
+          { chilledCells: stats.chilledCells, secureCells: stats.secureCells },
+          g,
+          n,
+          0,
+          st.day,
+        );
+      }
+      foundBase(st, 0, 'Základna');
+      if (st.base) Object.assign(st.base.buildings, levels);
       bump();
     },
     ending: (id: string) => {
