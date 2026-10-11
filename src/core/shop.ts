@@ -380,6 +380,7 @@ export function buyHull(state: GameState, stationId: string, hullId: string): Re
   state.ship = p.newShip;
   state.inventory.push(...p.inventoryAdds);
   clampShipResources(state);
+  state.flags['hullChanges'] = Number(state.flags['hullChanges'] ?? 0) + 1;
   msg(state, 'msg.boughtHull', { hull: hullId, price: cost }, 'good');
   return ok();
 }

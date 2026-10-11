@@ -233,6 +233,11 @@ export function onContractDone(
   c: { faction?: FactionId; facOnly?: boolean; evac?: boolean },
   payout: number,
 ): void {
+  if (c.evac) {
+    addRep(state, 'freeholds', 3);
+    addRep(state, 'lumen', 2);
+    addRep(state, 'directorate', 1.5);
+  }
   const f = c.faction;
   if (!f) return;
   addRep(state, f, Math.min(6, 1.2 + payout / 2600) * (c.facOnly ? 1.4 : 1));

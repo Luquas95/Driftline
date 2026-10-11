@@ -11,6 +11,7 @@ import { threatDaily } from './threat';
 import { checkAutoEndings } from './endings';
 import { baseDaily } from './base';
 import { researchDaily } from './research';
+import { checkAchievements } from './achievements';
 import type { Galaxy, GameState } from './types';
 
 /**
@@ -48,6 +49,7 @@ export function passTime(state: GameState, days: number): void {
     checkAutoEndings(state);
     baseDaily(state, state.lastEconDay);
     researchDaily(state);
+    checkAchievements(state);
     const ev = maybeSpawnEvent(g, state, state.lastEconDay);
     if (ev && sectorKnown(state, g, ev.sector))
       msg(state, `msg.market.${ev.kind}`, { sector: g.sectors[ev.sector].name }, 'info');

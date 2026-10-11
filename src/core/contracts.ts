@@ -308,6 +308,21 @@ export function refreshBoard(g: Galaxy, state: GameState, st: StationStatic): vo
       break;
     }
   }
+  // v4: the Grey. Refugees ask for evacuation from gripped systems; consumed systems have no board at all
+  const grip = state.threat.grip[st.systemId] ?? 0;
+  if (grip >= T.threat.consumeAt) board.length = 0;
+  else if (grip >= 25) {
+    for (let i = 0; i < 1 + (grip >= 60 ? 1 : 0); i++) {
+      const c = makeContract(g, state, st, rng, { kind: 'passenger' });
+      if (!c || (state.threat.grip[c.destSystem] ?? 0) >= 25) continue;
+      c.evac = true;
+      c.passengers = rng.int(3, 8);
+      c.comfort = 1;
+      c.reward = Math.round((c.reward * 1.6) / 5) * 5;
+      c.deadline = Math.min(c.deadline, state.day + rng.int(8, 14));
+      board.unshift(c);
+    }
+  }
   dyn.board = board;
   dyn.boardEpoch = epoch;
 }

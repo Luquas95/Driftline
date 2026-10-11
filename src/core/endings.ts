@@ -1,4 +1,5 @@
 /** Endings of the game and the summary shown on the final screen. */
+import { checkAchievements } from './achievements';
 import { Rng } from './rng';
 import { galaxyOf, msg } from './state';
 import { consumedShare } from './threat';
@@ -35,6 +36,7 @@ export function triggerEnding(state: GameState, id: string): void {
   if (def.saves) state.threat.stopped = true;
   state.story.log.push({ day: state.day, key: `ending.${id}` });
   msg(state, 'msg.ending', { ending: id }, def.tone === 'bad' ? 'bad' : 'good');
+  checkAchievements(state);
 }
 
 /** The only ending that comes by itself: the Grey consumes the galaxy. */

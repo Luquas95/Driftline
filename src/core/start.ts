@@ -7,15 +7,20 @@ import { findStartSystem, getGalaxy } from './galaxy';
 import { Rng, randomSeedFrom } from './rng';
 import { buildStarterShip, newModule } from './ship';
 import { newWorld } from './world';
+import { dailySeed, isDateKey } from './daily';
+import { applyStart } from './starts';
 import { refreshShop } from './shop';
 import { DEFAULT_DIFFICULTY, arrive, learnStation, msg, newUid, type NewGameOptions } from './state';
 import { SAVE_VERSION, type Difficulty, type GameState } from './types';
 import { T } from './tuning';
 
 export function newGame(opts: NewGameOptions = {}): GameState {
-  const seed = (opts.seed ?? '').trim() || randomSeedFrom(opts.entropy ?? 1);
+  const daily = isDateKey(opts.daily) ? opts.daily : null;
+  const seed = daily ? dailySeed(daily) : (opts.seed ?? '').trim() || randomSeedFrom(opts.entropy ?? 1);
   const galaxySize = opts.galaxySize ?? T.galaxySystems;
-  const difficulty: Difficulty = { ...DEFAULT_DIFFICULTY, ...opts.difficulty };
+  const difficulty: Difficulty = daily
+    ? { ...DEFAULT_DIFFICULTY }
+    : { ...DEFAULT_DIFFICULTY, ...opts.difficulty };
   const g = getGalaxy(seed, galaxySize);
   const startSys = findStartSystem(g.systems) ?? g.systems[0];
   const startSt =
@@ -78,7 +83,7 @@ export function newGame(opts: NewGameOptions = {}): GameState {
     combat: null,
     encounter: null,
     officersMet: [],
-    ...newWorld(seed, galaxySize, difficulty, startSys.id),
+    ...newWorld(seed, galaxySize, difficulty, startSys.id, 'standard', daily),
   };
   state.ship = buildStarterShip(T.startHull, opts.shipName ?? 'Poutník', () => newUid(state, 'm'));
   // starter loadout: a cargo pod in the first free medium slot
@@ -93,6 +98,7 @@ export function newGame(opts: NewGameOptions = {}): GameState {
     }
   }
   state.crew = opts.quickStart ? defaultCrew(seed, state.ship.hullId, 0, () => newUid(state, 'w')) : [];
+  if (!opts.quickStart && opts.start && !daily) applyStart(state, opts.start);
   arrive(state, startSys.id);
   state.location = { systemId: startSys.id, stationId: startSt.id, body: startSt.bodyIndex };
   refreshBoard(g, state, startSt);

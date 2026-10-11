@@ -33,6 +33,10 @@ export interface NewGameOptions {
   difficulty?: Partial<Difficulty>;
   shipName?: string;
   captainName?: string;
+  /** v4: starting option id (see content/starts.ts); `standard` = the first-ship screen. */
+  start?: string;
+  /** v4: daily challenge date key (`2026-10-07`): fixes the seed and the difficulty. */
+  daily?: string;
   /** Skip the shipyard: start with the old basic ship and a small purse (tests and balance bots). */
   quickStart?: boolean;
   galaxySize?: number;
