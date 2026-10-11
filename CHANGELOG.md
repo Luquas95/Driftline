@@ -2,6 +2,22 @@
 
 Formát vychází z [Keep a Changelog](https://keepachangelog.com/cs/1.1.0/), verze podle [SemVer](https://semver.org/lang/cs/).
 
+## [0.3.0] – živější svět a nový začátek
+
+### Přidáno
+- **Nový začátek hry:** kapitál podle obtížnosti (60 000 / 40 000 / 25 000 kr), začátek v doku bez lodi a obrazovka *Loděnice: tvoje první loď* s nabídkou od nejlevnější po nejdražší, kartami s náhledem, cenou, rolí a hodnotami, varováním o zbylých penězích a pojmenováním lodi. **14 trupů** (od ojetého raketoplánu za 4 200 kr po expediční loď za 110 000 kr), ojeté kusy s opotřebenými moduly. Tutoriál začíná první úpravou lodi.
+- **Scéna systému:** skutečná loď hráče z generátoru lodí s výtryskem, lety po křivce s rozjezdem a brzděním, přistání a odlet, vektorové stanice na orbitě, 2–6 lodí provozu, **zoom (kolečko, pinch, tlačítka, klávesy) a posun s setrvačností**, dvojklik na detail tělesa, paměť kamery, vyšší detail planet při přiblížení.
+- **Animace:** skok na mapě (nabití, rozmazaná stopa, záblesk), příjezd z hyperprostoru, sken, těžba, sonda, potvrzení nákupu a prodeje s odpočtem kreditů a letícími ikonami, přechody obrazovek, probliknutí změněných hodnot, paralaxa pozadí, zvuky. Nastavení animací *plné / omezené / vypnuté*, měřič FPS (`?fps=1`).
+- Rychlé tlačítko **Přistát** v zobrazení systému.
+
+### Opraveno
+- Planety se pohybují podle třetího Keplerova zákona (vnitřní rychle, vnější pomalu), issue #4.
+- Mapa jde po zoomu posouvat i dvěma prsty, po pinchi nepřeskočí (issue #3).
+- Nákup ukáže viditelné potvrzení (issue #2); přistání je vidět a jde z obrazovky systému jedním tlačítkem (issue #6); lety a skoky mají animaci přiměřené délky (issue #5).
+
+### Změněno
+- `SAVE_VERSION` 3 (`noShip`, `captain`); uložené hry se migrují beze změny hry. Čtyři nové testovací háčky pro E2E (`setAnim`, `sys`, `map`).
+
 ## [0.2.0] – v2: boj a posádka
 
 ### Přidáno

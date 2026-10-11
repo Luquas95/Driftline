@@ -137,6 +137,8 @@ export interface PlanetMesh {
   mesh: Mesh<Geometry, Shader>;
   setTime(t: number): void;
   setLight(x: number, y: number, z: number): void;
+  /** 0..1: how much close-up surface detail to add (grows with the on-screen size). */
+  setDetail(d: number): void;
 }
 
 export function createPlanet(params: PlanetParams): PlanetMesh {
@@ -154,6 +156,7 @@ export function createPlanet(params: PlanetParams): PlanetMesh {
         uLight: v3([-0.7, 0.35, 0.6]),
         uCloud: f1(params.cloud),
         uSpin: f1(params.spin),
+        uDetail: f1(0),
       },
     },
   });
@@ -162,6 +165,9 @@ export function createPlanet(params: PlanetParams): PlanetMesh {
     mesh,
     setTime: (t) => {
       shader.resources.u.uniforms.uTime = t;
+    },
+    setDetail: (d) => {
+      shader.resources.u.uniforms.uDetail = d;
     },
     setLight: (x, y, z) => {
       const l = shader.resources.u.uniforms.uLight as Float32Array;

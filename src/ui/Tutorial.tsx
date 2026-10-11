@@ -4,17 +4,20 @@ import { Btn } from './components';
 import { game, rev, screen, go } from './store';
 import { updateSettings } from './settings';
 
-const STEPS = 5;
+const STEPS = 6;
 
 function satisfied(step: number, s: NonNullable<typeof game.value>): boolean {
   switch (step) {
     case 0:
-      return !!s.flags['tut:bought'] || s.cargo.some((c) => !c.contractId);
+      // the first outfit: any module beyond the basic five core ones, or the player moves on
+      return s.ship.slots.filter(Boolean).length > 5 || !!s.flags['tut:shipok'];
     case 1:
-      return s.stats.jumps >= 1;
+      return !!s.flags['tut:bought'] || s.cargo.some((c) => !c.contractId);
     case 2:
-      return !!s.flags['tut:sold'];
+      return s.stats.jumps >= 1;
     case 3:
+      return !!s.flags['tut:sold'];
+    case 4:
       return s.contracts.length > 0 || s.stats.contractsDone > 0;
     default:
       return false;
@@ -49,17 +52,35 @@ export function Tutorial() {
       </div>
       <p style={{ margin: '4px 0 8px' }}>{t(`tut.step${step}`)}</p>
       <div class="row wrap">
-        {step === 0 && s.location.stationId && screen.value !== 'station' && (
+        {step === 0 && (
+          <>
+            <Btn small onClick={() => go('ship')}>
+              {t('nav.ship')}
+            </Btn>
+            <Btn
+              small
+              kind="primary"
+              testid="tutorial-next"
+              onClick={() => {
+                s.flags['tut:shipok'] = true;
+                rev.value++;
+              }}
+            >
+              {t('tut.next')}
+            </Btn>
+          </>
+        )}
+        {step === 1 && s.location.stationId && screen.value !== 'station' && (
           <Btn small onClick={() => go('station')}>
             {t('tut.openStation')}
           </Btn>
         )}
-        {step === 1 && screen.value !== 'map' && (
+        {step === 2 && screen.value !== 'map' && (
           <Btn small onClick={() => go('map')}>
             {t('tut.openMap')}
           </Btn>
         )}
-        {step === 4 && (
+        {step === 5 && (
           <>
             <Btn small onClick={() => go('ship')}>
               {t('nav.ship')}

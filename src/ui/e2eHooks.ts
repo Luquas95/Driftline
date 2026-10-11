@@ -1,7 +1,9 @@
 import { stage } from '../render/instance';
 import { galaxyOf } from '../core/state';
-import { game, rev, screen, selectedSystem, toasts } from './store';
+import { e2eFlags, game, rev, screen, selectedSystem, toasts } from './store';
 import { updateSettings } from './settings';
+import { mapScene } from './screens/MapScreen';
+import { systemScene } from './screens/SystemScreen';
 import { combatRoomPos } from './screens/CombatScreen';
 import { DT, drainEvents, stepCombat } from '../core/combat/sim';
 import { combatRev } from './combatCtl';
@@ -16,6 +18,7 @@ import { analyze, newUid } from '../core/state';
  * without pixel-hunting on the canvas and freeze the animation clock for deterministic screenshots.
  */
 export function installE2eHooks(): void {
+  e2eFlags.quick = new URLSearchParams(window.location.search).get('quick') === '1';
   const hooks = {
     state: () => game.value,
     screen: () => screen.value,
@@ -84,6 +87,35 @@ export function installE2eHooks(): void {
       if (c) c.auto = true;
     },
     roomPos: (side: 'player' | 'enemy', ship: number, room: number) => combatRoomPos(side, ship, room),
+    /** Animation level for tests: `full` also lifts the reduced-motion default of the hooks. */
+    setAnim: (a: 'full' | 'reduced' | 'off') => {
+      updateSettings(
+        a === 'full' ? { animations: 'full', motion: 'full' } : { animations: a, motion: 'reduced' },
+      );
+    },
+    map: () => {
+      const sc = mapScene();
+      return sc
+        ? {
+            cam: sc.getCam(),
+            jumping: sc.isJumping(),
+            seek: (u: number) => sc.seekJump(u),
+            pos: (id: number) => sc.systemScreenPos(id),
+          }
+        : null;
+    },
+    sys: () => {
+      const sc = systemScene();
+      if (!sc) return null;
+      return {
+        zoom: sc.getZoom(),
+        cam: sc.getCam(),
+        flying: sc.isFlying(),
+        ship: sc.shipScreenPos(),
+        body: (i: number) => sc.bodyScreenPos(i),
+        station: (id: string) => sc.stationScreenPos(id),
+      };
+    },
     toasts: () => toasts.value.map((x) => x.text),
     /** Let a headless bot play for a while (used to produce realistic README screenshots). */
     autoplay: async (strategy: 'trader' | 'explorer' | 'miner' | 'hauler', days: number) => {

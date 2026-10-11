@@ -15,7 +15,8 @@ test.describe('core game flow', () => {
   test('tutorial guides through the first trade and can be skipped', async ({ page }) => {
     await startGame(page, { tutorial: true });
     const tut = page.getByTestId('tutorial');
-    await expect(tut).toContainText('1/5');
+    // the quick-start ship already carries a cargo module, so the outfit step is done
+    await expect(tut).toContainText('2/6');
     const row = page
       .locator('[data-testid^="good-"]')
       .filter({ hasNotText: /chlazené|citlivé|nelegální|nebezpečné/ })
@@ -24,7 +25,7 @@ test.describe('core game flow', () => {
     await page.getByTestId('trade-max-buy').click();
     await page.getByTestId('btn-buy').click();
     await closeTrade(page);
-    await expect(tut).toContainText('2/5');
+    await expect(tut).toContainText('3/6');
     await page.getByTestId('tutorial-skip').click();
     await expect(tut).toBeHidden();
   });
@@ -192,6 +193,10 @@ test.describe('core game flow', () => {
     await page.getByTestId('menu-new').click();
     await page.getByTestId('new-permadeath').check();
     await page.getByTestId('menu-start').click();
+    // a new game starts in the shipyard: buy the cheapest ship first
+    await page.locator('[data-testid^="offer-"]').first().click();
+    await page.getByTestId('btn-buy-ship').click();
+    await expect(page.getByTestId('screen-station')).toBeVisible();
     await openScreen(page, 'settings');
     await expect(page.getByTestId('seed-display')).toBeVisible();
     expect((await state(page)).difficulty.permadeath).toBe(true);

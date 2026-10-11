@@ -7,6 +7,7 @@ Obchodně-průzkumná hra v prohlížeči (TypeScript strict, Vite, Preact + Sig
 ```
 src/core/       čistá simulace (bez DOM a Pixi), deterministická podle semínka
   crew.ts       posádka: najímání, mzdy, morálka, dovednosti, důstojníci (crewBase.ts: sdílené drobnosti)
+  firstShip.ts  nový začátek: nabídka první lodi (nové a ojeté kusy), náhled, nákup
   combat/       boj (v2): types, build (loď → místnosti), sim (krok simulace), ai, encounter (střety, hrozba),
                 resolve (výsledek → GameState), duel (hlavolamy pro balanc a testy)
   game.ts       veřejné akce (dock, jump, buy/sell, služby, opravy, odtah, pojištění)
@@ -24,8 +25,8 @@ src/core/       čistá simulace (bez DOM a Pixi), deterministická podle semín
   advisor.ts    plánovač trasy a doporučení obchodů (jen čtení)
   save.ts       serializace, migrace, export/import
 src/content/    data: goods, hulls, modules, stations, events, chains, marketEvents, crew (rasy, role, důstojníci), weapons, enemies
-src/render/     Pixi: glsl.ts (shadery), materials.ts, mapscene/systemscene/shipscene/backdrop, shipgen.ts, combatscene.ts (boj)
-src/ui/         Preact: App, screens/* (CrewScreen, CombatScreen), components, Portrait.tsx, combatCtl.ts (řízení boje), store.ts (signály), settings.ts
+src/render/     Pixi: glsl.ts (shadery), materials.ts, mapscene/systemscene/shipscene/backdrop, shipgen.ts, stationgen.ts (stanice), sysmath.ts (čistá matematika kamery a letů), hullThumb.ts, combatscene.ts (boj)
+src/ui/         Preact: App, anim.ts (animace UI: plynulé hodnoty, probliknutí, letící ikony), screens/* (CrewScreen, CombatScreen), components, Portrait.tsx, combatCtl.ts (řízení boje), store.ts (signály), settings.ts
 src/i18n/       t(), cs.ts (slovník); texty událostí jsou v content/events.ts
 src/sim/        boti (bots.ts) a balanční simulátor (balance.ts)
 src/persist/    IndexedDB ukládání
@@ -74,6 +75,12 @@ docs/           DESIGN.md, DECISIONS.md, balance.md, REVIEW-v1.md, screenshots/
 **Osobnost AI:** hodnota v `Personality` (`combat/types.ts`), rozdělení energie v `lean` a prahy útěku v `aiControl` (`combat/ai.ts`), případně zvláštní chování (výkupné chamtivých je ve `stepCombat`). Text `combat.pers.<id>` do `cs-v2.ts`.
 
 **Událost s posádkou:** v `content/events.ts` použij podmínky `hasRole`, `hasRace`, `skillMin`, `hasOfficer` a efekty `hurt`, `xp`, `morale`, `leave`, `join`, `fight` (spustí střet). Boj spouštěný událostí jde stejnou cestou jako náhodný střet.
+
+## Jak přidat… (v3: trupy a animace)
+
+**Trup k výběru první lodi:** objekt v `HULLS` (`src/content/hulls.ts`): `role` (klíč `hull.role.<role>` v `cs.ts`), `layout` (5 jádrových slotů `r e j l n` + volné `S/M/L`), cena, náklad, palivo, trup, kajuty, obratnost, `tier` (obchody ho nabízejí od úrovně loděnice). Cena rozhoduje o pořadí v nabídce a o tom, zda ji hráč na dané obtížnosti dosáhne (`T.startCapital`); drž ceny rozložené od levných po nedosažitelné. Nová loď potřebuje siluetu: `shape({ … })` nebo ručně v `SHAPES` (`render/shipgen.ts`), texty `hull.<id>` a `hull.<id>.desc` v `cs.ts`. Test `firstShip.test.ts` ověří letuschopnost každé nabídky.
+
+**Animaci:** vždy jen ve vrstvě vykreslování, jako funkci času nebo `dt`, nikdy ve stavu jádra. Úroveň čti z `animLevel()` (`full` / `reduced` / `off`) a při `off` ji vynech, při `reduced` zkrať. Čistý výpočet (dráha, easing, kamera) patří do `render/sysmath.ts` s unit testem. Efekty ve scéně systému jsou metody `SystemScene` (`scanPulse`, `mineBeam`, `launchProbe`, `dockInto`) volané z UI po úspěšné akci; efekty UI (probliknutí, plynulé počítadlo, letící ikona) jsou v `ui/anim.ts`. Každá animace jde přeskočit (klik, mezerník, Enter) a má zvuk přes `sfx` v `audio.ts`.
 
 ## Příkazy
 

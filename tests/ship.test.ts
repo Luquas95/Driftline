@@ -44,13 +44,14 @@ const uid = (() => {
 })();
 
 describe('ship', () => {
-  it('has at least six hulls with valid layouts and core slots', () => {
-    expect(HULLS.length).toBeGreaterThanOrEqual(6);
+  it('has at least twelve hulls with valid layouts and core slots', () => {
+    expect(HULLS.length).toBeGreaterThanOrEqual(12);
+    expect(new Set(HULLS.map((h) => h.price)).size).toBe(HULLS.length);
     for (const h of HULLS) {
       const slots = hullSlots(h.id);
       for (const k of ['reactor', 'engine', 'jump', 'life', 'sensors'])
         expect(slots.some((s) => s.core === k)).toBe(true);
-      expect(slots.filter((s) => !s.core).length).toBeGreaterThanOrEqual(3);
+      expect(slots.filter((s) => !s.core).length).toBeGreaterThanOrEqual(1);
     }
   });
 

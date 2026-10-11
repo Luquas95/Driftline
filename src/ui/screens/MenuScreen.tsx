@@ -24,7 +24,7 @@ export function MenuScreen() {
   const [view, setView] = useState<View>('main');
   const [list, setList] = useState<SaveMeta[]>([]);
   const [seed, setSeed] = useState('');
-  const [name, setName] = useState(t('menu.defaultShip'));
+  const [name, setName] = useState(t('menu.defaultCaptain'));
   const [diff, setDiff] = useState<Difficulty>({
     prices: 'normal',
     risk: 'normal',
@@ -186,7 +186,7 @@ export function MenuScreen() {
                     startNewGame({
                       seed: seed.trim() || undefined,
                       difficulty: diff,
-                      shipName: name.trim() || t('menu.defaultShip'),
+                      captainName: name.trim() || t('menu.defaultCaptain'),
                     });
                   }}
                 >

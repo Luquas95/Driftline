@@ -49,4 +49,80 @@ test.describe('visual snapshots', () => {
       timeout: 60_000,
     });
   });
+  test('screen system, planet detail after zoom', async ({ page, isMobile }) => {
+    test.skip(isMobile, 'mouse gestures');
+    await page.evaluate(() => window.__dl.setAnim('off'));
+    await openScreen(page, 'system');
+    await expect(page.getByTestId('screen-system')).toBeVisible();
+    const b = await page.evaluate(() => window.__dl.sys()!.body(1)!);
+    await page.mouse.dblclick(b.x, b.y);
+    await expect
+      .poll(() => page.evaluate(() => window.__dl.sys()!.zoom), { timeout: 20_000 })
+      .toBeGreaterThan(3);
+    // the camera eases in with the machine's frame rate: wait until zoom and position stop changing
+    let prev = '';
+    await expect
+      .poll(
+        async () => {
+          const c = await page.evaluate(() => JSON.stringify(window.__dl.sys()!.cam));
+          const same = c === prev;
+          prev = c;
+          await page.waitForTimeout(600);
+          return same;
+        },
+        { timeout: 60_000 },
+      )
+      .toBe(true);
+    await page.evaluate(() => window.__dl.freeze(3));
+    await page.waitForTimeout(250);
+    await expect(page).toHaveScreenshot('system-detail.png', {
+      animations: 'disabled',
+      // the zoomed planet shader fills most of the frame and its noise differs between software GL builds (CI vs local),
+      // so this snapshot guards the layout and framing, not the exact surface pixels
+      maxDiffPixelRatio: 0.3,
+      timeout: 60_000,
+    });
+  });
+
+  test('screen map, mid jump', async ({ page }) => {
+    await openScreen(page, 'map');
+    const target = await page.evaluate(() => window.__dl.neighborWithStation());
+    await page.evaluate((id) => window.__dl.select(id), target);
+    await page.evaluate(() => window.__dl.setAnim('full'));
+    await page.getByTestId('btn-jump').click();
+    await expect.poll(() => page.evaluate(() => window.__dl.map()!.jumping)).toBe(true);
+    await page.evaluate(() => window.__dl.map()!.seek(0.55));
+    await page.waitForTimeout(300);
+    await page.evaluate(() => window.__dl.freeze(3));
+    await page.waitForTimeout(250);
+    await expect(page).toHaveScreenshot('map-jump.png', {
+      animations: 'disabled',
+      maxDiffPixelRatio: 0.06,
+      timeout: 60_000,
+    });
+  });
+});
+
+test.describe('visual snapshots: first ship', () => {
+  test('first ship screen', async ({ page }) => {
+    await startGame(page, { seed: 'VISUAL1', quick: false });
+    await expect(page.getByTestId('screen-firstship')).toBeVisible();
+    await page
+      .waitForFunction(
+        () => [...document.querySelectorAll('.offer-pic')].every((e) => e.querySelector('img')),
+        null,
+        {
+          timeout: 60_000,
+        },
+      )
+      .catch(() => {});
+    await page.waitForTimeout(500);
+    await page.evaluate(() => window.__dl.freeze(3));
+    await page.waitForTimeout(250);
+    await expect(page).toHaveScreenshot('first-ship.png', {
+      animations: 'disabled',
+      maxDiffPixelRatio: 0.04,
+      timeout: 60_000,
+    });
+  });
 });

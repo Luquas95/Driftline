@@ -90,6 +90,7 @@ export function dockAt(state: GameState, stationId: string): Result<{ report: Do
 }
 
 export function undock(state: GameState): Result {
+  if (state.noShip) return fail('err.noShip');
   if (!state.location.stationId) return ok();
   if (state.pendingEvent) return fail('err.eventPending');
   state.location.stationId = null;
@@ -162,6 +163,7 @@ export interface JumpReport {
 }
 
 export function jump(state: GameState, toId: number): Result<{ report: JumpReport }> {
+  if (state.noShip) return fail('err.noShip');
   if (state.pendingEvent) return fail('err.eventPending');
   const plan = planJump(state, toId);
   if (!plan.ok) return fail(plan.reason ?? 'err.noRoute');
@@ -375,6 +377,7 @@ export function buyGoods(
 ): Result<{ qty: number; paid: number }> {
   const st = atStation(state, stationId);
   if (!st) return fail('err.notDocked');
+  if (state.noShip) return fail('err.noShip');
   if (!st.goods.includes(goodId)) return fail('err.notSold');
   if (!Number.isFinite(qty)) return fail('err.badAmount');
   qty = Math.floor(qty);
