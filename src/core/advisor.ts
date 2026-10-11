@@ -1,4 +1,5 @@
 /** Read-only planning helpers for the player: route planner and trade recommendations (use only known information). */
+import { isConsumed } from './threat';
 import { tariffMult } from './territory';
 import { feesFor, isBlackMarketGood, quoteBuy, quoteSell } from './economy';
 import { dist, shortestPath } from './galaxy';
@@ -38,7 +39,7 @@ export function planRoute(state: GameState, to: number): RoutePlan | null {
   const g = galaxyOf(state);
   const from = state.location.systemId;
   const seen = new Set(state.seen);
-  const path = shortestPath(g, from, to, (id) => seen.has(id));
+  const path = shortestPath(g, from, to, (id) => seen.has(id) && !isConsumed(state, id));
   if (!path) return null;
   const { stats } = analyze(state);
   const steps: RouteStep[] = [];

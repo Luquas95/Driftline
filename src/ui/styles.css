@@ -2799,3 +2799,213 @@ html[data-anim='off'] *::after {
     min-height: 44px;
   }
 }
+
+/* ---- v3: factions, base, research, journal tabs, ending ---- */
+.fac-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+  gap: var(--gap);
+}
+.fac-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--panel-2);
+}
+.fac-card.member {
+  border-color: var(--accent);
+}
+.rep-bar {
+  position: relative;
+  height: 8px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, var(--bad), var(--warn) 35%, var(--text-faint) 50%, var(--accent) 70%, var(--good));
+  opacity: 0.8;
+}
+.rep-mark {
+  position: absolute;
+  top: -3px;
+  width: 4px;
+  height: 14px;
+  margin-left: -2px;
+  border-radius: 2px;
+  background: #fff;
+  box-shadow: 0 0 0 1px #000;
+}
+.crest {
+  flex: none;
+}
+.base-view {
+  width: 100%;
+  max-height: 260px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: rgba(5, 10, 20, 0.6);
+}
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: var(--gap);
+}
+.row.wrap {
+  flex-wrap: wrap;
+}
+.two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--gap);
+}
+.route-builder {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 6px;
+}
+.tech-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: var(--gap);
+  align-items: start;
+}
+.tech-col {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.tech-col h4 {
+  margin: 0;
+  color: var(--accent-strong);
+}
+.tech-node {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel-2);
+}
+.tech-node.done {
+  border-color: var(--good);
+}
+.tech-node.active {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent) inset;
+}
+.tech-node.locked {
+  opacity: 0.55;
+}
+.dict-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 4px 12px;
+}
+.dict-row {
+  display: grid;
+  grid-template-columns: 90px 70px 1fr;
+  gap: 8px;
+  align-items: baseline;
+  color: var(--text-faint);
+}
+.dict-row.known {
+  color: var(--text);
+}
+.alien,
+.alien-word {
+  font-family: var(--mono);
+  letter-spacing: 0.08em;
+}
+.alien-word.unknown {
+  color: #b9a3ff;
+  text-shadow: 0 0 6px rgba(185, 163, 255, 0.5);
+}
+.alien-word.known {
+  color: #c9f0ff;
+  font-style: italic;
+}
+.alien-word.known::before {
+  content: '⟦';
+  opacity: 0.5;
+}
+.alien-word.known::after {
+  content: '⟧';
+  opacity: 0.5;
+}
+.ach-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 8px;
+}
+.ach {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  opacity: 0.55;
+}
+.ach.on {
+  opacity: 1;
+  border-color: var(--good);
+}
+.top-stat.threat.t0,
+.top-stat.threat.t1 {
+  color: var(--text-dim);
+}
+.top-stat.threat.t2,
+.top-stat.threat.t3,
+.top-stat.threat.t4 {
+  color: #b9a3ff;
+}
+.ending-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  overflow-y: auto;
+  display: flex;
+  justify-content: center;
+  padding: 24px 16px;
+  background: radial-gradient(circle at 50% 0, rgba(60, 90, 160, 0.4), rgba(3, 6, 12, 0.96) 70%);
+}
+.ending-screen.bad {
+  background: radial-gradient(circle at 50% 0, rgba(90, 80, 110, 0.4), rgba(6, 6, 8, 0.97) 70%);
+}
+.ending-card {
+  width: min(720px, 100%);
+  height: max-content;
+  padding: 24px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  background: var(--panel-solid);
+}
+.ending-card h1 {
+  margin: 0;
+}
+.ending-text {
+  font-size: 15.5px;
+  line-height: 1.55;
+}
+.ending-stats {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 2px 16px;
+}
+@media (max-width: 899px) {
+  .two-col {
+    grid-template-columns: 1fr;
+  }
+  .nav button {
+    font-size: 9px;
+  }
+  .nav button span {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .dict-row {
+    grid-template-columns: 70px 60px 1fr;
+  }
+}

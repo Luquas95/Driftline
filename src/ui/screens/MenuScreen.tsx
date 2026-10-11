@@ -5,6 +5,7 @@ import { Btn, Panel } from '../components';
 import {
   exportCurrent,
   game,
+  profile,
   importFromText,
   loadSlot,
   menuOpen,
@@ -17,11 +18,19 @@ import { unlockAudio, sfx } from '../../audio/audio';
 import { useScene } from '../useScene';
 import type { SaveMeta } from '../../persist/store';
 import type { Difficulty } from '../../core/types';
+import { STARTS } from '../../content/starts';
+import { dailyRanking, startUnlocked } from '../../core/profile';
+import { dailySeed } from '../../core/daily';
 
-type View = 'main' | 'new' | 'load';
+function todayKey(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
+type View = 'main' | 'new' | 'load' | 'daily';
 
 export function MenuScreen() {
   const [view, setView] = useState<View>('main');
+  const [startId, setStartId] = useState('standard');
   const [list, setList] = useState<SaveMeta[]>([]);
   const [seed, setSeed] = useState('');
   const [name, setName] = useState(t('menu.defaultCaptain'));
@@ -85,6 +94,9 @@ export function MenuScreen() {
               >
                 {t('menu.new')}
               </Btn>
+              <Btn onClick={() => setView('daily')} testid="menu-daily">
+                {t('daily.title')}
+              </Btn>
               <Btn onClick={() => setView('load')} testid="menu-load">
                 {t('menu.load')}
               </Btn>
@@ -108,6 +120,32 @@ export function MenuScreen() {
                   data-testid="new-ship-name"
                 />
               </label>
+              <div class="field">
+                {t('start.title')}
+                <div class="seg wrap" data-testid="start-select">
+                  {STARTS.map((st) => {
+                    const ok = startUnlocked(profile.value, st.id);
+                    return (
+                      <button
+                        key={st.id}
+                        type="button"
+                        disabled={!ok}
+                        class={startId === st.id ? 'active' : ''}
+                        title={
+                          ok ? t(`start.${st.id}.desc`) : t('start.locked', { ach: t(`ach.${st.unlock}`) })
+                        }
+                        data-testid={`start-${st.id}`}
+                        onClick={() => setStartId(st.id)}
+                      >
+                        {t(`start.${st.id}`)}
+                      </button>
+                    );
+                  })}
+                </div>
+                <span class="faint" style={{ fontSize: 12.5 }}>
+                  {t(`start.${startId}.desc`)}
+                </span>
+              </div>
               <label class="field">
                 {t('menu.seed')}
                 <input
@@ -187,10 +225,48 @@ export function MenuScreen() {
                       seed: seed.trim() || undefined,
                       difficulty: diff,
                       captainName: name.trim() || t('menu.defaultCaptain'),
+                      start: startId,
                     });
                   }}
                 >
                   {t('menu.start')}
+                </Btn>
+              </div>
+            </div>
+          </Panel>
+        )}
+        {view === 'daily' && (
+          <Panel title={t('daily.title')}>
+            <div class="stack" data-testid="daily-panel">
+              <p class="explain">{t('daily.help')}</p>
+              <b>{todayKey()}</b>
+              <h4>{t('daily.ranking')}</h4>
+              {dailyRanking(profile.value).length === 0 && <p class="empty">{t('daily.none')}</p>}
+              {dailyRanking(profile.value).map((r, i) => (
+                <div key={r.date} class="spread">
+                  <span>
+                    {i + 1}. {r.date}
+                  </span>
+                  <span class="mono">{t('daily.score', { n: fmt(r.best) })}</span>
+                </div>
+              ))}
+              <div class="row">
+                <Btn onClick={() => setView('main')}>{t('ui.back')}</Btn>
+                <Btn
+                  kind="primary"
+                  class="grow"
+                  testid="daily-start"
+                  onClick={() => {
+                    unlockAudio();
+                    const key = todayKey();
+                    startNewGame({
+                      seed: dailySeed(key),
+                      daily: key,
+                      captainName: name.trim() || t('menu.defaultCaptain'),
+                    });
+                  }}
+                >
+                  {t('daily.start')}
                 </Btn>
               </div>
             </div>

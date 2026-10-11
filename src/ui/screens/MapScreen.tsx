@@ -28,12 +28,17 @@ import { dayShown, tweenSignal } from '../anim';
 import { useScene } from '../useScene';
 import { dist } from '../../core/galaxy';
 import type { GameState } from '../../core/types';
+import { ownerOf, repOf, tierOf } from '../../core/territory';
+import { gripLevel } from '../../core/threat';
+import { FactionCrest } from '../FactionCrest';
 
 const FILTERS: { id: MapFilter; label: string; icon: string }[] = [
   { id: 'normal', label: 'map.filter.normal', icon: 'map' },
   { id: 'prices', label: 'map.filter.prices', icon: 'tag' },
   { id: 'contracts', label: 'map.filter.contracts', icon: 'contract' },
   { id: 'unexplored', label: 'map.filter.unexplored', icon: 'star' },
+  { id: 'factions', label: 'map.filter.factions', icon: 'target' },
+  { id: 'threat', label: 'map.filter.threat', icon: 'warning' },
 ];
 
 let sceneRef: (MapScene & { attach: (c: HTMLCanvasElement) => void }) | null = null;
@@ -364,6 +369,28 @@ function HoverTip({
   );
 }
 
+function OwnerLine({ s, sysId }: { s: GameState; sysId: number }) {
+  const o = ownerOf(s, sysId);
+  const grip = s.threat.grip[sysId] ?? 0;
+  const lvl = gripLevel(grip);
+  return (
+    <div class="row wrap" data-testid="owner-line">
+      {o ? (
+        <>
+          <FactionCrest id={o} size={22} />
+          <span>{t(`fac.${o}`)}</span>
+          <Tag tone={tierOf(repOf(s, o)) === 'enemy' || tierOf(repOf(s, o)) === 'hostile' ? 'bad' : ''}>
+            {t(`fac.tier.${tierOf(repOf(s, o))}`)}
+          </Tag>
+        </>
+      ) : (
+        <span class="dim">{t('fac.neutralSpace')}</span>
+      )}
+      {lvl > 0 && <Tag tone="warn">{t(`threat.level.${lvl}`)}</Tag>}
+    </div>
+  );
+}
+
 function SystemPanel({
   s,
   sysId,
@@ -409,6 +436,7 @@ function SystemPanel({
           {visited ? <Tag tone="good">{t('map.visited')}</Tag> : <Tag tone="warn">{t('map.unexplored')}</Tag>}
           {here && <Tag tone="accent">{t('map.youAreHere')}</Tag>}
         </div>
+        <OwnerLine s={s} sysId={sysId} />
         {visited ? (
           <dl class="kv">
             <dt>{t('map.bodies')}</dt>

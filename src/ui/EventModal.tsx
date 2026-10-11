@@ -7,6 +7,7 @@ import { Btn, Modal } from './components';
 import { act, game, report, rev } from './store';
 import { sfx } from '../audio/audio';
 import { Icon } from './Icon';
+import { AlienText } from './AlienText';
 
 function effectLine(e: Effect): { text: string; tone: 'pos' | 'neg' | '' } | null {
   const sign = (n: number) => (n > 0 ? '+' : '') + fmt(n);
@@ -56,6 +57,18 @@ function effectLine(e: Effect): { text: string; tone: 'pos' | 'neg' | '' } | nul
       return { text: t('fx.fight'), tone: 'neg' };
     case 'death':
       return { text: t('fx.death'), tone: 'neg' };
+    case 'fRep':
+      return { text: `${t('fx.facRep')} ${sign(e.n)}`, tone: e.n >= 0 ? 'pos' : 'neg' };
+    case 'fMerit':
+      return { text: `${t('fx.merit')} ${sign(e.n)}`, tone: 'pos' };
+    case 'langLearn':
+      return { text: t('fx.lang', { n: e.n }), tone: 'pos' };
+    case 'research':
+      return { text: `${t('fx.research')} ${sign(e.n)}`, tone: 'pos' };
+    case 'artifact':
+      return { text: t('fx.artifact'), tone: 'pos' };
+    case 'slow':
+      return { text: t('fx.slow'), tone: 'pos' };
     default:
       return null;
   }
@@ -85,7 +98,9 @@ export function EventModal() {
           </Btn>
         }
       >
-        <p>{t(res.textKey)}</p>
+        <p>
+          <AlienText text={t(res.textKey)} />
+        </p>
         {lines.length > 0 && (
           <ul class="stack" style={{ listStyle: 'none', padding: 0, margin: '8px 0 0', gap: 4 }}>
             {lines.map((l, i) => (
@@ -100,7 +115,9 @@ export function EventModal() {
   }
   return (
     <Modal title={t(ev.titleKey)} testid="modal-event">
-      <p>{t(ev.textKey)}</p>
+      <p>
+        <AlienText text={t(ev.textKey)} />
+      </p>
       <div style={{ marginTop: 12 }}>
         {ev.choices.map((c, i) => {
           const avail = choiceAvailable(s, ev, i);

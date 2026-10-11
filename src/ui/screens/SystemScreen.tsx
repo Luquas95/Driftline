@@ -19,6 +19,10 @@ import { fmt, t } from '../../i18n';
 import { sfx } from '../../audio/audio';
 import { Btn, Panel, Tag, Bar } from '../components';
 import { Icon } from '../Icon';
+import { checkFounding, foundBase } from '../../core/base';
+import { FOUNDING } from '../../content/buildings';
+import { money } from '../../i18n';
+import { go } from '../store';
 import {
   act,
   analysis,
@@ -507,8 +511,50 @@ function BodyPanel({
             ))}
           </section>
         )}
+        <FoundBase body={body} />
       </div>
     </aside>
+  );
+}
+
+function FoundBase({ body }: { body: BodyStatic }) {
+  const s = game.value!;
+  if (s.base) {
+    return s.base.systemId === s.location.systemId && s.base.bodyIndex === body.index ? (
+      <div class="spread" data-testid="base-here">
+        <Tag tone="good">{t('ui3.yourBase')}</Tag>
+        <Btn small onClick={() => go('base')}>
+          {t('nav.base')}
+        </Btn>
+      </div>
+    ) : null;
+  }
+  const chk = checkFounding(s, body.index);
+  return (
+    <section class="stack" style={{ gap: 6 }}>
+      <h3>{t('ui3.foundTitle')}</h3>
+      <p class="explain">
+        {t('ui3.foundHelp', {
+          credits: money(FOUNDING.credits),
+          goods: Object.entries(FOUNDING.goods)
+            .map(([g, n]) => `${n}× ${t(`good.${g}`)}`)
+            .join(', '),
+        })}
+      </p>
+      {!chk.ok && chk.error && <div class="neg">{t(chk.error)}</div>}
+      <Btn
+        small
+        kind="primary"
+        disabled={!chk.ok}
+        testid="btn-found-base"
+        onClick={() => {
+          const r = act((st) => foundBase(st, body.index, `${body.name} ${t('ui3.baseSuffix')}`));
+          if (report(r)) go('base');
+        }}
+      >
+        {t('ui3.found')}
+      </Btn>
+    </section>
   );
 }
 

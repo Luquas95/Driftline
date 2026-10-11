@@ -94,6 +94,9 @@ export function ContractCard({
             {GOODS_BY_ID[c.goodId] ? t(`good.${c.goodId}`) : ''} ×{c.qty}
           </Tag>
         )}
+        {c.faction && <Tag tone="accent">{t(`fac.${c.faction}`)}</Tag>}
+        {c.facOnly && <Tag tone="good">{t('ui3.membersOnly')}</Tag>}
+        {c.evac && <Tag tone="warn">{t('ui3.evac')}</Tag>}
         {sameDest && <Tag tone="accent">{t('contract.sameDest')}</Tag>}
         {ready && <Tag tone="good">{t('contract.ready')}</Tag>}
         {c.state === 'active' && c.kind === 'survey' && (
