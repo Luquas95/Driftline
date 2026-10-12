@@ -4,9 +4,14 @@ import { GOODS_BY_ID } from '../../content/goods';
 import { HULLS_BY_ID } from '../../content/hulls';
 import { unitsOf } from '../cargo';
 import { bestSkill, crewHasOfficer, tradeBonus } from '../crew';
+import { warDanger } from '../factions';
 import { Rng } from '../rng';
+import { inspectionAtSystem, ownerOf, repOf, tierOf } from '../territory';
+import { threatDanger } from '../threat';
 import { buildStarterShip, hullSlots, moduleFits, newModule } from '../ship';
-import { analyze, fail, galaxyOf, ok, withRng, type Result } from '../state';
+import { analyze, damageHull, fail, galaxyOf, ok, withRng, type Result } from '../state';
+import { learnWords } from '../lang';
+import { addResearchPoints } from '../research';
 import { T, riskFactor } from '../tuning';
 import type { GameState, Ship } from '../types';
 import { buildCombatShip, crewToCombat, placeCrew } from './build';
@@ -182,6 +187,17 @@ export function threatLevel(state: GameState, systemId: number, days = 3): numbe
   if (typeof last === 'number' && state.day - last < 3) p *= 0.3;
   if (hasIllegal && sys.region !== 'rim') p += 0.03;
   if (wanted) p += 0.05;
+  // v4: faction space, wars and the Grey
+  const owner = ownerOf(state, systemId);
+  if (owner) {
+    const tier = tierOf(repOf(state, owner));
+    if (owner === 'corsairs')
+      p *=
+        tier === 'ally' ? 0.25 : tier === 'friendly' ? 0.5 : tier === 'hostile' || tier === 'enemy' ? 1.4 : 1;
+    else if (tier === 'enemy' || tier === 'hostile') p *= 1.15;
+  }
+  p *= 1 + warDanger(state, systemId);
+  p += threatDanger(state, systemId);
   return Math.min(0.5, p);
 }
 
@@ -258,6 +274,10 @@ export function makeEncounter(
   }
   if (kind === 'wreck' || kind === 'fauna')
     options.push({ id: 'evade', chance: Math.min(0.85, 0.35 + 0.07 * pilot) });
+  if (kind === 'grey') {
+    options.push({ id: 'evade', chance: Math.min(0.8, 0.3 + 0.06 * pilot) });
+    options.push({ id: 'listen', chance: 1 });
+  }
   return {
     kind,
     enemyDefs: defs,
@@ -281,10 +301,16 @@ export function rollEncounter(state: GameState, systemId: number, days = 3): boo
       (c) => GOODS_BY_ID[c.goodId]?.tags.includes('illegal') && !c.contractId,
     );
     const wanted = isWanted(state);
+    const grip = state.threat.grip[systemId] ?? 0;
     const weights: [EncounterKind, number][] = [
-      ['pirate', 3],
+      ['grey', grip >= 30 ? 4 + grip / 25 : 0],
+      ['pirate', ownerOf(state, systemId) === 'corsairs' && repOf(state, 'corsairs') >= 25 ? 0.6 : 3],
       ['fauna', sys.region === 'rim' || sys.region === 'outer' ? 1.2 : 0.2],
-      ['customs', hasIllegal ? 3 : sys.region === 'core' || sys.region === 'inner' ? 0.6 : 0],
+      [
+        'customs',
+        (hasIllegal ? 3 : sys.region === 'core' || sys.region === 'inner' ? 0.6 : 0) *
+          (ownerOf(state, systemId) === 'corsairs' ? 0 : Math.max(0.3, inspectionAtSystem(state, systemId))),
+      ],
       ['hunter', wanted ? 4 : 0.3],
     ];
     const kind = rng.weighted(weights, (w) => w[1])[0];
@@ -352,6 +378,15 @@ export function chooseEncounterOption(
       if (state.cargo.length < before) state.stats.fines++;
       state.encounter = null;
       return ok({ fight: false, text: 'enc.result.paid' });
+    }
+    case 'listen': {
+      // let the Grey speak: a few words in exchange for a shock to ship and crew
+      const learned = learnWords(state, roll < 0.4 ? 2 : 1);
+      addResearchPoints(state, 5);
+      for (const m of state.crew) m.morale = Math.max(0, m.morale - 6);
+      damageHull(state, Math.round(4 + roll * 8));
+      state.encounter = null;
+      return ok({ fight: false, text: `enc.result.listened${learned.length > 1 ? 'Two' : ''}` });
     }
     case 'evade':
       if (roll < (opt.chance ?? 0.5)) {

@@ -6,8 +6,10 @@ import { dist } from '../core/galaxy';
 import type { Galaxy, GameState, SystemStatic } from '../core/types';
 import { GOODS_BY_ID } from '../content/goods';
 import { prefersReducedMotion } from '../ui/settings';
+import { FACTIONS_BY_ID } from '../content/factions';
+import { ownerOf } from '../core/territory';
 
-export type MapFilter = 'normal' | 'prices' | 'contracts' | 'unexplored';
+export type MapFilter = 'normal' | 'prices' | 'contracts' | 'unexplored' | 'factions' | 'threat';
 
 export interface MapOptions {
   galaxy: Galaxy;
@@ -102,7 +104,8 @@ export function createMapScene(opts: MapOptions): MapScene {
     done: () => void;
   } | null = null;
   const dyn = new Graphics();
-  world.addChild(routes, routeHi, starLayer, markers, labelLayer, shipGfx, dyn, jumpIcon, jumpShip);
+  const world_ = new Graphics();
+  world.addChild(world_, routes, routeHi, starLayer, markers, labelLayer, shipGfx, dyn, jumpIcon, jumpShip);
 
   let W = 800;
   let H = 600;
@@ -193,6 +196,62 @@ export function createMapScene(opts: MapOptions): MapScene {
     return isFinite(buy) ? { buy, sell } : null;
   }
 
+  /** Faction territory (discs and borders) and the Grey. The threat is always drawn, territory on its filter. */
+  function drawWorld(px: number): void {
+    world_.clear();
+    if (!state) return;
+    const st = state;
+    const showFac = filter === 'factions';
+    for (const s of galaxy.systems) {
+      const vs = visible(s.id);
+      if (!vs) continue;
+      const own = ownerOf(st, s.id);
+      if (showFac && own) {
+        const col = FACTIONS_BY_ID[own].color;
+        world_.circle(s.x, s.y, 26 * px).fill({ color: col, alpha: 0.13 });
+        // borders: an edge to a neighbour of another owner is drawn thick, split in the two colours
+        for (const n of s.neighbors) {
+          if (n < s.id || !visible(n)) continue;
+          const o = galaxy.systems[n];
+          const no = ownerOf(st, n);
+          const midx = (s.x + o.x) / 2;
+          const midy = (s.y + o.y) / 2;
+          world_
+            .moveTo(s.x, s.y)
+            .lineTo(midx, midy)
+            .stroke({ width: 3 * px, color: col, alpha: 0.7 });
+          if (no) {
+            world_
+              .moveTo(midx, midy)
+              .lineTo(o.x, o.y)
+              .stroke({ width: 3 * px, color: FACTIONS_BY_ID[no].color, alpha: 0.7 });
+            if (no !== own) world_.circle(midx, midy, 3.2 * px).fill({ color: 0xffffff, alpha: 0.9 });
+          }
+        }
+      }
+      const grip = st.threat.grip[s.id] ?? 0;
+      if (grip >= 5) {
+        const k = Math.min(1, grip / 100);
+        const r = (9 + 14 * k) * px * (filter === 'threat' ? 1.5 : 1);
+        if (grip >= 100) {
+          world_.circle(s.x, s.y, r).fill({ color: 0x120a22, alpha: 0.85 });
+          world_.circle(s.x, s.y, r).stroke({ width: 1.4 * px, color: 0x8a6bd8, alpha: 0.9 });
+        } else {
+          world_.circle(s.x, s.y, r).fill({ color: 0x7a55d0, alpha: 0.12 + 0.3 * k });
+          world_.circle(s.x, s.y, r).stroke({ width: 1 * px, color: 0xb9a3ff, alpha: 0.35 + 0.4 * k });
+        }
+      }
+    }
+    const b = st.base;
+    if (b && visible(b.systemId)) {
+      const bs = galaxy.systems[b.systemId];
+      const r = 9 * px;
+      world_
+        .poly([bs.x, bs.y - r, bs.x + r, bs.y + r * 0.8, bs.x - r, bs.y + r * 0.8])
+        .stroke({ width: 1.6 * px, color: 0x6ee7a0, alpha: 0.95 });
+    }
+  }
+
   function drawStatic(): void {
     if (!state) return;
     const z = cam.zoom;
@@ -222,6 +281,7 @@ export function createMapScene(opts: MapOptions): MapScene {
       }
     }
     void fuelRange;
+    drawWorld(px);
     // markers
     markers.clear();
     for (const s of galaxy.systems) {

@@ -1,0 +1,82 @@
+/**
+ * Concepts of the alien language. The Czech word is the meaning (dictionary key `lex.<id>` holds the same text for
+ * the UI); the alien spelling is generated from the galaxy seed in `core/lang.ts`.
+ */
+export interface Concept {
+  id: string;
+  cs: string;
+}
+
+const c = (id: string, cs: string): Concept => ({ id, cs });
+
+export const LEXICON: Concept[] = [
+  c('light', 'světlo'),
+  c('dark', 'tma'),
+  c('star', 'hvězda'),
+  c('path', 'cesta'),
+  c('gate', 'brána'),
+  c('people', 'lidé'),
+  c('ship', 'loď'),
+  c('voice', 'hlas'),
+  c('silence', 'ticho'),
+  c('memory', 'paměť'),
+  c('forget', 'zapomnění'),
+  c('hunger', 'hlad'),
+  c('gift', 'dar'),
+  c('debt', 'dluh'),
+  c('breath', 'dech'),
+  c('stone', 'kámen'),
+  c('water', 'voda'),
+  c('fire', 'oheň'),
+  c('death', 'smrt'),
+  c('life', 'život'),
+  c('beginning', 'počátek'),
+  c('end', 'konec'),
+  c('return', 'návrat'),
+  c('leave', 'odchod'),
+  c('mirror', 'zrcadlo'),
+  c('shadow', 'stín'),
+  c('dream', 'sen'),
+  c('truth', 'pravda'),
+  c('lie', 'lež'),
+  c('name', 'jméno'),
+  c('void', 'prázdnota'),
+  c('balance', 'rovnováha'),
+  c('circle', 'kruh'),
+  c('thread', 'nit'),
+  c('string', 'struna'),
+  c('echo', 'ozvěna'),
+  c('home', 'domov'),
+  c('stranger', 'cizinec'),
+  c('neighbour', 'soused'),
+  c('promise', 'slib'),
+  c('fear', 'strach'),
+  c('hope', 'naděje'),
+  c('child', 'dítě'),
+  c('elder', 'stařec'),
+  c('keeper', 'strážce'),
+  c('thief', 'zloděj'),
+  c('peace', 'mír'),
+  c('war', 'válka'),
+  c('sacrifice', 'obětovat'),
+  c('take', 'vzít'),
+  c('give', 'dát'),
+  c('hear', 'slyšet'),
+  c('see', 'vidět'),
+  c('understand', 'rozumět'),
+  c('wait', 'čekat'),
+  c('stand', 'stát'),
+  c('go', 'jít'),
+  c('join', 'spojit'),
+  c('divide', 'rozdělit'),
+  c('sleep', 'spát'),
+  c('wake', 'probudit'),
+  c('we', 'my'),
+  c('you', 'ty'),
+  c('i', 'já'),
+  c('together', 'společně'),
+  c('alone', 'osamělý'),
+  c('enough', 'dost'),
+];
+
+export const LEXICON_BY_ID: Record<string, Concept> = Object.fromEntries(LEXICON.map((x) => [x.id, x]));

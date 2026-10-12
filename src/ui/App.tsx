@@ -32,6 +32,10 @@ import { combatSummary } from './combatCtl';
 import { FirstShipScreen } from './screens/FirstShipScreen';
 import { CrewScreen } from './screens/CrewScreen';
 import { JournalScreen } from './screens/JournalScreen';
+import { FactionsScreen } from './screens/FactionsScreen';
+import { BaseScreen } from './screens/BaseScreen';
+import { EndingScreen } from './EndingScreen';
+import { consumedShare, gripLevel } from '../core/threat';
 import { SettingsScreen } from './screens/SettingsScreen';
 import { EventModal, eventResult } from './EventModal';
 import { DockReportModal, dockReport } from './DockReport';
@@ -67,6 +71,8 @@ const NAV: { id: ScreenId; icon: string; label: string; key: string }[] = [
   { id: 'ship', icon: 'ship', label: 'nav.ship', key: 'L' },
   { id: 'cargo', icon: 'cargo', label: 'nav.cargo', key: 'C' },
   { id: 'crew', icon: 'crew', label: 'nav.crew', key: 'P' },
+  { id: 'factions', icon: 'flag', label: 'nav.factions', key: 'F' },
+  { id: 'base', icon: 'base', label: 'nav.base', key: 'B' },
   { id: 'journal', icon: 'journal', label: 'nav.journal', key: 'J' },
   { id: 'settings', icon: 'settings', label: 'nav.settings', key: 'O' },
 ];
@@ -119,6 +125,19 @@ function TopBar() {
           <Icon name="shield" />
           <span class="mono">{Math.round(hullPct * 100)}%</span>
         </span>
+        {s.day >= s.threat.start && (
+          <button
+            type="button"
+            class={`top-stat threat t${gripLevel(s.threat.grip[s.location.systemId] ?? 0)}`}
+            title={t('threat.chip', { n: Math.round(consumedShare(s) * 100) })}
+            aria-label={t('threat.chip', { n: Math.round(consumedShare(s) * 100) })}
+            data-testid="top-threat"
+            onClick={() => go('journal')}
+          >
+            <Icon name="warning" />
+            <span class="mono">{Math.round(consumedShare(s) * 100)}%</span>
+          </button>
+        )}
         {noPower && (
           <span class="top-stat neg" title={t('top.noPower')}>
             <Icon name="power" />
@@ -146,6 +165,7 @@ function Nav() {
     <nav class="nav" aria-label={t('nav.label')}>
       {NAV.map((n) => {
         const disabled = (n.id === 'station' && !docked) || !!s.combat || s.noShip;
+        if (n.id === 'base' && !s.base) return null;
         return (
           <button
             key={n.id}
@@ -154,6 +174,7 @@ function Nav() {
             disabled={disabled}
             style={disabled ? { opacity: 0.35 } : undefined}
             title={`${t(n.label)} (${n.key})`}
+            aria-label={t(n.label)}
             data-testid={`nav-${n.id}`}
             onClick={() => {
               unlockAudio();
@@ -252,10 +273,12 @@ function useShortcuts() {
         else if (screen.value !== 'map') go(s.location.stationId ? 'station' : 'map');
         return;
       }
+      if (s.ending && (!s.ending.freePlay || !s.flags['endingSeen'])) return;
       if (s.pendingEvent || s.combat || s.encounter) return;
       const nav = NAV.find((n) => n.key.toLowerCase() === k.toLowerCase());
       if (nav) {
         if (nav.id === 'station' && !s.location.stationId) return;
+        if (nav.id === 'base' && !s.base) return;
         go(nav.id);
         e.preventDefault();
       }
@@ -328,6 +351,8 @@ function AppInner() {
               {!s.noShip && !s.combat && scr === 'ship' && <ShipScreen />}
               {!s.noShip && !s.combat && scr === 'cargo' && <CargoScreen />}
               {!s.noShip && !s.combat && scr === 'crew' && <CrewScreen />}
+              {!s.noShip && !s.combat && scr === 'factions' && <FactionsScreen />}
+              {!s.noShip && !s.combat && scr === 'base' && <BaseScreen />}
               {!s.noShip && !s.combat && scr === 'journal' && <JournalScreen />}
               {!s.noShip && !s.combat && scr === 'settings' && <SettingsScreen />}
               {!s.combat &&
@@ -342,6 +367,12 @@ function AppInner() {
           {(s.pendingEvent || eventResult.value) && <EventModal />}
           {!s.pendingEvent && !eventResult.value && !s.encounter && !s.combat && <DockReportModal />}
           {!s.pendingEvent && !eventResult.value && !combatSummary.value && !s.combat && <DeathModal />}
+          {s.ending &&
+            (!s.ending.freePlay || !s.flags['endingSeen']) &&
+            !s.pendingEvent &&
+            !eventResult.value &&
+            !combatSummary.value &&
+            !s.combat && <EndingScreen />}
           {showHelp.value && <HelpModal />}
         </div>
       )}

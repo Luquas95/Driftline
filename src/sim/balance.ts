@@ -6,6 +6,7 @@ import { writeFileSync } from 'node:fs';
 import { newGame } from '../core/start';
 import { Bot, type BotRun, type Strategy } from './bots';
 import { combatReport } from './combatBalance';
+import { endgameReport } from './endgameReport';
 import { buyFirstShip, firstShipOffers } from '../core/firstShip';
 import { HULLS_BY_ID } from '../content/hulls';
 import { T } from '../core/tuning';
@@ -199,6 +200,7 @@ function main(): void {
       }),
     );
   }
+  if (!process.argv.includes('--no-endgame')) lines.push(...endgameReport({ seeds: Math.min(seeds, 6) }));
   if (!process.argv.includes('--no-start'))
     lines.push(...startSection(Math.max(4, Math.floor(seeds * 0.6)), Math.min(days, 90)));
   if (!process.argv.includes('--no-start'))

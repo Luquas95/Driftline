@@ -54,6 +54,7 @@ test.describe('visual snapshots', () => {
     await page.evaluate(() => window.__dl.setAnim('off'));
     await openScreen(page, 'system');
     await expect(page.getByTestId('screen-system')).toBeVisible();
+    await page.waitForFunction(() => !!window.__dl.sys());
     const b = await page.evaluate(() => window.__dl.sys()!.body(1)!);
     await page.mouse.dblclick(b.x, b.y);
     await expect

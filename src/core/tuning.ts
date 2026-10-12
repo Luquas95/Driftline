@@ -41,6 +41,17 @@ export const T = {
   firstDiscoveryBonus: 1.8,
   /** v2: encounter chance per jump before modifiers. */
   encounter: { base: 0.055 },
+  /** v4: the spreading threat. `rate` is calibrated so an unopposed spread consumes 80 % of the galaxy in about 530 / 475 / 350 days (low / normal / high). */
+  threat: {
+    startDay: { low: 40, normal: 28, high: 18 },
+    foci: { low: 1, normal: 2, high: 3 },
+    rate: { low: 0.9, normal: 0.66, high: 0.68 },
+    /** The rate grows with time: x(1 + t / growthDays). */
+    growthDays: { low: 260, normal: 200, high: 160 },
+    spreadMin: 28,
+    consumeAt: 100,
+    mitigationCap: 0.85,
+  },
 };
 
 export function priceFactor(difficulty: 'easy' | 'normal' | 'hard'): number {

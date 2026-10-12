@@ -4,13 +4,19 @@ import { analyze, galaxyOf, type NewGameOptions, type Result } from '../core/sta
 import { SaveStore } from '../persist/store';
 import { importSave, exportSave } from '../core/save';
 import { t } from '../i18n';
+import { FACTION_IDS } from '../core/worldTypes';
 import { sfx } from '../audio/audio';
 import { settings } from './settings';
+import { loadProfile, saveProfile } from '../persist/profile';
+import { recordDaily, syncAchievements, type Profile } from '../core/profile';
 import type { GameState } from '../core/types';
 
-export type ScreenId = 'map' | 'system' | 'station' | 'ship' | 'cargo' | 'crew' | 'journal' | 'settings';
+export type ScreenId =
+  'map' | 'system' | 'station' | 'ship' | 'cargo' | 'crew' | 'factions' | 'base' | 'journal' | 'settings';
 
 export const game = signal<GameState | null>(null);
+/** Local profile: achievements across runs, unlocked starts, daily ranking. */
+export const profile = signal<Profile>(loadProfile());
 /** Bumped after every mutation; components read it to re-render (GameState is mutated in place). */
 export const rev = signal(0);
 export const screen = signal<ScreenId>('map');
@@ -65,9 +71,23 @@ export function afterMutation(s: GameState): void {
     }
   }
   msgSeen = s.messages.length;
+  syncProfile(s);
   scheduleAutosave(s);
   if (s.dead) {
     void saves.remove('autosave');
+  }
+}
+
+/** Copy new achievements and the daily score into the profile (persisted). */
+export function syncProfile(s: GameState): void {
+  const p = profile.value;
+  const added = syncAchievements(p, s);
+  const before = s.run.daily ? JSON.stringify(p.daily[s.run.daily]) : '';
+  recordDaily(p, s);
+  const changed = added.length > 0 || (s.run.daily ? JSON.stringify(p.daily[s.run.daily]) !== before : false);
+  if (changed) {
+    profile.value = { ...p };
+    saveProfile(p);
   }
 }
 
@@ -101,6 +121,17 @@ export function describeMessage(key: string, params?: Record<string, string | nu
       t(`mod.${String(p.module).replace(/_[sml]$/, '')}`) + ' ' + String(p.module).slice(-1).toUpperCase();
   if (typeof p.hull === 'string') p.hull = t(`hull.${p.hull}`);
   if (typeof p.good === 'string') p.good = t(`good.${p.good}`);
+  // v4 ids: factions, ranks, tiers, buildings, technologies
+  const fid = typeof p.faction === 'string' ? p.faction : null;
+  for (const k of ['faction', 'a', 'b'] as const)
+    if (typeof p[k] === 'string' && (FACTION_IDS as string[]).includes(p[k] as string))
+      p[k] = t(`fac.${p[k]}`);
+  if (typeof p.rank === 'number' && fid) p.rank = t(`fac.${fid}.rank.${p.rank}`);
+  if (typeof p.tier === 'string') p.tier = t(`fac.tier.${p.tier}`);
+  if (typeof p.building === 'string') p.building = t(`bld.${p.building}`);
+  if (typeof p.tech === 'string') p.tech = t(`tech.${p.tech}`);
+  if (typeof p.ach === 'string') p.ach = t(`ach.${p.ach}`);
+  if (typeof p.ending === 'string') p.ending = t(`ending.${p.ending}`);
   return t(key, p);
 }
 

@@ -27,7 +27,7 @@ export default defineConfig({
   reporter: [['list']],
   use: { baseURL: 'http://localhost:4173', trace: 'off', launchOptions },
   webServer: {
-    command: 'npm run build && npm run preview',
+    command: 'VITE_E2E=1 npm run build && npm run preview',
     url: 'http://localhost:4173',
     reuseExistingServer: true,
     timeout: 180_000,

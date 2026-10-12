@@ -4,6 +4,10 @@ import { MODULES_BY_ID } from '../../content/modules';
 import { SKILLS } from '../../content/crew';
 import { addGoods, removeGoods, unitsOf } from '../cargo';
 import { gainXp, maxHp } from '../crew';
+import { onBaseFightEnded } from '../base';
+import { learnWords } from '../lang';
+import { addResearchPoints } from '../research';
+import { onFightEnded } from '../factions';
 import { Rng } from '../rng';
 import { newModule } from '../ship';
 import { analyze, destroyShip, msg, newUid } from '../state';
@@ -91,6 +95,7 @@ export function resolveCombat(state: GameState, c: CombatState): CombatSummary {
   }
 
   if (lost) {
+    onBaseFightEnded(state, false);
     state.combat = null;
     state.encounter = null;
     destroyShip(state);
@@ -157,6 +162,11 @@ export function resolveCombat(state: GameState, c: CombatState): CombatSummary {
       state.inventory.push(inst);
     }
     state.ship.fuel = Math.min(stats.fuelCap, state.ship.fuel + sum.fuel);
+    onFightEnded(state, c.kind, outcome, state.location.systemId);
+    if (c.kind === 'grey') {
+      learnWords(state, 1);
+      addResearchPoints(state, 6);
+    }
     const dRep = repFor(c.kind, outcome);
     if (dRep) {
       const st = state.stations[state.home];
@@ -193,6 +203,7 @@ export function resolveCombat(state: GameState, c: CombatState): CombatSummary {
   } else if (outcome === 'enemy-fled') {
     msg(state, 'msg.combat.enemyFled', undefined, 'info');
   }
+  onBaseFightEnded(state, outcome === 'victory' || outcome === 'surrender');
   state.combat = null;
   state.encounter = null;
   return sum;

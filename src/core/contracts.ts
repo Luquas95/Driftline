@@ -2,7 +2,9 @@ import { CHAINS, CHAINS_BY_ID, type ChainStepDef } from '../content/chains';
 import { GOODS_BY_ID, MARKET_GOODS } from '../content/goods';
 import { STATION_TYPES_BY_ID } from '../content/stations';
 import { dist, shortestPath } from './galaxy';
+import { FACTIONS_BY_ID } from '../content/factions';
 import { Rng } from './rng';
+import { ownerOf } from './territory';
 import { T } from './tuning';
 import type { Contract, ContractKind, Galaxy, GameState, StationStatic } from './types';
 
@@ -265,10 +267,30 @@ export function refreshBoard(g: Galaxy, state: GameState, st: StationStatic): vo
   const def = STATION_TYPES_BY_ID[st.type];
   const n = (st.size === 'small' ? 3 : st.size === 'medium' ? 5 : 7) + rng.int(-1, 1);
   const board: Contract[] = [];
+  const owner = ownerOf(state, st.systemId);
+  const bias = owner ? FACTIONS_BY_ID[owner].contractBias : {};
   for (let i = 0; i < n; i++) {
-    const kind = rng.weighted(ALL_KINDS, (k) => (def.contractBias[k] ?? 0.6) * (k === 'rescue' ? 0.5 : 1));
+    const kind = rng.weighted(
+      ALL_KINDS,
+      (k) => (def.contractBias[k] ?? 0.6) * (k === 'rescue' ? 0.5 : 1) * (bias[k] ?? 1),
+    );
     const c = makeContract(g, state, st, rng, { kind });
-    if (c) board.push(c);
+    if (c) {
+      if (owner) c.faction = owner;
+      board.push(c);
+    }
+  }
+  // members get extra jobs of their own faction: better pay and merit toward the next rank
+  if (owner && state.fac.member === owner) {
+    for (let i = 0; i < 2; i++) {
+      const kind = rng.weighted(ALL_KINDS, (k) => (bias[k] ?? 1) * (k === 'rescue' ? 0.5 : 1));
+      const c = makeContract(g, state, st, rng, { kind });
+      if (!c) continue;
+      c.faction = owner;
+      c.facOnly = true;
+      c.reward = Math.round((c.reward * 1.3) / 5) * 5;
+      board.unshift(c);
+    }
   }
   // occasional story chain
   for (const chain of CHAINS) {
@@ -284,6 +306,21 @@ export function refreshBoard(g: Galaxy, state: GameState, st: StationStatic): vo
     if (c) {
       board.unshift(c);
       break;
+    }
+  }
+  // v4: the Grey. Refugees ask for evacuation from gripped systems; consumed systems have no board at all
+  const grip = state.threat.grip[st.systemId] ?? 0;
+  if (grip >= T.threat.consumeAt) board.length = 0;
+  else if (grip >= 25) {
+    for (let i = 0; i < 1 + (grip >= 60 ? 1 : 0); i++) {
+      const c = makeContract(g, state, st, rng, { kind: 'passenger' });
+      if (!c || (state.threat.grip[c.destSystem] ?? 0) >= 25) continue;
+      c.evac = true;
+      c.passengers = rng.int(3, 8);
+      c.comfort = 1;
+      c.reward = Math.round((c.reward * 1.6) / 5) * 5;
+      c.deadline = Math.min(c.deadline, state.day + rng.int(8, 14));
+      board.unshift(c);
     }
   }
   dyn.board = board;

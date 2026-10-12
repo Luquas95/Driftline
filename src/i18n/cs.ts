@@ -1,4 +1,6 @@
 import { csV2 } from './cs-v2';
+import { csV3 } from './cs-v3';
+import { csUi3 } from './cs-ui3';
 /** Czech UI dictionary. Event texts live next to their definitions (content/events.ts) and are merged in i18n/index.ts. */
 const goods: Record<string, string> = {
   missiles: 'Rakety',
@@ -146,6 +148,7 @@ const marketMsgs: Record<string, string> = {
   'msg.market.crop_failure': 'Neúroda v sektoru {sector}: potraviny jsou vzácné.',
   'msg.market.mining_boom': 'Boom těžby v sektoru {sector}: surovin je dost, stroje chybí.',
   'msg.market.strike': 'Stávka v sektoru {sector}: průmysl stojí, průmyslové zboží chybí.',
+  'msg.market.panic': 'Panika v sektoru {sector}: lidé se zásobují a utíkají před Šedí.',
   'msg.market.blockade': 'Blokáda v sektoru {sector}: většina zboží je nedostatková.',
   'msg.market.festival': 'Slavnosti v sektoru {sector}: luxusní zboží a lihoviny jdou na dračku.',
   'msg.market.tech_boom': 'Technologický boom v sektoru {sector}: poptávka po počítačích a robotice.',
@@ -261,7 +264,7 @@ const base: Record<string, string> = {
     'Tažením posouvej mapu, dvěma prsty přibližuj. Kontejnery v nákladu přetáhni prstem, dalším klepnutím je otočíš.',
   'help.basics': 'Jak hrát',
   'help.basicsText':
-    'Kup zboží tam, kde je levné, odvez ho tam, kde je drahé, a vydělané kredity investuj do lepší lodi. Zakázky, průzkum a těžba jsou další cesty k penězům. Čas běží ve dnech a každý skok stojí palivo i čas. Ceny jinde znáš jen z doby poslední návštěvy.',
+    'Kup zboží tam, kde je levné, odvez ho tam, kde je drahé, a vydělané kredity investuj do lepší lodi. Zakázky, průzkum a těžba jsou další cesty k penězům. Čas běží ve dnech a každý skok stojí palivo i čas. Ceny jinde znáš jen z doby poslední návštěvy. Postupem hry založíš základnu (v pohledu na systém), vstoupíš do frakce a zjistíš, co je Šeď: stav najdeš v Deníku.',
   /* map */
   'map.filters': 'Filtry mapy',
   'map.filter.normal': 'Přehled',
@@ -832,7 +835,7 @@ const base: Record<string, string> = {
   'err.towNotNeeded': 'Odtah nepotřebuješ: palivo na skok máš.',
 };
 
-const dict: Record<string, string> = { ...base, ...chains, ...marketMsgs, ...csV2 };
+const dict: Record<string, string> = { ...base, ...chains, ...marketMsgs, ...csV2, ...csV3, ...csUi3 };
 for (const [k, v] of Object.entries(goods)) dict[`good.${k}`] = v;
 for (const [k, v] of Object.entries(mods)) dict[`mod.${k}`] = v;
 for (const [k, [name, desc]] of Object.entries(hulls)) {

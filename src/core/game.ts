@@ -46,8 +46,13 @@ import {
   updateSeen,
   withRng,
   type Result,
+  isDeadSystem,
 } from './state';
 import { passTime } from './time';
+import { rollStory } from './story';
+import { greyArrival, isConsumed } from './threat';
+import { addRep } from './factions';
+import { inspectionMult, ownerOfStation, tariffMult } from './territory';
 import { T, riskFactor } from './tuning';
 import type { Contract, GameState, StationStatic } from './types';
 
@@ -63,6 +68,7 @@ export function dockAt(state: GameState, stationId: string): Result<{ report: Do
   const st = g.stationsById[stationId];
   if (!st || st.systemId !== state.location.systemId) return fail('err.noStation');
   if (state.pendingEvent) return fail('err.eventPending');
+  if (isConsumed(state, st.systemId)) return fail('err.consumed');
   if (state.location.stationId === stationId) return ok({ report: { completed: [] } });
   const { stats } = analyze(state);
   if (stats.speedAuDay <= 0 || stats.powerFree < -0.001) return fail('err.noEngine');
@@ -85,7 +91,8 @@ export function dockAt(state: GameState, stationId: string): Result<{ report: Do
   report.completed = done.map((d) => ({ contract: d.contract, payout: d.payout }));
   // repair modules / shield recharge at dock
   state.ship.shield = Math.max(state.ship.shield, analyze(state).stats.shieldCap);
-  rollEvent(state, 'dock', 0.12, { systemId: st.systemId });
+  if (!rollStory(state, 'dock', { systemId: st.systemId }))
+    rollEvent(state, 'dock', 0.12, { systemId: st.systemId });
   return ok({ report });
 }
 
@@ -115,7 +122,8 @@ function inspect(state: GameState, st: StationStatic): { fine: number; confiscat
       security *
       riskFactor(state.difficulty.risk) *
       (1 - concealment) *
-      (1 + (st.blackMarket ? 0.3 : 0)),
+      (1 + (st.blackMarket ? 0.3 : 0)) *
+      inspectionMult(state, st),
   );
   const caught = withRng(state, (rng) => rng.chance(p));
   if (!caught) return null;
@@ -125,6 +133,8 @@ function inspect(state: GameState, st: StationStatic): { fine: number; confiscat
   state.cargo = state.cargo.filter((c) => !(isIllegal(c.goodId) && !c.contractId));
   state.credits -= fine;
   state.stations[st.id].rep -= 3;
+  const owner = ownerOfStation(state, st);
+  if (owner) addRep(state, owner, -4);
   state.stats.fines++;
   msg(state, 'msg.inspection', { fine, value: Math.round(value) }, 'bad');
   return { fine, confiscated: Math.round(value) };
@@ -219,7 +229,10 @@ export function jump(state: GameState, toId: number): Result<{ report: JumpRepor
     if (state.dead || state.location.stationId !== null) return ok({ report });
   }
   arrive(state, toId);
-  if (!rollEncounter(state, toId, plan.days)) rollEvent(state, 'jump', 0.42, { systemId: toId });
+  greyArrival(state, toId);
+  if (!rollEncounter(state, toId, plan.days)) {
+    if (!rollStory(state, 'arrival', { systemId: toId })) rollEvent(state, 'jump', 0.42, { systemId: toId });
+  }
   if (!state.pendingEvent) rollEvent(state, 'arrival', 0.12, { systemId: toId });
   void stats;
   return ok({ report });
@@ -282,7 +295,7 @@ export function callTow(state: GameState): Result<{ station: string; fee: number
   for (const s of g.systems) {
     for (const st of s.stations) {
       const d = dist(here, s);
-      if (d < bd && st.type !== 'pirate') {
+      if (d < bd && st.type !== 'pirate' && !isDeadSystem(state, s.id)) {
         bd = d;
         best = st;
       }
@@ -295,7 +308,8 @@ export function callTow(state: GameState): Result<{ station: string; fee: number
   arrive(state, best.systemId);
   state.location = { systemId: best.systemId, stationId: best.id, body: best.bodyIndex };
   state.home = best.id;
-  state.ship.fuel = Math.max(state.ship.fuel, Math.min(stats.fuelCap, 4));
+  // enough for a few jumps, not a token amount: the tow must not strand the player again
+  state.ship.fuel = Math.max(state.ship.fuel, Math.min(stats.fuelCap, Math.max(4, stats.fuelCap * 0.25)));
   learnStation(state, best);
   refreshBoard(g, state, best);
   refreshShop(state, best);
@@ -325,7 +339,8 @@ export function wait(state: GameState, days: number): Result {
 
 function atStation(state: GameState, stationId: string): StationStatic | null {
   if (state.location.stationId !== stationId) return null;
-  return stationOf(state, stationId);
+  const st = stationOf(state, stationId);
+  return isConsumed(state, st.systemId) ? null : st;
 }
 
 export function stockOf(state: GameState, stationId: string, goodId: string): number {
@@ -340,7 +355,7 @@ export function quoteFor(
   qty: number,
 ): Quote {
   const st = stationOf(state, stationId);
-  const fees = feesFor(st, state.difficulty, isBlackMarketGood(goodId));
+  const fees = feesFor(st, state.difficulty, isBlackMarketGood(goodId), tariffMult(state, st));
   const stock = stockOf(state, stationId, goodId);
   if (side === 'buy') return quoteBuy(st, stock, goodId, qty, fees);
   return quoteSell(st, stock, goodId, qty, fees);
@@ -427,7 +442,7 @@ export function sellGoods(
   if (!Number.isFinite(qty)) return fail('err.badAmount');
   qty = Math.min(Math.floor(qty), have);
   if (qty <= 0) return fail('err.badAmount');
-  const fees = feesFor(st, state.difficulty, isBlackMarketGood(goodId));
+  const fees = feesFor(st, state.difficulty, isBlackMarketGood(goodId), tariffMult(state, st));
   const items = state.cargo
     .filter((c) => c.goodId === goodId && !c.contractId)
     .sort((a, b) => a.acquiredDay - b.acquiredDay);
@@ -449,6 +464,7 @@ export function sellGoods(
   state.credits += revenue;
   state.stations[stationId].stock[GOOD_INDEX[goodId]] = stock;
   state.stats.tradesProfit += revenue - cost;
+  if (isBlackMarketGood(goodId) && st.blackMarket) addRep(state, 'corsairs', 0.4, false);
   learnStation(state, st);
   return ok({ qty, revenue, profit: Math.round(revenue - cost) });
 }
@@ -694,7 +710,14 @@ export function refuelNeeded(state: GameState): number {
 }
 
 export function snapshotAt(state: GameState, st: StationStatic, goodId: string) {
-  return snapshotPrice(st, stockOf(state, st.id, goodId), goodId, state.difficulty, state.day);
+  return snapshotPrice(
+    st,
+    stockOf(state, st.id, goodId),
+    goodId,
+    state.difficulty,
+    state.day,
+    tariffMult(state, st),
+  );
 }
 
 /* ------------------------------ insurance ----------------------------- */

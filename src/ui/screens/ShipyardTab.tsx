@@ -14,6 +14,7 @@ import {
   previewHullSwap,
   sellModule,
   sellValue,
+  shopHulls,
 } from '../../core/shop';
 import { sfx } from '../../audio/audio';
 import { fmt, money, t } from '../../i18n';
@@ -117,7 +118,7 @@ export function ShipyardTab({ st }: { st: StationStatic }) {
           <div class="stack">
             <p class="explain">{t('yard.hullHelp', { trade: money(hullTradeIn(s)) })}</p>
             <div class="layout-3">
-              {dyn.shop.hulls.map((id) => {
+              {shopHulls(s, st).map((id) => {
                 const h = HULLS_BY_ID[id];
                 const price = hullPrice(s, st, id);
                 const cur = id === s.ship.hullId;

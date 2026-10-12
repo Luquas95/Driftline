@@ -1,3 +1,5 @@
+import { addRep } from './factions';
+import { addResearchPoints } from './research';
 import { GOODS_BY_ID } from '../content/goods';
 import { addGoods } from './cargo';
 import { rollEvent } from './events';
@@ -343,6 +345,9 @@ export function sellDiscoveries(
   for (const d of items) d.sold = true;
   state.credits += total;
   state.stations[st.id].rep += 1;
+  // v4: data feeds research and pleases the scholars
+  addResearchPoints(state, total / 90);
+  addRep(state, 'lumen', Math.min(3, total / 1500));
   msg(state, 'msg.soldData', { total }, 'good');
   return ok({ total, count: items.length });
 }

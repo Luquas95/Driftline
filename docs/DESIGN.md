@@ -263,3 +263,55 @@ Všechno v této kapitole je **jen vrstva vykreslování**: nic nemění stav j�
 **Efekty:** sken (vlna z lodi, tělesa se odhalují postupně), těžba (paprsek, jiskry, u plynných obrů nasávání), sonda (letí k tělesu a zaniká). Na mapě galaxie letí silueta lodi po trase (nabití, rozmazaná stopa, záblesk), dny v horním panelu přibývají plynule. Nákup a prodej ukážou potvrzení, odpočet kreditů a ikony zboží letící do nákladu; přechody obrazovek, tlačítka a změny hodnot (zelené a červené probliknutí) jsou CSS.
 
 **Animace** řídí nastavení *plné / omezené / vypnuté* (`animLevel()`, sníženo i `prefers-reduced-motion`); vypnuté nepoužije žádné přechody a pohyby, omezené krátké a jednoduché. `?fps=1` (a vývojový režim) ukazuje měřič FPS.
+
+## 16. Koncová hra (v3 „základna, frakce, hrozba a konce“)
+
+Stav je od `SAVE_VERSION 4` rozšířen o `fac`, `base`, `research`, `threat`, `lang`, `story`, `ending`, `run`, `ach` (viz `src/core/worldTypes.ts`). Migrace 3 → 4 (`save.ts`) je generuje ze semínka, takže stará hra dostane frakce, hrozbu a slovník beze změny dosavadního stavu. Vše je deterministické: území, ohniska Šedi, slovník i osudy posádky vycházejí z RNG se semínkem hry.
+
+### 16.1 Frakce a reputace (`core/territory.ts`, `core/factions.ts`, `content/factions.ts`)
+
+Pět originálních frakcí: **Konsorcium Halcyon** (obchod), **Direktorát Aegis** (vojenská správa jádra), **Svobodné državy** (kolonie na okraji), **Bratrstvo Lumen** (badatelé) a **Klany Cinderu** (pirátské klany). Každá má vektorový erb (`ui/FactionCrest.tsx` z `CrestSpec`), barvu, hlavní město a území, které vyroste ze semínka (nejbližší hlavní město vyhrává, hranice jsou sousedské hrany mezi systémy dvou majitelů). Válka mezi frakcemi s nepřátelským vztahem (`relations ≤ −0,3`) trvá 40 až 110 dní, posouvá frontu a může změnit majitele systému, stejně tak vyvolá blokádu v sektoru, kde se hranice setkávají. Příměří je dané dnem.
+
+Reputace je −100 až 100 a má pět pásem (`nepřítel < −60`, `nepřátelský < −20`, `neutrální < 25`, `přátelský < 60`, `spojenec`). Mění **clo** (násobek poplatků 1,5 až 0,7 ×), **celní kontroly** (1,9 až 0,25 ×), nabídku zakázek, exkluzivní loď frakce (od reputace 40, nebo hodnosti 2 člena) a ceny v jejím prostoru (`tariffMult`). Změna reputace se šíří na spojence (třetina) a nepřátele (opačně). Členství je volitelné (reputace ≥ 15, jen v jedné frakci), hodnosti 0 až 5 se získávají zásluhami (`RANK_MERIT`: 40 / 120 / 280 / 520 / 900). Zakázky jen pro členy dávají dvojnásobek zásluh. Vstup k jedné straně poškodí její nepřátele.
+
+### 16.2 Základna (`core/base.ts`, `content/buildings.ts`)
+
+Založit ji lze na prozkoumaném tělese ve volném nebo nenepřátelském systému: **14 000 kr** a v nákladu **40 stavebního materiálu + 12 strojů**. Deset budov (`mine`, `refinery`, `factory`, `warehouse`, `shipyard`, `hangar`, `lab`, `defense`, `port`, `anchor`) má úrovně a cenu `základ × 0,62 × úroveň^1,45`; stavba trvá dny a odebere materiál ze skladu základny (fronta 3). Denní provoz stojí `upkeep` budov. Základna běží v čase (`baseDaily` v denním tiku): důl dodává z odhalených ložisek systému, linky vyrábějí zboží z receptur (`inputs`) do skladu (kapacita 250 + 350 na úroveň skladu), přístav automaticky prodává přebytky nad zvolenou zásobou se slevou 38 až 13 %, zakázky loděnice stavějí moduly a trupy. Nájezdníci útočí podle hodnoty základny, nebezpečnosti a reputace u Klanů (`attackChance`), obranu tvoří budova `defense`, lodě v hlídce a hráč (`defendBase` spustí boj).
+
+### 16.3 Výzkum (`core/research.ts`, `content/tech.ts`)
+
+26 technologií v pěti větvích (navigace, energie, průmysl, zbraně, Šeď a jazyk). Body výzkumu dává laboratoř (`6 × úroveň^1,2` za den, +10 % z některých technologií), objevy a artefakty. Zkoumá se jedna technologie najednou, denně se přelije nejvýše `max(12, cena / 8)` bodů. Některé odemykají moduly v obchodech a výrobě (`MODULE_TECH`), jiné zpomalují Šeď (`mitigation`), učí slova (`words`), zvyšují zisk flotily nebo obranu.
+
+### 16.4 Flotila (`core/fleet.ts`)
+
+Lodě v hangáru (počet míst `1 + úroveň hangáru`) mají rozkaz: stát, **obchodovat** po trase mezi dvěma stanicemi, **eskortovat** (snižuje šanci útoku na hráče až o 3 lodě) nebo **hlídat** základnu. Obchodní loď běží ze skutečných cen trhu: `planTrip` počítá nákup, prodej s prokluzem, palivo, mzdy a riziko (z `routeThreat` a ochrany lodi), zisk dostane `FLEET_EFFICIENCY 0,62` a po cestě se vrátí do pokladny. Obchod skutečně posouvá zásoby trhů. Hráč může se zaparkovanou lodí **vyměnit** místo na základně.
+
+### 16.5 Šeď (`core/threat.ts`)
+
+Šeď je 0 až 100 „sevření“ na systém. Začíná v 1 až 3 ohniscích daleko od startu (den 40 / 28 / 18 podle rizika) a šíří se po trasách rychlostí `rate × (1 + t / growthDays) × (1 − zpomalení)`. Systém je při 100 pohlcen: žádný trh, žádné zakázky, hrozba pro lodě, přistání je zakázané (`err.consumed`). Kalibrace (medián přes semínka, viz `docs/balance.md`): 80 % galaxie je pohlceno za zhruba **530 až 580 / 410 až 475 / 310 až 350 dní** (nízké / normální / vysoké riziko, podle sady semínek); plné zpomalení z výzkumu, artefaktů, rozhodnutí a budovy Kotva (strop 85 %) to protáhne zhruba na trojnásobek. Rozhodnutí hráče tedy mění, jestli stihne konec, ne jestli hra běží. Frakce reagují na procento pohlcení (milníky `msg.threatStage.*`), uprchlíci vytvářejí evakuační zakázky. Setkání se Šedí (`enemy.grey`) lze také vyslechnout (`listen`), což učí slova.
+
+### 16.6 Jazyk (`core/lang.ts`, `content/lexicon.ts`)
+
+Cizí řeč má slovník pojmů; každý má pro hru jeden ze semínka odvozený zápis (slabiky a znaky `◐◑◒…`). Pořadí učení je permutace ze semínka. Texty událostí obsahují značky `⟦pojem⟧`, které `translateAlien` při čtení přeloží podle toho, kolik slov hráč zná (známé česky, neznámé znaky); UI je vykreslí zvlášť (`AlienText`). Slovník v deníku ukazuje všechna slova s překladem známých. Slova dávají události, výzkum a poslech.
+
+### 16.7 Příběh a konce (`core/story.ts`, `content/story.ts`, `content/storyEvents.ts`, `core/endings.ts`)
+
+Hlavní linka „Dlouhá cesta“ má pět stádií (`story.stage`): první signál, bledé systémy, rozhovor s Lumenem, mrtvé zóny, postoj frakcí a stádium 5 „cesty ven“. Dějové zastávky jsou události, které nabídne `rollStory` při přistání nebo příletu, jakmile platí podmínky. Rozhodnutí se zapisují (`story.log`) a objeví se v závěrečné obrazovce. Pět konců:
+
+| Konec | Podmínky |
+|---|---|
+| **Věda** (`science`) | stádium 5, hráč na základně s budovou `anchor`, technologie `grey_decode`, ≥ 3 artefakty |
+| **Dohoda** (`accord`) | stádium 5, v systému s Šedí ≥ 30, technologie `accord_protocol`, ≥ 85 % slovníku, ≥ 2 artefakty |
+| **Exodus** (`exodus`) | stádium 5, na základně, technologie `exodus_drive`, loď `ark` a ≥ 3 lodě v hangáru |
+| **Nadvláda** (`dominion`) | stádium 5, člen Konsorcia hodnosti 5 v jeho prostoru, ≥ 150 000 kr, přístav ≥ 3 |
+| **Pohlcení** (`consumed`) | přijde samo, když je pohlceno 80 % galaxie |
+
+Tři konce zachrání galaxii (věda, dohoda, nadvláda) a hra pokračuje v **volné hře** bez hrozby, exodus a pohlcení hru uzavřou. Závěrečná obrazovka (`EndingScreen`) ukazuje statistiky, rozhodnutí, osudy posádky (3 varianty na konec, ze semínka) a postoj frakcí.
+
+### 16.8 Úspěchy, začátky a denní výzva (`core/achievements.ts`, `starts.ts`, `daily.ts`, `profile.ts`)
+
+41 úspěchů v pěti kategoriích se po každé akci vyhodnotí z čistého stavu. Profil hráče (úspěchy napříč hrami, denní výsledky) je v `localStorage` (`persist/profile.ts`), není součástí uložené hry. Čtyři začátky (standard, pašerák, vědec, uprchlík) se odemykají úspěchy. **Denní výzva** má pevné semínko `daily-<datum>`, pevnou obtížnost a skóre (`dailyScore`: bohatství, artefakty, výzkum, slova, konec, smrt); místní žebříček ukazuje nejlepší výsledky podle data.
+
+### 16.9 Vývojářské háčky a produkční build
+
+`window.__dl.cheat` (kredity, zboží, reputace, slova, výzkum, dny, konec, `quickBase`) existuje jen při buildu s `VITE_E2E=1` (nastavuje ho Playwright web server) nebo ve `vite` dev serveru; produkční build jej odstraní (`import.meta.env` je při sestavení nahrazeno, větev je mrtvý kód).

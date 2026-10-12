@@ -36,6 +36,14 @@ Klidná obchodně-průzkumná hra o malé lodi v procedurálně generované gala
 |---|---|---|
 | ![Mobil boj](docs/screenshots/mobile-combat.png) | ![Mobil výsledek](docs/screenshots/mobile-combat-result.png) | ![Mobil nábor](docs/screenshots/mobile-crew-hire.png) |
 
+### Koncová hra: frakce, Šeď, základna a konce
+
+| Frakce na mapě | Šeď na mapě | Základna |
+|---|---|---|
+| ![Frakce](docs/screenshots/desktop-map-factions.png) | ![Šeď](docs/screenshots/desktop-map-threat.png) | ![Základna](docs/screenshots/desktop-base.png) |
+| ![Výzkum](docs/screenshots/desktop-research.png) | ![Frakce](docs/screenshots/desktop-factions.png) | ![Konec](docs/screenshots/desktop-ending.png) |
+| ![Mobil základna](docs/screenshots/mobile-base.png) | ![Mobil Šeď](docs/screenshots/mobile-map-threat.png) | ![Mobil konec](docs/screenshots/mobile-ending.png) |
+
 ## Jak hrát
 
 0. **Začátek:** nová hra začíná ve stanici s kapitálem podle obtížnosti (snadná 60 000, normální 40 000, těžká 25 000 kr) a **bez lodi**. Na obrazovce první lodi vybíráš z 14 trupů seřazených od nejlevnějšího (nové i ojeté kusy s opotřebovanými moduly), vidíš, kolik ti po koupi zbude (a varování, když to na první náklad nestačí), a loď pojmenuješ. Tutoriál je přizpůsobený.
@@ -47,7 +55,11 @@ Klidná obchodně-průzkumná hra o malé lodi v procedurálně generované gala
 6. **Loď:** moduly spotřebovávají energii z reaktoru, některé zlepšují jen sousední sloty, všechno se opotřebovává. V loděnici vidíš před koupí změnu vlastností zeleně a červeně.
 7. **Posádka:** obrazovka *Posádka* (`P`). Ve stanici najímáš lidi šesti ras (každá má vlastnosti: dýchání, oheň, opravy, boj zblízka, zásoby, společenský vliv) a rolí (pilot, inženýr, střelec, lékař, obchodník, vědec). Dovednosti rostou používáním. Každý den se platí mzdy a jí se zásoby; nevyplacená mzda a hlad srážejí morálku a lidé pak odcházejí nebo se vzbouří. Počet lidí omezují lůžka (trup + ubikace). Vzácní **důstojníci** mají zvláštní schopnost a vlastní příběh.
 8. **Boj:** po skoku tě může zastavit pirát, lovec odměn, celnice, vrak s obranou nebo zvíře. Dialog nabídne boj, útěk, výkupné, vyjednávání nebo vyhnutí. Boj je **pozastavitelný v reálném čase**: loď je rozdělená na místnosti podle modulů, energii mezi zbraně, štíty, motory a podporu života rozdělujete živě, míříš na konkrétní místnost protivníka, posádka hasí, opravuje a ošetřuje. Zbraně: energetické (silné proti štítům), kinetické (proti trupu), rakety (procházejí štítem, munice z nákladu, koupíš ji ve stanici), iontové (vyřadí systém), dronové hangáry a teleportér pro abordáž. Hrozbu vidíš na mapě u každého systému a na trase. Kořist, rozebrání vraku a zkušenosti posádky jsou odměnou; boj se vyplatí jen někdy, obchodní hra bez boje zůstává plně hratelná (viz [docs/balance.md](docs/balance.md)).
-9. **Smrt:** s pojištěním se probudíš v poslední stanici (ztratíš náklad a nepojištěné moduly). Při nové hře můžeš zapnout **trvalou smrt**.
+9. **Cíl a konce:** v galaxii se šíří **Šeď**, tichá hrozba, která pohlcuje systémy. Na hráči je, jestli ji zastaví, vyjedná s ní dohodu, uteče před ní, nebo si koupí moc, než zbude jen ticho. Hra má **5 konců** (věda, dohoda, exodus, nadvláda, pohlcení) a závěrečnou obrazovku se statistikami, rozhodnutími a osudy posádky. Po záchraně galaxie lze hrát dál bez hrozby. Délka hry je řádově 6 až 15 hodin.
+10. **Frakce:** pět frakcí vládne území na mapě (filtr *Frakce*). Reputace mění clo, kontroly a nabídku lodí; můžeš vstoupit a získávat hodnosti. Války mění hranice.
+11. **Základna:** na prozkoumaném tělese ji založíš (*Systém → těleso → Založit základnu*), postavíš doly, továrny, laboratoř, sklad, přístav, loděnici a hangár a necháš ji pracovat. Výzkum odemyká moduly a zpomaluje Šeď, lodě v hangáru obchodují samy.
+12. **Cizí řeč a deník:** v *Deníku* je příběh, slovník (překládáš cizí slova, jak se je učíš), stav Šedi a úspěchy. V menu jsou odemykatelné začátky a **denní výzva** s místním žebříčkem.
+13. **Smrt:** s pojištěním se probudíš v poslední stanici (ztratíš náklad a nepojištěné moduly). Při nové hře můžeš zapnout **trvalou smrt**.
 
 ### Ovládání
 
@@ -112,7 +124,7 @@ Pro vlastní server stačí obsah `dist/` vystavit jako statické soubory (`BASE
 ## Architektura ve zkratce
 
 - `src/core`: **čistá, deterministická simulace** (TypeScript, bez DOM a Pixi, vlastní PRNG podle semínka). Stav je JSON s verzí a migracemi.
-- `src/content`: data (zboží, trupy, moduly, typy stanic, události, řetězce zakázek).
+- `src/content`: data (zboží, trupy, moduly, typy stanic, události, řetězce zakázek, frakce, budovy, technologie, příběh, úspěchy).
 - `src/render`: PixiJS v8 se shadery (planety, hvězdy, mlhoviny), generátor lodí.
 - `src/ui`: Preact + Signals, česky přes slovník `src/i18n/cs.ts`.
 - `src/sim`: boti a balanční simulátor (`npm run balance`).

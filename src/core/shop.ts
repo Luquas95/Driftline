@@ -2,6 +2,8 @@ import { HULLS, HULLS_BY_ID } from '../content/hulls';
 import { MODULES, MODULES_BY_ID } from '../content/modules';
 import { STATION_TYPES_BY_ID } from '../content/stations';
 import { serviceMult } from './economy';
+import { exclusiveHullFor } from './factions';
+import { moduleUnlocked } from './research';
 import { Rng } from './rng';
 import { autoArrange, cargoMass, gridDims } from './cargo';
 import {
@@ -45,7 +47,10 @@ export function refreshShop(state: GameState, st: StationStatic): void {
   const region = g.systems[st.systemId].region;
   const mult = serviceMult(st, region, state.difficulty);
   const hulls = HULLS.filter(
-    (h) => h.tier <= tier || (h.tier === tier + 1 && rng.chance(0.3)) || h.id === 'wayfarer',
+    (h) =>
+      !h.faction &&
+      !h.tech &&
+      (h.tier <= tier || (h.tier === tier + 1 && rng.chance(0.3)) || h.id === 'wayfarer'),
   ).map((h) => h.id);
   const mods: ModuleInstance[] = [];
   const prices: number[] = [];
@@ -58,7 +63,8 @@ export function refreshShop(state: GameState, st: StationStatic): void {
   for (const id of ['cargo_s', 'cargo_m', 'fuel_s', 'fuel_m']) push(id, 'C');
   const count = 6 + tier * 3;
   const pool = MODULES.filter(
-    (m) => (m.size !== 'L' || tier >= 2) && !(tier === 1 && m.kind === 'amplifier'),
+    (m) =>
+      (m.size !== 'L' || tier >= 2) && !(tier === 1 && m.kind === 'amplifier') && moduleUnlocked(state, m.id),
   );
   for (let i = 0; i < count; i++) {
     const def = rng.pick(pool);
@@ -69,6 +75,21 @@ export function refreshShop(state: GameState, st: StationStatic): void {
     modules: mods.map((m, i) => ({ uid: m.uid, defId: m.defId, quality: m.quality, price: prices[i] })),
     epoch,
   };
+}
+
+/**
+ * Hulls on offer at a station right now: the weekly shop selection plus what standing and research unlock
+ * (the faction's own hull for friends and members, tech hulls at larger yards once researched).
+ */
+export function shopHulls(state: GameState, st: StationStatic): string[] {
+  const dyn = state.stations[st.id];
+  const out = [...dyn.shop.hulls];
+  const ex = exclusiveHullFor(state, st);
+  if (ex && !out.includes(ex)) out.push(ex);
+  if (STATION_TYPES_BY_ID[st.type].shipyard >= 2)
+    for (const h of HULLS)
+      if (h.tech && state.research.done.includes(h.tech) && !out.includes(h.id)) out.push(h.id);
+  return out;
 }
 
 export function hullTradeIn(state: GameState): number {
@@ -345,8 +366,7 @@ function swapCore(state: GameState, hullId: string, cost: number): HullSwapPrevi
 export function buyHull(state: GameState, stationId: string, hullId: string): Result {
   const st = dockedShop(state, stationId);
   if (!st) return fail('err.noShipyard');
-  const dyn = state.stations[stationId];
-  if (!dyn.shop.hulls.includes(hullId)) return fail('err.itemGone');
+  if (!shopHulls(state, st).includes(hullId)) return fail('err.itemGone');
   if (hullId === state.ship.hullId) return fail('err.sameHull');
   const price = hullPrice(state, st, hullId);
   const cost = price - hullTradeIn(state);
@@ -360,6 +380,7 @@ export function buyHull(state: GameState, stationId: string, hullId: string): Re
   state.ship = p.newShip;
   state.inventory.push(...p.inventoryAdds);
   clampShipResources(state);
+  state.flags['hullChanges'] = Number(state.flags['hullChanges'] ?? 0) + 1;
   msg(state, 'msg.boughtHull', { hull: hullId, price: cost }, 'good');
   return ok();
 }

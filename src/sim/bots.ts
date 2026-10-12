@@ -5,6 +5,7 @@
 import { MODULES, MODULES_BY_ID } from '../content/modules';
 import { GOODS_BY_ID, MARKET_GOODS } from '../content/goods';
 import { STATION_TYPES_BY_ID } from '../content/stations';
+import { tariffMult } from '../core/territory';
 import { quoteBuy, quoteSell, feesFor, isBlackMarketGood } from '../core/economy';
 import { acceptContract } from '../core/contractOps';
 import { stationsNear } from '../core/contracts';
@@ -189,8 +190,9 @@ export class Bot {
       const has = (id: string) => enc.options.some((o) => o.id === id);
       const opt = (id: string) => enc.options.find((o) => o.id === id)!;
       const hp = s.ship.hp / Math.max(1, analyze(s).stats.hpMax);
-      let pick: 'fight' | 'flee' | 'bribe' | 'negotiate' | 'pay' | 'evade' = 'fight';
-      if (this.armed && hp > 0.6 && enc.tier <= 2) pick = 'fight';
+      let pick: 'fight' | 'flee' | 'bribe' | 'negotiate' | 'pay' | 'evade' | 'listen' = 'fight';
+      if (has('listen') && hp > 0.55) pick = 'listen';
+      else if (this.armed && hp > 0.6 && enc.tier <= 2) pick = 'fight';
       else if (has('evade')) pick = 'evade';
       else if (has('pay')) pick = 'pay';
       else if (has('bribe') && opt('bribe').cost! <= s.credits * 0.5) pick = 'bribe';
@@ -214,12 +216,18 @@ export class Bot {
     }
   }
 
-  private autoPending(): void {
+  /** Choice among the available options of a pending event (random by default; endgame bots decide). */
+  protected pickChoice(ev: { id: string }, opts: number[]): number {
+    void ev;
+    return opts.length ? this.rng.pick(opts) : 0;
+  }
+
+  protected autoPending(): void {
     const s = this.state;
     while (s.pendingEvent) {
       const ev = EVENTS_BY_ID[s.pendingEvent.eventId];
       const opts = ev.choices.map((_, i) => i).filter((i) => choiceAvailable(s, ev, i));
-      const pick = opts.length ? this.rng.pick(opts) : 0;
+      const pick = this.pickChoice(ev, opts);
       const r = resolveEvent(s, pick);
       if (!r.ok) {
         s.pendingEvent = null;
@@ -265,7 +273,11 @@ export class Bot {
     let guard = 0;
     while (s.location.systemId !== target && guard++ < 60) {
       if (s.dead) return false;
-      const path = shortestPath(this.g(), s.location.systemId, target);
+      // v4: stay out of dead zones (no markets, no fuel) when there is another way
+      const alive = (id: number) => (s.threat.grip[id] ?? 0) < 100;
+      const path =
+        shortestPath(this.g(), s.location.systemId, target, alive) ??
+        shortestPath(this.g(), s.location.systemId, target);
       if (!path || path.length < 2) return false;
       const next = path[1];
       let plan = planJump(s, next);
@@ -380,7 +392,10 @@ export class Bot {
     let best: { dest: StationStatic; goodId: string; qty: number; score: number; profit: number } | null =
       null;
     const near = stationsNear(g, here.systemId, 4).filter(
-      (n) => n.station.id !== here.id && n.station.type !== 'pirate',
+      (n) =>
+        n.station.id !== here.id &&
+        n.station.type !== 'pirate' &&
+        (s.threat.grip[n.station.systemId] ?? 0) < 85,
     );
     for (const { station: d } of near) {
       const known = s.prices[d.id];
@@ -395,8 +410,8 @@ export class Bot {
         if (stock < 2) continue;
         const qMax = maxBuy(s, here.id, goodId);
         if (qMax <= 0) continue;
-        const feesH = feesFor(here, s.difficulty, false);
-        const feesD = feesFor(d, s.difficulty, false);
+        const feesH = feesFor(here, s.difficulty, false, tariffMult(s, here));
+        const feesD = feesFor(d, s.difficulty, false, tariffMult(s, d));
         const dStock = oracle ? stockOf(s, d.id, goodId) : known[goodId]?.stock;
         if (dStock === undefined) continue;
         // pick qty maximising profit under slippage (coarse search)
@@ -440,7 +455,7 @@ export class Bot {
     const g = this.g();
     const here = g.systems[s.location.systemId];
     const cands = g.systems
-      .filter((x) => !s.visited.includes(x.id) && s.seen.includes(x.id))
+      .filter((x) => !s.visited.includes(x.id) && s.seen.includes(x.id) && (s.threat.grip[x.id] ?? 0) < 100)
       .map((x) => ({ x, d: dist(here, x) }))
       .sort((a, b) => a.d - b.d)
       .slice(0, 6);
@@ -524,6 +539,12 @@ export class Bot {
     void startCredits;
   }
 
+  /** Extra score for a contract (endgame bots prefer jobs of their faction). */
+  protected contractBonus(c: { facOnly?: boolean }): number {
+    void c;
+    return 0;
+  }
+
   stepHauler(): void {
     const s = this.state;
     if (!this.dockSomewhere()) return void this.exploreStep(false);
@@ -548,7 +569,7 @@ export class Bot {
         const len = this.pathLen(st.systemId, c.destSystem);
         const days = len / Math.max(1, stats.jumpSpeed) + 1;
         const fuel = len * stats.fuelPerLy * 4.6;
-        return { c, score: (c.reward - fuel) / days, len, fuel };
+        return { c, score: (c.reward - fuel) / days + this.contractBonus(c), len, fuel };
       })
       .filter((x) => x.score > 30 && x.len < 70)
       .sort((a, b) => b.score - a.score);
@@ -754,8 +775,18 @@ export class Bot {
     const start = s.day;
     this.run.startWorth = netWorth(s);
     let guard = 0;
-    while (s.day - start < days && !s.dead && guard++ < 5000) {
+    let stall = 0;
+    let lastDay = s.day;
+    while (s.day - start < days && !s.dead && !s.ending && guard++ < 5000) {
       const deaths0 = s.stats.deaths;
+      // a broke or stuck bot would spin without time passing: let a day go by
+      if (s.day === lastDay && ++stall > 20) {
+        wait(s, 1);
+        stall = 0;
+      } else if (s.day !== lastDay) {
+        stall = 0;
+        lastDay = s.day;
+      }
       this.step();
       this.autoEvent();
       if (s.stats.deaths > deaths0 && this.run.firstDeathDay === null) this.run.firstDeathDay = s.day - start;

@@ -10,8 +10,10 @@ import { ContractCard } from './ContractsTab';
 import { abandonContract } from '../../core/contractOps';
 import { act } from '../store';
 import { Icon } from '../Icon';
+import { AchievementsTab, LanguageTab, StoryTab, ThreatTab } from './JournalExtra';
 
-type Tab = 'contracts' | 'notes' | 'prices' | 'discoveries' | 'stats';
+type Tab =
+  'contracts' | 'notes' | 'prices' | 'discoveries' | 'story' | 'language' | 'threat' | 'ach' | 'stats';
 
 export function JournalScreen() {
   void rev.value;
@@ -41,6 +43,10 @@ export function JournalScreen() {
                 icon: 'scan',
                 badge: s.discoveries.filter((d) => !d.sold).length,
               },
+              { id: 'story', label: t('journal.story'), icon: 'star' },
+              { id: 'language', label: t('journal.language'), icon: 'anomaly' },
+              { id: 'threat', label: t('journal.threat'), icon: 'warning' },
+              { id: 'ach', label: t('ach.title'), icon: 'check' },
               { id: 'stats', label: t('journal.stats'), icon: 'info' },
             ]}
             value={tab}
@@ -176,6 +182,10 @@ export function JournalScreen() {
                   ))}
               </div>
             )}
+            {tab === 'story' && <StoryTab />}
+            {tab === 'language' && <LanguageTab />}
+            {tab === 'threat' && <ThreatTab />}
+            {tab === 'ach' && <AchievementsTab />}
             {tab === 'stats' && (
               <div class="stack">
                 <div class="stats-grid" data-testid="stats-grid">

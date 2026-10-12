@@ -12,6 +12,9 @@ import { MODULES_BY_ID } from '../content/modules';
 import { hullSlots, moduleFits, newModule } from '../core/ship';
 import { addGoods } from '../core/cargo';
 import { analyze, newUid } from '../core/state';
+import { cheatApi } from './cheats';
+
+const CHEATS = import.meta.env.VITE_E2E === '1' || import.meta.env.DEV ? cheatApi : null;
 
 /**
  * Test hooks, enabled only with `?e2e=1`. They never change game rules: they let Playwright select a system
@@ -133,6 +136,8 @@ export function installE2eHooks(): void {
       }
       rev.value++;
     },
+    /** Developer cheats: only present in builds made with VITE_E2E=1 (never in the production build). */
+    cheat: CHEATS ? CHEATS() : null,
     /** First neighbouring system that has a station (for scripted trade routes). */
     neighborWithStation: () => {
       const s = game.value!;
