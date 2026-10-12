@@ -7,7 +7,7 @@ import type { Cond } from '../core/eventTypes';
  */
 export interface Beat {
   id: string;
-  trigger: 'dock' | 'arrival';
+  trigger: 'dock' | 'arrival' | 'both';
   when: Cond[];
   cooldown?: number;
 }
@@ -20,7 +20,7 @@ export const STORY_BEATS: Beat[] = [
   {
     id: 'st_lumen',
     trigger: 'dock',
-    when: [story(2, 2), { t: 'fRep', f: 'lumen', min: 5 }, { t: 'dayMin', n: 30 }],
+    when: [story(2, 2), { t: 'fRep', f: 'lumen', min: 0 }, { t: 'dayMin', n: 30 }],
   },
   { id: 'st_dead', trigger: 'arrival', when: [{ t: 'gripHere', min: 100 }, story(2, 3)] },
   {
@@ -57,7 +57,7 @@ export const STORY_BEATS: Beat[] = [
   // endings: offered when the conditions hold; "not yet" brings them back later
   {
     id: 'end_science',
-    trigger: 'arrival',
+    trigger: 'both',
     when: [
       story(5),
       { t: 'atBase' },
@@ -81,7 +81,7 @@ export const STORY_BEATS: Beat[] = [
   },
   {
     id: 'end_exodus',
-    trigger: 'arrival',
+    trigger: 'both',
     when: [
       story(5),
       { t: 'atBase' },
@@ -99,7 +99,7 @@ export const STORY_BEATS: Beat[] = [
       { t: 'owner', f: 'consortium' },
       { t: 'fMember', f: 'consortium' },
       { t: 'fRank', min: 5 },
-      { t: 'creditsMin', n: 350000 },
+      { t: 'creditsMin', n: 150000 },
       { t: 'building', id: 'port', min: 3 },
     ],
     cooldown: 25,

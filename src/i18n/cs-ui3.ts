@@ -141,3 +141,20 @@ Object.assign(csUi3, {
   'ui3.membersOnly': 'Jen pro členy',
   'ui3.evac': 'Evakuace',
 });
+Object.assign(csUi3, {
+  'journal.goals': 'Cesty ven',
+  'journal.goalsHelp':
+    'Co je potřeba splnit pro každý konec. Konec se nabídne, když splníš všechno a přiletíš či přistaneš.',
+  'cond.atBase': 'Být na své základně',
+  'cond.building': 'Budova {b}, úroveň {n}',
+  'cond.tech': 'Výzkum: {tech}',
+  'cond.artifacts': 'Artefakty: alespoň {n}',
+  'cond.grip': 'V systému sevřeném Šedí ({n}+)',
+  'cond.lang': 'Znát {n} % slovníku',
+  'cond.hull': 'Mít v hangáru loď {hull}',
+  'cond.fleet': 'Flotila: alespoň {n} lodě v hangáru',
+  'cond.owner': 'V prostoru frakce {f}',
+  'cond.member': 'Být členem frakce {f}',
+  'cond.rank': 'Hodnost ve frakci: {n}',
+  'cond.credits': 'Mít alespoň {n} kr',
+});

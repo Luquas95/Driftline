@@ -7,7 +7,7 @@ export function rollStory(state: GameState, trigger: 'dock' | 'arrival', ctx: Ev
   if (state.pendingEvent || state.encounter || state.combat || state.dead) return false;
   if (state.ending && !state.ending.freePlay) return false;
   for (const b of STORY_BEATS) {
-    if (b.trigger !== trigger) continue;
+    if (b.trigger !== trigger && b.trigger !== 'both') continue;
     const key = `sb:${b.id}`;
     const last = state.flags[key];
     if (typeof last === 'number') {

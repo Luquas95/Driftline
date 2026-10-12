@@ -1,6 +1,7 @@
 /** Endings of the game and the summary shown on the final screen. */
 import { checkAchievements } from './achievements';
 import { Rng } from './rng';
+import { T } from './tuning';
 import { galaxyOf, msg } from './state';
 import { consumedShare } from './threat';
 import { understanding } from './lang';
@@ -33,7 +34,9 @@ export function triggerEnding(state: GameState, id: string): void {
   const def = ENDINGS_BY_ID[id];
   if (!def) return;
   state.ending = { id, day: state.day, freePlay: def.saves };
-  if (def.saves) state.threat.stopped = true;
+  // the Dominion only holds the Grey back (the text says it keeps growing, slowly)
+  if (def.saves && id !== 'dominion') state.threat.stopped = true;
+  else if (id === 'dominion') state.threat.mitigation = T.threat.mitigationCap;
   state.story.log.push({ day: state.day, key: `ending.${id}` });
   msg(state, 'msg.ending', { ending: id }, def.tone === 'bad' ? 'bad' : 'good');
   checkAchievements(state);

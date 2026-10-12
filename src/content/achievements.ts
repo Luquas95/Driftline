@@ -1,5 +1,6 @@
 import type { GameState } from '../core/types';
 import { FACTION_IDS } from '../core/worldTypes';
+import { TECHS } from './tech';
 
 export type AchCategory = 'trade' | 'explore' | 'combat' | 'story' | 'challenge';
 
@@ -42,7 +43,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   a('artifact_1', 'explore', (s) => s.story.artifacts >= 1),
   a('artifact_3', 'explore', (s) => s.story.artifacts >= 3),
   a('techs_10', 'explore', (s) => s.research.done.length >= 10),
-  a('techs_all', 'explore', (s) => s.research.done.length >= 24),
+  a('techs_all', 'explore', (s) => s.research.done.length >= TECHS.length),
   // combat and crew
   a('first_blood', 'combat', (s) => s.stats.victories >= 1),
   a('warrior_25', 'combat', (s) => s.stats.victories >= 25),

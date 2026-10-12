@@ -594,7 +594,7 @@ export class EndgameBot extends Bot {
         if (
           s.fac.member === 'consortium' &&
           s.fac.rank >= 5 &&
-          s.credits >= 350000 &&
+          s.credits >= 150000 &&
           s.base &&
           levelOf(s.base, 'port') >= 3
         ) {

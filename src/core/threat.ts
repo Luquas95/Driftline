@@ -100,7 +100,7 @@ export function spreadSpeed(state: GameState, day: number): number {
   return (
     T.threat.rate[rk] *
     (1 + t / T.threat.growthDays[rk]) *
-    (1 - Math.min(T.threat.mitigationCap, th.mitigation))
+    (1 - Math.min(T.threat.mitigationCap, th.mitigation + 0.04 * (state.base?.buildings.anchor ?? 0)))
   );
 }
 
@@ -108,7 +108,7 @@ export function spreadSpeed(state: GameState, day: number): number {
 export function threatDaily(state: GameState, day: number): void {
   const th = state.threat;
   if (state.ending && !state.ending.freePlay) return;
-  if (th.stopped || state.ending?.freePlay) {
+  if (th.stopped || (state.ending?.freePlay && state.ending.id !== 'dominion')) {
     // the front recedes
     let n = 0;
     for (const k of Object.keys(th.grip)) {

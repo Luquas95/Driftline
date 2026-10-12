@@ -314,7 +314,7 @@ describe('story: every ending can be reached', () => {
     };
     const sysC = g.systems.find((x) => ownerOf(s, x.id) === 'consortium')!;
     place(s, sysC.id);
-    expect(evalCond(s, { t: 'creditsMin', n: 350000 })).toBe(true);
+    expect(evalCond(s, { t: 'creditsMin', n: 150000 })).toBe(true);
     beat(s, 'dock', 'end_dominion', 0);
     expect(s.ending).toMatchObject({ id: 'dominion', freePlay: true });
   });

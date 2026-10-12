@@ -303,7 +303,7 @@ Hlavní linka „Dlouhá cesta“ má pět stádií (`story.stage`): první sign
 | **Věda** (`science`) | stádium 5, hráč na základně s budovou `anchor`, technologie `grey_decode`, ≥ 3 artefakty |
 | **Dohoda** (`accord`) | stádium 5, v systému s Šedí ≥ 30, technologie `accord_protocol`, ≥ 85 % slovníku, ≥ 2 artefakty |
 | **Exodus** (`exodus`) | stádium 5, na základně, technologie `exodus_drive`, loď `ark` a ≥ 3 lodě v hangáru |
-| **Nadvláda** (`dominion`) | stádium 5, člen Konsorcia hodnosti 5 v jeho prostoru, ≥ 350 000 kr, přístav ≥ 3 |
+| **Nadvláda** (`dominion`) | stádium 5, člen Konsorcia hodnosti 5 v jeho prostoru, ≥ 150 000 kr, přístav ≥ 3 |
 | **Pohlcení** (`consumed`) | přijde samo, když je pohlceno 80 % galaxie |
 
 Tři konce zachrání galaxii (věda, dohoda, nadvláda) a hra pokračuje v **volné hře** bez hrozby, exodus a pohlcení hru uzavřou. Závěrečná obrazovka (`EndingScreen`) ukazuje statistiky, rozhodnutí, osudy posádky (3 varianty na konec, ze semínka) a postoj frakcí.

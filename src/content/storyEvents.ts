@@ -414,7 +414,7 @@ ev(
         3,
       ),
       out(
-        'Plocha tě vtáhne dovnitř, jen na chvíli. Vyvrávíš zpět s krvácejícím nosem a novým slovem v hlavě.',
+        'Plocha tě vtáhne dovnitř, jen na chvíli. Vracíš se zpět s krvácejícím nosem a novým slovem v hlavě.',
         [{ t: 'artifact' }, lang(2), hurt(10), discover(900)],
         2,
       ),

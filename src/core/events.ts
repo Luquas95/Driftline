@@ -364,7 +364,7 @@ export function applyEffect(state: GameState, e: Effect, ctx?: EventContext): vo
       break;
     case 'artifact':
       state.story.artifacts++;
-      state.threat.mitigation = Math.min(T.threat.mitigationCap, state.threat.mitigation + 0.04);
+      state.threat.mitigation = Math.min(T.threat.mitigationCap, state.threat.mitigation + 0.02);
       addResearchPoints(state, 25);
       msg(state, 'msg.artifact', undefined, 'good');
       break;
