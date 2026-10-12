@@ -211,6 +211,7 @@ export function transferGoods(
   if (!inBaseSystem(state)) return fail('err.notAtBase');
   if (!GOODS_BY_ID[goodId] || !Number.isFinite(qty) || qty <= 0) return fail('err.badAmount');
   qty = Math.floor(qty);
+  if (qty < 1) return fail('err.badAmount');
   if (dir === 'toBase') {
     const have = unitsOf(state.cargo, goodId);
     const n = Math.min(qty, have, storageLeft(base));

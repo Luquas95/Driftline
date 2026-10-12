@@ -207,7 +207,11 @@ export function destroyShip(state: GameState): void {
     state.ship.fuel = st.fuelCap * 0.4;
     state.ship.supplies = st.suppliesCap * 0.5;
     state.ship.shield = 0;
-    const home = g.stationsById[state.home] ?? firstStation(g);
+    const homeSt = g.stationsById[state.home];
+    const home =
+      homeSt && !isDeadSystem(state, homeSt.systemId)
+        ? homeSt
+        : (nearestStation(state, g) ?? homeSt ?? firstStation(g));
     state.location = { systemId: home.systemId, stationId: home.id, body: home.bodyIndex };
     state.day += 3;
     if (!state.visited.includes(home.systemId)) state.visited.push(home.systemId);
@@ -230,6 +234,11 @@ function firstStation(g: Galaxy): StationStatic {
   return g.systems.find((s) => s.stations.length)!.stations[0];
 }
 
+/** A system the Grey has consumed: nothing works there, so rescues and respawns must not put the player in it. */
+export function isDeadSystem(state: GameState, systemId: number): boolean {
+  return (state.threat?.grip?.[systemId] ?? 0) >= T.threat.consumeAt;
+}
+
 function nearestStation(state: GameState, g: Galaxy): StationStatic | null {
   const a = g.systems[state.location.systemId];
   let best: StationStatic | null = null;
@@ -237,7 +246,7 @@ function nearestStation(state: GameState, g: Galaxy): StationStatic | null {
   for (const s of g.systems)
     for (const st of s.stations) {
       const d = Math.hypot(s.x - a.x, s.y - a.y);
-      if (d < bd && st.type !== 'pirate') {
+      if (d < bd && st.type !== 'pirate' && !isDeadSystem(state, s.id)) {
         bd = d;
         best = st;
       }

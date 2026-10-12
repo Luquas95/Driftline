@@ -46,6 +46,7 @@ import {
   updateSeen,
   withRng,
   type Result,
+  isDeadSystem,
 } from './state';
 import { passTime } from './time';
 import { rollStory } from './story';
@@ -294,7 +295,7 @@ export function callTow(state: GameState): Result<{ station: string; fee: number
   for (const s of g.systems) {
     for (const st of s.stations) {
       const d = dist(here, s);
-      if (d < bd && st.type !== 'pirate') {
+      if (d < bd && st.type !== 'pirate' && !isDeadSystem(state, s.id)) {
         bd = d;
         best = st;
       }
@@ -307,7 +308,8 @@ export function callTow(state: GameState): Result<{ station: string; fee: number
   arrive(state, best.systemId);
   state.location = { systemId: best.systemId, stationId: best.id, body: best.bodyIndex };
   state.home = best.id;
-  state.ship.fuel = Math.max(state.ship.fuel, Math.min(stats.fuelCap, 4));
+  // enough for a few jumps, not a token amount: the tow must not strand the player again
+  state.ship.fuel = Math.max(state.ship.fuel, Math.min(stats.fuelCap, Math.max(4, stats.fuelCap * 0.25)));
   learnStation(state, best);
   refreshBoard(g, state, best);
   refreshShop(state, best);

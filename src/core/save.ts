@@ -11,7 +11,9 @@ import { ENEMIES_BY_ID } from '../content/enemies';
 import { POWER_GROUPS, WEAPON_KINDS, type CShip, type CombatOutcome, type CombatState } from './combat/types';
 import { QUALITIES } from './types';
 import { newWorld } from './world';
-import { FACTION_IDS } from './worldTypes';
+import { FACTION_IDS, type Base } from './worldTypes';
+import { BUILDINGS_BY_ID } from '../content/buildings';
+import { ENDINGS_BY_ID } from './endings';
 
 /**
  * Save format: the game state is plain JSON. The galaxy is NOT stored: it is regenerated from the seed,
@@ -345,6 +347,70 @@ function repair(state: GameState): void {
   state.messages = state.messages.slice(-120);
 }
 
+/** The base is dropped when its structure is unusable, otherwise unknown content is removed and gaps are filled. */
+function repairBase(state: GameState): void {
+  const b = state.base;
+  if (!b) return;
+  const isObj = (x: unknown): x is Record<string, unknown> =>
+    !!x && typeof x === 'object' && !Array.isArray(x);
+  const sys = Number.isInteger(b.systemId) && b.systemId >= 0 && b.systemId < state.galaxySize;
+  if (!sys || !isObj(b)) {
+    state.base = null;
+    return;
+  }
+  if (typeof b.name !== 'string') b.name = 'Base';
+  if (!finite(b.bodyIndex, 0, 100)) b.bodyIndex = 0;
+  if (b.kind !== 'station' && b.kind !== 'colony') b.kind = 'station';
+  if (!finite(b.founded)) b.founded = 0;
+  if (!finite(b.treasury, 0, 1e12)) b.treasury = 0;
+  if (!finite(b.lastTick)) b.lastTick = Math.floor(state.day);
+  if (!isObj(b.buildings)) b.buildings = {};
+  for (const [k, v] of Object.entries(b.buildings))
+    if (!BUILDINGS_BY_ID[k as never] || !finite(v, 0, 10)) delete b.buildings[k];
+  b.queue = Array.isArray(b.queue)
+    ? b.queue.filter((q) => q && BUILDINGS_BY_ID[q.id as never] && finite(q.level, 1, 10) && finite(q.done))
+    : [];
+  if (!isObj(b.storage)) b.storage = {};
+  for (const [k, v] of Object.entries(b.storage))
+    if (!GOODS_BY_ID[k] || !finite(v, 0, 1e9)) delete b.storage[k];
+  b.lines = Array.isArray(b.lines)
+    ? b.lines.filter((l) => l && GOODS_BY_ID[l.goodId] && finite(l.cap, 0))
+    : [];
+  b.orders = Array.isArray(b.orders)
+    ? b.orders.filter(
+        (o) =>
+          o &&
+          finite(o.done) &&
+          ((o.kind === 'module' && MODULES_BY_ID[o.item]) || (o.kind === 'hull' && HULLS_BY_ID[o.item])),
+      )
+    : [];
+  if (!isObj(b.autoSell)) b.autoSell = {};
+  b.hangar = Array.isArray(b.hangar)
+    ? b.hangar.filter(
+        (f) => f && f.ship && HULLS_BY_ID[f.ship.hullId] && Array.isArray(f.crew) && typeof f.id === 'string',
+      )
+    : [];
+  for (const f of b.hangar) {
+    if (!['idle', 'trade', 'escort', 'guard'].includes(f.order)) f.order = 'idle';
+    if (!finite(f.idleUntil)) f.idleUntil = 0;
+    if (!finite(f.earned)) f.earned = 0;
+    if (!finite(f.trips)) f.trips = 0;
+    if (f.route && (!isObj(f.route) || typeof f.route.from !== 'string' || typeof f.route.to !== 'string'))
+      f.route = null;
+    if (f.trip && (!isObj(f.trip) || !finite(f.trip.end) || !finite(f.trip.profit) || !finite(f.trip.cost)))
+      f.trip = null;
+  }
+  b.attack =
+    b.attack && finite(b.attack.strength) && finite(b.attack.resolve) && finite(b.attack.day)
+      ? b.attack
+      : null;
+  b.log = Array.isArray(b.log) ? b.log.slice(-60) : [];
+  const st = isObj(b.stats) ? b.stats : ({} as Base['stats']);
+  for (const k of ['produced', 'sold', 'fleetIncome', 'upkeep', 'attacks', 'repelled'] as const)
+    if (!finite(st[k])) st[k] = 0;
+  b.stats = st;
+}
+
 /** v4 sections: fill in anything missing or malformed with deterministic defaults, drop unknown content ids. */
 function repairWorld(state: GameState): void {
   const w = newWorld(state.seed, state.galaxySize, state.difficulty, state.location.systemId);
@@ -387,7 +453,7 @@ function repairWorld(state: GameState): void {
     th.foci = th.foci.filter((id) => Number.isInteger(id) && id >= 0 && id < state.galaxySize);
     if (!th.foci.length) th.foci = w.threat.foci;
     for (const [k, v] of Object.entries(th.grip))
-      if (!finite(v, 0, 100) || Number(k) >= state.galaxySize) delete th.grip[Number(k)];
+      if (!finite(v, 0, 100) || !/^\d+$/.test(k) || Number(k) >= state.galaxySize) delete th.grip[k as never];
     th.consumed = Object.values(th.grip).filter((v) => v >= 100).length;
     if (!finite(th.mitigation, 0, 1)) th.mitigation = 0;
     if (!finite(th.start, 0, 1e5)) th.start = w.threat.start;
@@ -402,7 +468,17 @@ function repairWorld(state: GameState): void {
     state.story.log = Array.isArray(state.story.log) ? state.story.log.slice(-200) : [];
   }
   if (!state.ach || typeof state.ach !== 'object') state.ach = {};
-  if (state.ending && (typeof state.ending.id !== 'string' || !finite(state.ending.day))) state.ending = null;
+  if (state.ending && (!ENDINGS_BY_ID[state.ending.id] || !finite(state.ending.day))) state.ending = null;
+  if (!['low', 'normal', 'high'].includes(state.difficulty?.risk)) state.difficulty.risk = 'normal';
+  if (f && typeof f === 'object')
+    for (const [k, v] of Object.entries(state.fac.owner))
+      if (v !== null && !FACTION_IDS.includes(v as never)) delete state.fac.owner[Number(k)];
+  if (!finite(state.lastEconDay)) state.lastEconDay = Math.floor(state.day);
+  state.lastEconDay = Math.max(
+    Math.floor(state.day) - 400,
+    Math.min(Math.floor(state.day), state.lastEconDay),
+  );
+  repairBase(state);
   state.ending ??= null;
   if (!state.run || typeof state.run.start !== 'string') state.run = w.run;
 }

@@ -158,3 +158,49 @@ Kapitál: snadná 60000 kr, normální 40000 kr, těžká 25000 kr. Boti si prvn
 **Závěr k novému začátku.** Žádná první loď není jistá prohra pro všechny strategie: kurýr a kestrel jsou v normální obtížnosti kladné, průzkumník s lodí scout vydělává na všech obtížnostech. Nejdražší lodě (merchant) nechají málo na první náklad, těžařské trupy mají pomalý rozjezd (bot kupuje moduly až z výdělku) a na těžké obtížnosti jsou obchodník a těžař v prvních 90 dnech kolem nuly, což odpovídá záměru „těžká“. Žádná loď není triviálně nejlepší. Do ladění dál patří ceny těžařských trupů.
 
 Doba běhu simulace: 126 s.
+
+## Koncová hra: základna, frakce, Šeď a konce
+
+### Rychlost Šedi (bez zásahu hráče)
+
+Dny do pohlcení podílu galaxie, medián přes semínka; „zpomalená“ = plné zpomalení z výzkumu (strop 85 %).
+
+| Riziko | 20 % | 50 % | 80 % (konec „pohlceno“) | 80 % při plném zpomalení |
+|---|---:|---:|---:|---:|
+| low | 401 | 516 | 582 | 1734 |
+| normal | 238 | 337 | 408 | 1238 |
+| high | 187 | 250 | 313 | 964 |
+
+### Boti v koncové hře
+
+Bot má ke stejným strategiím jako dosud správce základny: staví podle plánu cíle, zkoumá, plní příběhové zastávky a v závěru se pokusí o „svůj“ konec. Boti hrají s předpokladem: materiál na stavbu kupují přímo do skladu a skenování ložisek berou jako hotové. Druhý scénář přidává příjem navíc (model hráče, který vydělává víc než boti).
+
+#### Boti sami (příjem jen z obchodu)
+
+| Strategie (cíl) | Konce | Medián dne konce | Základna (den) | Příběh 5 (den) | Podíl pasivního příjmu (den ~200) | Pohlceno na konci |
+|---|---|---:|---:|---:|---:|---:|
+| miner (science) | nic 1/3, consumed 2/3 | 452 | 215 | 352 | 0 % | 80 % |
+| explorer (accord) | consumed 3/3 | 433 | 239 | 426 | 0 % | 80 % |
+| trader (exodus) | consumed 3/3 | 421 | 163 | 401 | 0 % | 80 % |
+| hauler (dominion) | consumed 3/3 | 409 | 249 | 394 | 0 % | 80 % |
+
+#### Hráč s vyšším příjmem (+600 kr/den navíc)
+
+| Strategie (cíl) | Konce | Medián dne konce | Základna (den) | Příběh 5 (den) | Podíl pasivního příjmu (den ~200) | Pohlceno na konci |
+|---|---|---:|---:|---:|---:|---:|
+| miner (science) | science 2/3, consumed 1/3 | 398 | 38 | 340 | 3 % | 52 % |
+| explorer (accord) | accord 1/3, consumed 2/3 | 438 | 35 | 233 | 1 % | 80 % |
+| trader (exodus) | consumed 3/3 | 435 | 30 | 317 | 0 % | 80 % |
+| hauler (dominion) | consumed 3/3 | 426 | 43 | 252 | 18 % | 80 % |
+
+**Čtení tabulky.** Bot je v koncové hře slabý: nechává Šeď růst a spoléhá na obchod. Každý ze čtyř koncových scénářů je dosažitelný (scénář s příběhem prochází `tests/story.test.ts`), tabulka ukazuje tempo, kterého dosáhne bot, ne strop hráče.
+
+**Co z toho plyne.**
+
+- *Tempo Šedi:* normální obtížnost dává asi 410 až 475 dní do pohlcení 80 % galaxie, vysoká asi 310 až 350, nízká 530 až 580. Plné zpomalení je asi 3×, takže výzkum a rozhodnutí kupují čas, ale hru nezastaví.
+- *Pasivní příjem základny a flotily* je v polovině hry (kolem dne 200) 0 až 18 % přírůstku jmění, tedy hluboko pod hranicí 40 %. Základna je investice a zázemí, ne stroj na peníze.
+- *Konce bota:* bot dosáhl vědy (2 ze 3) a dohody (1 ze 3) jen s příjmem navíc a bez něj ho vždy pohltila Šeď. Exodus a nadvládu bot nedokončil: jeho obchodní příjem (asi 100 až 450 kr/den) nestačí na archu (118 000 kr) ani na 150 000 kr s hodností 5, a příběh dosahuje stádia 5 až kolem dne 250 až 430. Obě cesty jsou ve hře splnitelné (podmínky a skriptovaný průchod jsou v `tests/story.test.ts`), ale na ověření tempa člověkem je potřeba hra s lidským hráčem; simulace dává dolní odhad.
+- *Délka hry:* konec přichází mezi dnem 330 a 480, což odpovídá zhruba 6 až 15 hodinám hraní podle toho, kolik dní hráč stráví jedním skokem a zakázkou.
+
+Pro ladění: `COST_SCALE` (`content/buildings.ts`), `T.threat` (`core/tuning.ts`), `labRate` (`core/research.ts`), cena `ark` (`content/hulls.ts`) a práh nadvlády (`content/story.ts`).
+

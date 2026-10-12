@@ -288,7 +288,7 @@ Lodě v hangáru (počet míst `1 + úroveň hangáru`) mají rozkaz: stát, **o
 
 ### 16.5 Šeď (`core/threat.ts`)
 
-Šeď je 0 až 100 „sevření“ na systém. Začíná v 1 až 3 ohniscích daleko od startu (den 40 / 28 / 18 podle rizika) a šíří se po trasách rychlostí `rate × (1 + t / growthDays) × (1 − zpomalení)`. Systém je při 100 pohlcen: žádný trh, žádné zakázky, hrozba pro lodě, přistání je zakázané (`err.consumed`). Kalibrace: 80 % galaxie je pohlceno za zhruba **520 / 420 / 320 dní** (nízké / normální / vysoké riziko), plné zpomalení z výzkumu a rozhodnutí (strop 85 %) to protáhne zhruba na dvojnásobek. Frakce reagují na procento pohlcení (milníky `msg.threatStage.*`), uprchlíci vytvářejí evakuační zakázky. Setkání se Šedí (`enemy.grey`) lze také vyslechnout (`listen`), což učí slova.
+Šeď je 0 až 100 „sevření“ na systém. Začíná v 1 až 3 ohniscích daleko od startu (den 40 / 28 / 18 podle rizika) a šíří se po trasách rychlostí `rate × (1 + t / growthDays) × (1 − zpomalení)`. Systém je při 100 pohlcen: žádný trh, žádné zakázky, hrozba pro lodě, přistání je zakázané (`err.consumed`). Kalibrace (medián přes semínka, viz `docs/balance.md`): 80 % galaxie je pohlceno za zhruba **530 až 580 / 410 až 475 / 310 až 350 dní** (nízké / normální / vysoké riziko, podle sady semínek); plné zpomalení z výzkumu, artefaktů, rozhodnutí a budovy Kotva (strop 85 %) to protáhne zhruba na trojnásobek. Rozhodnutí hráče tedy mění, jestli stihne konec, ne jestli hra běží. Frakce reagují na procento pohlcení (milníky `msg.threatStage.*`), uprchlíci vytvářejí evakuační zakázky. Setkání se Šedí (`enemy.grey`) lze také vyslechnout (`listen`), což učí slova.
 
 ### 16.6 Jazyk (`core/lang.ts`, `content/lexicon.ts`)
 

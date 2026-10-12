@@ -775,8 +775,18 @@ export class Bot {
     const start = s.day;
     this.run.startWorth = netWorth(s);
     let guard = 0;
+    let stall = 0;
+    let lastDay = s.day;
     while (s.day - start < days && !s.dead && !s.ending && guard++ < 5000) {
       const deaths0 = s.stats.deaths;
+      // a broke or stuck bot would spin without time passing: let a day go by
+      if (s.day === lastDay && ++stall > 20) {
+        wait(s, 1);
+        stall = 0;
+      } else if (s.day !== lastDay) {
+        stall = 0;
+        lastDay = s.day;
+      }
       this.step();
       this.autoEvent();
       if (s.stats.deaths > deaths0 && this.run.firstDeathDay === null) this.run.firstDeathDay = s.day - start;

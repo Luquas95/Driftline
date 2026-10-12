@@ -9,7 +9,7 @@ Formát vychází z [Keep a Changelog](https://keepachangelog.com/cs/1.1.0/), ve
 - **Základna:** založení na prozkoumaném tělese, 10 budov s úrovněmi (důl, rafinerie, továrna, sklad, loděnice, hangár, laboratoř, obrana, přístav, kotva), výroba v čase, sklad, zakázky na moduly a lodě, opravy a doplňování u základny, nájezdy a obrana. Obrazovka základny s vektorovým pohledem, který roste.
 - **Výzkum:** 26 technologií v 5 větvích odemykají moduly, zpomalují Šeď, učí slova.
 - **Flotila:** lodě v hangáru obchodují samy po trasách ze skutečných cen, eskortují nebo hlídají; výměna lodi na základně.
-- **Šeď:** hrozba, která se pomalu šíří po trasách a pohlcuje galaxii za asi 320 až 520 dní podle obtížnosti; lze ji zpomalit a zastavit. Pohlcené systémy jsou mrtvé. Zobrazení na mapě a v deníku.
+- **Šeď:** hrozba, která se pomalu šíří po trasách a pohlcuje galaxii za asi 310 až 580 dní podle obtížnosti; lze ji zpomalit a zastavit. Pohlcené systémy jsou mrtvé. Zobrazení na mapě a v deníku.
 - **Cizí řeč:** slovník v deníku, překlad po slovech, zápis deterministicky ze semínka.
 - **Příběh a 5 konců** (věda, dohoda, exodus, nadvláda, pohlcení) se závěrečnou obrazovkou (statistiky, rozhodnutí, osudy posádky) a volnou hrou po záchraně galaxie.
 - **41 úspěchů**, 4 odemykatelné začátky, **denní výzva** s místním žebříčkem (profil v `localStorage`).
