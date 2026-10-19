@@ -1,9 +1,8 @@
 import { useState } from 'preact/hooks';
 import { HULLS_BY_ID } from '../../content/hulls';
 import { MODULES_BY_ID } from '../../content/modules';
-import { addGoods, cargoMass } from '../../core/cargo';
+import { cargoMass } from '../../core/cargo';
 import { computeShipStats, hullSlots, moduleFits, modulePrice } from '../../core/ship';
-import { analyze } from '../../core/state';
 import {
   buyHull,
   buyModule,
@@ -192,28 +191,7 @@ export function ShipyardTab({ st }: { st: StationStatic }) {
                   >
                     {t('market.sell')} ({money(sellValue(m))})
                   </Btn>
-                  <Btn
-                    small
-                    kind="danger"
-                    onClick={() => {
-                      const r = act((x) =>
-                        disassembleModule(x, m.uid, (g, q) => {
-                          const { stats, dims } = analyze(x);
-                          return addGoods(
-                            x.cargo,
-                            dims,
-                            { chilledCells: stats.chilledCells, secureCells: stats.secureCells },
-                            g,
-                            q,
-                            0,
-                            x.day,
-                          ).added;
-                        }),
-                      );
-                      if (report(r) && r.ok)
-                        toast(t('yard.disassembled', { metals: r.metals, parts: r.parts }), 'info');
-                    }}
-                  >
+                  <Btn small kind="danger" onClick={() => disassemble(m.uid)}>
                     {t('yard.disassemble')}
                   </Btn>
                 </div>
@@ -295,6 +273,12 @@ export function InstallModal({ mod, onClose }: { mod: ModuleInstance; onClose: (
       </div>
     </Modal>
   );
+}
+
+/** Break a module (from the inventory or the ship) down into materials in the hold. */
+export function disassemble(uid: string): void {
+  const r = act((x) => disassembleModule(x, uid));
+  if (report(r) && r.ok) toast(t('yard.disassembled', { metals: r.metals, parts: r.parts }), 'info');
 }
 
 export function StatDiff({

@@ -35,7 +35,6 @@ import {
   toggleModule,
 } from '../src/core/shop';
 import { dockAt } from '../src/core/game';
-import { addGoods } from '../src/core/cargo';
 import { mk } from './helpers';
 
 const uid = (() => {
@@ -243,20 +242,7 @@ describe('shipyard', () => {
   it('disassembles modules into materials', () => {
     const s = docked('DIS');
     s.inventory.push(newModule('laser_m', 'C', newUid(s, 'm')));
-    const stats = analyze(s);
-    void stats;
-    const res = disassembleModule(s, s.inventory[0].uid, (g, q) => {
-      const { stats: st, dims } = analyze(s);
-      return addGoods(
-        s.cargo,
-        dims,
-        { chilledCells: st.chilledCells, secureCells: st.secureCells },
-        g,
-        q,
-        0,
-        s.day,
-      ).added;
-    });
+    const res = disassembleModule(s, s.inventory[0].uid);
     expect(res.ok).toBe(true);
     expect(s.cargo.length).toBeGreaterThan(0);
     void dockAt;

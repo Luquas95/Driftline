@@ -1,18 +1,10 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { MODULES_BY_ID, QUALITY } from '../../content/modules';
 import { HULLS_BY_ID } from '../../content/hulls';
-import { addGoods } from '../../core/cargo';
 import { renewInsurance, setFullCoverage } from '../../core/game';
 import { canJump, hullSlots, insuredValue, moduleFits, neighbours } from '../../core/ship';
-import { analyze, premiumPerDay } from '../../core/state';
-import {
-  disassembleModule,
-  installModule,
-  removeModuleToInventory,
-  sellModule,
-  sellValue,
-  toggleModule,
-} from '../../core/shop';
+import { premiumPerDay } from '../../core/state';
+import { installModule, removeModuleToInventory, sellModule, sellValue, toggleModule } from '../../core/shop';
 import { createShipScene, type ShipScene } from '../../render/shipscene';
 import { stage } from '../../render/instance';
 import { sfx } from '../../audio/audio';
@@ -22,7 +14,7 @@ import { Icon } from '../Icon';
 import { act, analysis, game, report, rev, toast } from '../store';
 import { moduleName, moduleStat, modulePower } from '../moduleInfo';
 import { useScene } from '../useScene';
-import { StatDiff } from './ShipyardTab';
+import { disassemble, StatDiff } from './ShipyardTab';
 import { computeShipStats } from '../../core/ship';
 import { cargoMass } from '../../core/cargo';
 
@@ -204,28 +196,7 @@ export function ShipScreen() {
                         </>
                       )}
                       {!MODULES_BY_ID[selMod.defId].core && (
-                        <Btn
-                          small
-                          kind="danger"
-                          onClick={() => {
-                            const r = act((x) =>
-                              disassembleModule(x, selMod.uid, (g, q) => {
-                                const an = analyze(x);
-                                return addGoods(
-                                  x.cargo,
-                                  an.dims,
-                                  { chilledCells: an.stats.chilledCells, secureCells: an.stats.secureCells },
-                                  g,
-                                  q,
-                                  0,
-                                  x.day,
-                                ).added;
-                              }),
-                            );
-                            if (report(r) && r.ok)
-                              toast(t('yard.disassembled', { metals: r.metals, parts: r.parts }), 'info');
-                          }}
-                        >
+                        <Btn small kind="danger" onClick={() => disassemble(selMod.uid)}>
                           {t('yard.disassemble')}
                         </Btn>
                       )}
