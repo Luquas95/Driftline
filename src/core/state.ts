@@ -66,6 +66,14 @@ export function msg(
   if (state.messages.length > 120) state.messages.splice(0, state.messages.length - 120);
 }
 
+/**
+ * Messages added after `lastSeen`. The log is capped (see `msg`), so a numeric index stops moving once it
+ * is full; the last seen message object is the cursor instead. If it was trimmed away, everything is new.
+ */
+export function messagesSince(messages: Message[], lastSeen: Message | null): Message[] {
+  return messages.slice(lastSeen ? messages.lastIndexOf(lastSeen) + 1 : 0);
+}
+
 export interface Analysis {
   stats: ShipStats;
   dims: GridDims;

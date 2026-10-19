@@ -1,6 +1,6 @@
 import { signal, computed } from '@preact/signals';
 import { newGame } from '../core/start';
-import { analyze, galaxyOf, type NewGameOptions, type Result } from '../core/state';
+import { analyze, galaxyOf, messagesSince, type NewGameOptions, type Result } from '../core/state';
 import { SaveStore } from '../persist/store';
 import { importSave, exportSave } from '../core/save';
 import { t } from '../i18n';
@@ -9,7 +9,7 @@ import { sfx } from '../audio/audio';
 import { settings } from './settings';
 import { loadProfile, saveProfile } from '../persist/profile';
 import { recordDaily, syncAchievements, type Profile } from '../core/profile';
-import type { GameState } from '../core/types';
+import type { GameState, Message } from '../core/types';
 
 export type ScreenId =
   'map' | 'system' | 'station' | 'ship' | 'cargo' | 'crew' | 'factions' | 'base' | 'journal' | 'settings';
@@ -44,7 +44,8 @@ export function toast(text: string, tone: Toast['tone'] = 'info', ms = 4200): vo
 
 export const saves = new SaveStore();
 let saveTimer: number | undefined;
-let msgSeen = 0;
+/** Last message already surfaced as a toast (an index would stall once the capped log is full). */
+let lastMsg: Message | null = null;
 
 export const analysis = computed(() => {
   void rev.value;
@@ -64,13 +65,12 @@ export function act<T>(fn: (s: GameState) => T): T {
 
 export function afterMutation(s: GameState): void {
   rev.value++;
-  for (let i = msgSeen; i < s.messages.length; i++) {
-    const m = s.messages[i];
+  for (const m of messagesSince(s.messages, lastMsg)) {
     if (m.tone !== 'info' || m.key.startsWith('msg.contract') || m.key.startsWith('msg.market')) {
       toast(describeMessage(m.key, m.params), m.tone);
     }
   }
-  msgSeen = s.messages.length;
+  lastMsg = s.messages.at(-1) ?? null;
   syncProfile(s);
   scheduleAutosave(s);
   if (s.dead) {
@@ -155,7 +155,7 @@ export const e2eFlags = { quick: false };
 export function startNewGame(opts: NewGameOptions): void {
   const s = newGame({ ...opts, quickStart: e2eFlags.quick, entropy: opts.entropy ?? Date.now() });
   game.value = s;
-  msgSeen = s.messages.length;
+  lastMsg = s.messages.at(-1) ?? null;
   menuOpen.value = false;
   screen.value = 'station';
   selectedSystem.value = null;
@@ -167,7 +167,7 @@ export function startNewGame(opts: NewGameOptions): void {
 export function loadGame(s: GameState): void {
   if (s.combat) s.combat.paused = true;
   game.value = s;
-  msgSeen = s.messages.length;
+  lastMsg = s.messages.at(-1) ?? null;
   menuOpen.value = false;
   screen.value = s.location.stationId ? 'station' : 'system';
   selectedSystem.value = null;
