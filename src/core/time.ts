@@ -55,6 +55,8 @@ export function passTime(state: GameState, days: number): void {
       msg(state, `msg.market.${ev.kind}`, { sector: g.sectors[ev.sector].name }, 'info');
     if (state.ship.shield < stats.shieldCap)
       state.ship.shield = Math.min(stats.shieldCap, state.ship.shield + stats.shieldCap * 0.5);
+    // a final ending stops the clock: the world must not keep ticking for the rest of the trip
+    if (state.ending && !state.ending.freePlay) break;
   }
   removeSpoiled(state);
   failExpired(state, g);

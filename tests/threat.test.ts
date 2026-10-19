@@ -140,6 +140,16 @@ describe('endings', () => {
     expect(t.ending?.id).toBe('science');
   });
 
+  it('a final ending reached mid-trip stops the daily ticks that day', () => {
+    const s = game('TH9b');
+    for (let i = 0; i < 300; i++) s.threat.grip[i] = 100;
+    s.threat.consumed = 300;
+    const econDay = s.lastEconDay;
+    passTime(s, 10);
+    expect(s.ending?.id).toBe('consumed');
+    expect(s.lastEconDay).toBe(econDay + 1);
+  });
+
   it('summarises the run: stats, decisions, fates of the crew (deterministic)', () => {
     const s = game('TH10');
     s.story.log.push({ day: 3, key: 'copied' });
