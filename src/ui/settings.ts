@@ -1,3 +1,7 @@
+/**
+ * Player preferences (sound, motion, contrast, combat helpers) as a signal persisted in localStorage.
+ * Kept outside GameState: they belong to the device, not to a save.
+ */
 import { signal, effect } from '@preact/signals';
 
 export interface Settings {
@@ -19,6 +23,7 @@ export interface Settings {
   pauseOnSelect: boolean;
 }
 
+/** Touch-first device; decides the pauseOnSelect default. */
 function coarse(): boolean {
   try {
     return window.matchMedia('(pointer: coarse)').matches;
@@ -44,6 +49,7 @@ const DEFAULTS: Settings = {
 const KEY = 'driftline.settings';
 
 function load(): Settings {
+  // merge over defaults so settings saved by older versions pick up newly added keys
   try {
     const raw = localStorage.getItem(KEY);
     if (raw) return { ...DEFAULTS, ...(JSON.parse(raw) as Partial<Settings>) };
@@ -55,6 +61,7 @@ function load(): Settings {
 
 export const settings = signal<Settings>(load());
 
+/** Shallow-merge a change; persistence and the <html> data attributes follow via the effect below. */
 export function updateSettings(patch: Partial<Settings>): void {
   settings.value = { ...settings.value, ...patch };
 }
@@ -69,6 +76,7 @@ export function animLevel(): AnimLevel {
   return 'full';
 }
 
+/** Reduced motion: explicit setting first, otherwise the OS preference ("auto"). */
 export function prefersReducedMotion(): boolean {
   const s = settings.value.motion;
   if (s === 'reduced') return true;
@@ -80,6 +88,7 @@ export function prefersReducedMotion(): boolean {
   }
 }
 
+// persist every change and mirror it into <html data-*> so CSS can react (contrast, motion, animation level)
 effect(() => {
   const s = settings.value;
   try {

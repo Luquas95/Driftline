@@ -1,3 +1,7 @@
+/**
+ * Base screen (nav "base"): tabs for the player's outpost from core/base.ts. Overview, buildings
+ * and storage live here; production, research and fleet tabs are in their own Base*.tsx files.
+ */
 import { useState } from 'preact/hooks';
 import { BUILDINGS } from '../../content/buildings';
 import {
@@ -32,10 +36,12 @@ import { BaseResearch } from './BaseResearch';
 
 type Tab = 'overview' | 'buildings' | 'production' | 'storage' | 'research' | 'fleet';
 
+/** Overview tab: base picture, key stats, services at the base, raid warning and the base log. */
 function Overview() {
   void rev.value;
   const s = game.value!;
   const base = s.base!;
+  // every base service requires the ship to be in the base's system (core returns err.notAtBase)
   const here = inBaseSystem(s);
   const cost = baseServiceCost(s);
   return (
@@ -75,6 +81,7 @@ function Overview() {
         </Btn>
         <Btn
           small
+          // repairAtBase needs a shipyard of level 1+
           disabled={!here || levelOf(base, 'shipyard') < 1}
           onClick={() => report(act((st) => repairAtBase(st)))}
         >
@@ -87,6 +94,7 @@ function Overview() {
           <b class="neg">
             {t('ui3.attack', { n: base.attack.strength, day: Math.ceil(base.attack.resolve) })}
           </b>
+          {/* defending spawns a regular pirate encounter (defendBase) */}
           <Btn small kind="danger" disabled={!here} onClick={() => report(act((st) => defendBase(st)))}>
             {t('ui3.defend')}
           </Btn>
@@ -108,6 +116,7 @@ function Overview() {
   );
 }
 
+/** Buildings tab: every building with its level, queue progress and cost check from checkBuilding. */
 function Buildings() {
   void rev.value;
   const s = game.value!;
@@ -169,12 +178,14 @@ function moved(r: ReturnType<typeof transferGoods>): void {
   if (report(r) && r.ok) toast(t('ui3.moved', { n: r.moved }), 'good');
 }
 
+/** Storage tab: move goods between the ship's hold and the base warehouse in fixed batches. */
 function Storage() {
   void rev.value;
   const s = game.value!;
   const base = s.base!;
   const here = inBaseSystem(s);
   const inShip = [...new Set(s.cargo.map((c) => c.goodId))].filter((g) => unitsOf(s.cargo, g) > 0);
+  // storage holds fractional units (production ticks); hide leftovers that round to zero
   const stored = Object.entries(base.storage).filter(([, n]) => n >= 0.5);
   const [qty, setQty] = useState(10);
   return (
@@ -233,6 +244,7 @@ function Storage() {
   );
 }
 
+/** Base screen root; without a founded base it only explains how to found one. */
 export function BaseScreen() {
   void rev.value;
   useScene(() => createBackdropScene({ tint: 3 }), []);
@@ -266,6 +278,7 @@ export function BaseScreen() {
             onChange={setTab}
           />
           <div class="panel-body">
+            {/* research works remotely and the overview shows its own notice, so warn only on the other tabs */}
             {!inBaseSystem(s) && tab !== 'overview' && tab !== 'research' && (
               <p class="explain" data-testid="base-away">
                 {t('ui3.notAtBase', { sys: galaxyOf(s).systems[base.systemId].name })}

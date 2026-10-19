@@ -1,3 +1,7 @@
+/**
+ * Station screen (nav "station", only while docked): header with station tags and undock, plus tabs
+ * whose bodies live in StationMarket, ShipyardTab, StationRepairs, ContractsTab and StationInfo.
+ */
 import { useState } from 'preact/hooks';
 import { STATION_TYPES_BY_ID } from '../../content/stations';
 import { createBackdropScene } from '../../render/backdrop';
@@ -13,8 +17,10 @@ import { RepairsTab } from './StationRepairs';
 import { CartographyTab, NewsTab } from './StationInfo';
 
 type TabId = 'market' | 'shipyard' | 'repairs' | 'contracts' | 'cartography' | 'news';
+// module-level so the chosen tab survives leaving the screen and docking again
 let lastTab: TabId = 'market';
 
+/** Station screen root; child tabs get `s` as a prop and re-render through this component's rev read. */
 export function StationScreen() {
   void rev.value;
   const s = game.value!;
@@ -59,6 +65,7 @@ export function StationScreen() {
     { id: 'cartography', label: t('station.cartography'), icon: 'scan' },
     { id: 'news', label: t('station.news'), icon: 'info' },
   ];
+  // the remembered tab may not exist here (no shipyard): fall back to the market
   const cur = tabs.some((x) => x.id === tab) ? tab : 'market';
   return (
     <div class="screen" data-testid="screen-station">
@@ -88,6 +95,7 @@ export function StationScreen() {
               <Btn
                 icon="jump"
                 onClick={() => {
+                  // the system scene picks this up and plays the ship flying out of the station
                   launchFlag.pending = true;
                   act((x) => undock(x));
                   screen.value = 'map';

@@ -22,6 +22,7 @@ type Sfx =
   | 'impact'
   | 'boom';
 
+// created lazily: browsers refuse to start an AudioContext before a user gesture
 let ctx: AudioContext | null = null;
 let master: GainNode | null = null;
 let ambientGain: GainNode | null = null;
@@ -29,6 +30,7 @@ let sfxGain: GainNode | null = null;
 let ambientStarted = false;
 let chimeTimer: number | undefined;
 
+/** Create the context and the gain graph (ambient + sfx → master) once; null where Web Audio is missing. */
 function ensure(): AudioContext | null {
   if (ctx) return ctx;
   const AC =
@@ -54,11 +56,13 @@ function applyVolumes(): void {
   if (!ctx || !master || !ambientGain || !sfxGain) return;
   const s = settings.value;
   const m = s.muted ? 0 : s.master;
+  // short ramps instead of hard sets avoid clicks when a slider moves
   master.gain.setTargetAtTime(m, ctx.currentTime, 0.05);
   ambientGain.gain.setTargetAtTime(s.ambient * 0.5, ctx.currentTime, 0.2);
   sfxGain.gain.setTargetAtTime(s.sfx, ctx.currentTime, 0.05);
 }
 
+// follow volume/mute changes from the settings screen live
 effect(() => {
   void settings.value;
   applyVolumes();
@@ -72,6 +76,7 @@ export function unlockAudio(): void {
   if (!ambientStarted) startAmbient(c);
 }
 
+/** Detuned low drone through a slowly swept low-pass filter, plus random pentatonic-ish chimes. */
 function startAmbient(c: AudioContext): void {
   ambientStarted = true;
   const base = [55, 82.41, 110, 164.81];
@@ -100,6 +105,7 @@ function startAmbient(c: AudioContext): void {
   });
   const scale = [220, 247.5, 293.66, 329.63, 392, 440, 493.88, 587.33];
   const chime = () => {
+    // suspended (tab in background, not yet unlocked): try again later instead of queueing notes
     if (!ctx || ctx.state !== 'running') {
       chimeTimer = window.setTimeout(chime, 9000);
       return;
@@ -112,6 +118,7 @@ function startAmbient(c: AudioContext): void {
   chimeTimer = window.setTimeout(chime, 4000);
 }
 
+/** One enveloped oscillator note, optionally sliding to `slideTo` Hz. */
 function tone(
   freq: number,
   delay: number,
@@ -136,6 +143,7 @@ function tone(
   o.stop(t0 + dur + 0.05);
 }
 
+/** Band-passed white-noise burst that fades out linearly (engines, impacts, explosions). */
 function noise(delay: number, dur: number, vol: number, freq: number, dest: AudioNode): void {
   if (!ctx) return;
   const len = Math.floor(ctx.sampleRate * dur);
@@ -153,6 +161,7 @@ function noise(delay: number, dur: number, vol: number, freq: number, dest: Audi
   src.start(ctx.currentTime + delay);
 }
 
+/** Play a named effect; silently does nothing until audio is unlocked or while muted. */
 export function sfx(name: Sfx): void {
   const c = ensure();
   if (!c || !sfxGain || settings.value.muted) return;
@@ -227,6 +236,7 @@ export function sfx(name: Sfx): void {
   }
 }
 
+/** Tear down the context and the chime loop; the next unlockAudio starts from scratch. */
 export function stopAudio(): void {
   if (chimeTimer) clearTimeout(chimeTimer);
   void ctx?.close();

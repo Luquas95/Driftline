@@ -1,3 +1,7 @@
+/**
+ * Event dialog: shows `state.pendingEvent` with its choices, then the chosen outcome with a summary of
+ * its effects. Choices are resolved by resolveEvent in core/events.ts.
+ */
 import { signal } from '@preact/signals';
 import { EVENTS_BY_ID } from '../content/events';
 import { choiceAvailable, resolveEvent } from '../core/events';
@@ -9,6 +13,7 @@ import { sfx } from '../audio/audio';
 import { Icon } from './Icon';
 import { AlienText } from './AlienText';
 
+/** Player-facing summary line of one effect; effects without a visible result return null. */
 function effectLine(e: Effect): { text: string; tone: 'pos' | 'neg' | '' } | null {
   const sign = (n: number) => (n > 0 ? '+' : '') + fmt(n);
   switch (e.t) {
@@ -74,14 +79,17 @@ function effectLine(e: Effect): { text: string; tone: 'pos' | 'neg' | '' } | nul
   }
 }
 
+/** Outcome being shown. Lives in the UI because resolveEvent clears `pendingEvent` immediately. */
 export const eventResult = signal<{ eventId: string; textKey: string; effects: Effect[] } | null>(null);
 
+/** Event modal: the result view when `eventResult` is set, otherwise the choice view. */
 export function EventModal() {
   void rev.value;
   const s = game.value!;
   const res = eventResult.value;
   const pe = s.pendingEvent;
   const ev = EVENTS_BY_ID[res?.eventId ?? pe?.eventId ?? ''];
+  // unknown id (e.g. an event removed from content after the save was made): drop it instead of crashing
   if (!ev) {
     eventResult.value = null;
     return null;
@@ -120,6 +128,7 @@ export function EventModal() {
       </p>
       <div style={{ marginTop: 12 }}>
         {ev.choices.map((c, i) => {
+          // unmet requirements leave the choice visible but locked, so the player sees what exists
           const avail = choiceAvailable(s, ev, i);
           return (
             <Btn

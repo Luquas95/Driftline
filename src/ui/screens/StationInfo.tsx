@@ -1,3 +1,4 @@
+/** Station screen, "cartography" and "news" tabs: selling scan data, buying price intel, market news. */
 import { STATION_TYPES_BY_ID } from '../../content/stations';
 import { sellDiscoveries } from '../../core/exploration';
 import { buyIntel, intelPrice } from '../../core/game';
@@ -11,6 +12,7 @@ import type { GameState, StationStatic } from '../../core/types';
 
 /* ---------------------------- cartography ---------------------------- */
 
+/** Sell unsold discoveries (cartography stations only) and buy price intel where offered. */
 export function CartographyTab({ s, st }: { s: GameState; st: StationStatic }) {
   const def = STATION_TYPES_BY_ID[st.type];
   const items = s.discoveries.filter((d) => !d.sold);
@@ -74,8 +76,10 @@ export function CartographyTab({ s, st }: { s: GameState; st: StationStatic }) {
 
 /* -------------------------------- news -------------------------------- */
 
+/** Running market events and the latest messages. */
 export function NewsTab({ s }: { s: GameState }) {
   const g = galaxyOf(s);
+  // news only reaches the player from sectors they have visited
   const events = s.events.filter(
     (e) => e.end > s.day && s.visited.some((id) => g.systems[id].sector === e.sector),
   );

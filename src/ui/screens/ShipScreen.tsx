@@ -1,3 +1,7 @@
+/**
+ * Ship screen (nav "ship"): Pixi ship view (render/shipscene.ts) beside the slot grid, power budget,
+ * stats and insurance. Module actions come from core/shop.ts; installing and selling need docking.
+ */
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { MODULES_BY_ID, QUALITY } from '../../content/modules';
 import { HULLS_BY_ID } from '../../content/hulls';
@@ -18,8 +22,10 @@ import { disassemble, StatDiff } from './ShipyardTab';
 import { computeShipStats } from '../../core/ship';
 import { cargoMass } from '../../core/cargo';
 
+// module-level so the render-sync effects can reach the scene created by useScene
 let sceneRef: ShipScene | null = null;
 
+/** Ship screen root; `sel` is the selected slot index, highlighted in both the grid and the scene. */
 export function ShipScreen() {
   void rev.value;
   const s = game.value!;
@@ -35,11 +41,13 @@ export function ShipScreen() {
     return sc;
   }, [s.ship.hullId]);
 
+  // no deps: redraw modules and highlight after every render (ship is mutated in place)
   useEffect(() => {
     sceneRef?.setShip(s.ship);
     sceneRef?.setHighlight(sel);
   });
 
+  // the canvas is shared and full-screen; draw the ship only inside the placeholder div's rectangle
   useEffect(() => {
     const place = () => {
       const el = viewRef.current;
@@ -52,6 +60,7 @@ export function ShipScreen() {
     const ro = new ResizeObserver(place);
     if (viewRef.current) ro.observe(viewRef.current);
     window.addEventListener('resize', place);
+    // re-measure once layout has settled after mount
     const t1 = setTimeout(place, 120);
     return () => {
       ro.disconnect();
@@ -66,6 +75,7 @@ export function ShipScreen() {
   const hull = HULLS_BY_ID[s.ship.hullId];
   const st = a.stats;
   const j = canJump(st);
+  // power check per activity: idle draw plus that activity's draw must fit the reactor output
   const power = [
     { key: 'idle', label: t('ship.actIdle'), draw: st.idleDraw, ok: st.powerFree >= -0.001 },
     { key: 'jump', label: t('ship.actJump'), draw: st.idleDraw + st.jumpDraw, ok: st.powerJump >= -0.001 },
@@ -108,6 +118,7 @@ export function ShipScreen() {
               {slots.map((sl) => {
                 const m = s.ship.slots[sl.index];
                 const def = m ? MODULES_BY_ID[m.defId] : null;
+                // outline neighbours of the selected slot: adjacency bonuses depend on them
                 const nb = sel !== null && neighbours(s.ship.hullId, sel).includes(sl.index);
                 return (
                   <button
@@ -170,6 +181,7 @@ export function ShipScreen() {
                       <p class="explain">{t('ship.adjacencyHelp')}</p>
                     )}
                     <div class="row wrap">
+                      {/* reactor and life support can never be switched off (toggleModule refuses) */}
                       {!['reactor', 'life'].includes(MODULES_BY_ID[selMod.defId].kind) && (
                         <Btn
                           small
@@ -229,6 +241,7 @@ export function ShipScreen() {
               </div>
             )}
           </Panel>
+          {/* power budget, stats and insurance panels */}
           <Panel title={t('ship.power')} icon="power">
             <div class="stack" data-testid="power-panel">
               <div class="spread">
@@ -349,6 +362,7 @@ export function ShipScreen() {
   );
 }
 
+/** Inventory modules that fit a slot, each with a stat diff against the current fit. */
 function InventoryInstall({ slot }: { slot: number }) {
   const s = game.value!;
   const sl = hullSlots(s.ship.hullId)[slot];
@@ -359,6 +373,7 @@ function InventoryInstall({ slot }: { slot: number }) {
     <div class="stack" style={{ gap: 8 }}>
       <h3>{t('ship.fromInventory')}</h3>
       {fit.map((m) => {
+        // hypothetical ship with this module installed, for the preview only
         const trial = { ...s.ship, slots: s.ship.slots.map((x, i) => (i === slot ? m : x)) };
         return (
           <div class="contract-card" key={m.uid}>

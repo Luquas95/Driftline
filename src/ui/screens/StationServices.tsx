@@ -1,3 +1,4 @@
+/** Consumables block at the top of the market tab: fuel, supplies, probes and missiles. */
 import { analysis, act, report, toast } from '../store';
 import { buyFuel, buySupplies, buyProbes, buyMissiles, serviceCost } from '../../core/game';
 import { unitsOf } from '../../core/cargo';
@@ -8,8 +9,10 @@ import { Icon } from '../Icon';
 import { sfx } from '../../audio/audio';
 import type { GameState, StationStatic } from '../../core/types';
 
+/** Service purchases; prices are the tuning base times the station's service multiplier. */
 export function ServiceBlock({ s, st }: { s: GameState; st: StationStatic }) {
   const a = analysis.value!;
+  // regional/difficulty multiplier applied by the core to every consumable
   const mult = serviceCost(s, st.id);
   const fuelPrice = T.fuelPrice * mult;
   const supPrice = T.suppliesPrice * mult;
@@ -40,6 +43,7 @@ export function ServiceBlock({ s, st }: { s: GameState; st: StationStatic }) {
               disabled={room <= 0}
               testid="btn-refuel"
               onClick={() => {
+                // "fill up" asks for far more than fits; the core clamps to free room and credits
                 const r = act((x) => buyFuel(x, st.id, 9999));
                 if (report(r) && r.ok) {
                   sfx('buy');
@@ -130,6 +134,7 @@ export function ServiceBlock({ s, st }: { s: GameState; st: StationStatic }) {
         <div class="service">
           <div class="spread">
             <span class="dim">{t('good.missiles')}</span>
+            {/* missiles are a cargo good (ammo for launchers), not a ship counter */}
             <span class="mono" data-testid="missile-count">
               {unitsOf(s.cargo, 'missiles')}
             </span>

@@ -1,3 +1,7 @@
+/**
+ * Station screen, "market" tab: station services, the goods table (legal and black market) and a
+ * trade panel with a live preview. Prices and limits come from core/game.ts and core/economy.ts.
+ */
 import { useEffect, useState } from 'preact/hooks';
 import { GOODS_BY_ID } from '../../content/goods';
 import { bestKnownPrice } from '../../core/advisor';
@@ -18,6 +22,7 @@ import type { GameState, StationStatic } from '../../core/types';
 /** Remembered per station so that arriving somewhere new never starts with a stale selection. */
 let selectedGood: { station: string; good: string } | null = null;
 
+/** Matches the CSS mobile breakpoint; below it the trade panel opens as a modal instead of a side column. */
 function useNarrow(): boolean {
   const [narrow, setNarrow] = useState(() => window.matchMedia('(max-width: 899px)').matches);
   useEffect(() => {
@@ -29,6 +34,7 @@ function useNarrow(): boolean {
   return narrow;
 }
 
+/** Market tab body. */
 export function MarketTab({ s, st }: { s: GameState; st: StationStatic }) {
   const [sel, setSelRaw] = useState<string | null>(
     selectedGood?.station === st.id ? selectedGood.good : null,
@@ -82,6 +88,7 @@ export function MarketTab({ s, st }: { s: GameState; st: StationStatic }) {
   );
 }
 
+/** Goods table with buy/sell quotes for one unit, trend vs. base price and the best known price elsewhere. */
 function GoodsTable({
   s,
   st,
@@ -116,6 +123,7 @@ function GoodsTable({
           const buy = quoteFor(s, st.id, id, 'buy', 1).first;
           const sell = quoteFor(s, st.id, id, 'sell', 1).first;
           const mid = midPrice(st, id, stock);
+          // trend: current mid price against the base price (red = expensive to buy here)
           const trend = mid / good.basePrice - 1;
           const best = bestKnownPrice(s, id, 'sell');
           const g = galaxyOf(s);
@@ -179,6 +187,7 @@ function GoodsTable({
   );
 }
 
+/** Quantity picker, buy/sell buttons, warnings and a preview of cost, price impact, cargo, mass and range. */
 function TradePanel({
   s,
   st,
@@ -197,6 +206,7 @@ function TradePanel({
   const owned = unitsOf(s.cargo, goodId);
   const maxB = maxBuy(s, st.id, goodId);
   const q = Math.max(0, Math.floor(qty));
+  // quote at least one unit so the preview still shows a price when nothing can be bought or sold
   const buyQ = quoteFor(s, st.id, goodId, 'buy', Math.max(1, Math.min(q, Math.max(1, maxB))));
   const sellQ = quoteFor(s, st.id, goodId, 'sell', Math.max(1, Math.min(q, Math.max(1, owned))));
   const items = s.cargo.filter((c) => c.goodId === goodId && !c.contractId);
@@ -209,6 +219,7 @@ function TradePanel({
   const needsVault = good.tags.includes('sensitive') && stats.secureCells <= 0;
   const buyN = Math.min(q, maxB);
   const massAfter = stats.mass + buyN * good.mass;
+  // same formula as computeShipStats (core/ship.ts), applied to the mass after the purchase
   const fuelPerLyAfter = (T.fuelK * massAfter) / Math.max(1e-6, stats.jumpEff);
   const rangeAfter = fuelPerLyAfter > 0 ? s.ship.fuel / fuelPerLyAfter : 0;
   const cellsUsed = s.cargo.reduce((a, c) => a + c.w * c.h, 0);
@@ -216,6 +227,7 @@ function TradePanel({
   const willOverload = cellsAfter > dims.cells;
   const priceImpact = buyN > 0 ? buyQ.endMid / midPrice(st, goodId, stockOf(s, st.id, goodId)) - 1 : 0;
   const sellImpact = sellQ.endMid / midPrice(st, goodId, stockOf(s, st.id, goodId)) - 1;
+  // inline confirmation next to the buttons, plus the top-bar credits gliding to the new value
   const confirmTrade = (text: string, tone: 'good' | 'warn', before: number) => {
     setDone({ text, tone });
     window.setTimeout(() => setDone(null), 4200);
@@ -250,6 +262,7 @@ function TradePanel({
       flyIcon('[data-testid="nav-cargo"]', '[data-testid="top-credits"]', '¤', '#ffd36b');
     }
   };
+  // inside the mobile modal the panel chrome would be doubled, so render a bare div there
   const Wrap = bare ? 'div' : Panel;
   const wrapProps = bare
     ? { 'data-testid': 'trade-panel' }

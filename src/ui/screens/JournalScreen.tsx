@@ -1,3 +1,7 @@
+/**
+ * Journal screen (nav "journal"): active contracts, system notes, remembered prices, discoveries,
+ * stats and the message log. The v4 tabs (story, language, threat, achievements) are in JournalExtra.
+ */
 import { useState } from 'preact/hooks';
 import { GOODS, MARKET_GOODS } from '../../content/goods';
 import { galaxyOf } from '../../core/state';
@@ -15,6 +19,7 @@ import { AchievementsTab, LanguageTab, StoryTab, ThreatTab } from './JournalExtr
 type Tab =
   'contracts' | 'notes' | 'prices' | 'discoveries' | 'story' | 'language' | 'threat' | 'ach' | 'stats';
 
+/** Journal screen root with one tab per section. */
 export function JournalScreen() {
   void rev.value;
   useScene(() => createBackdropScene({ tint: 4 }), []);
@@ -23,6 +28,7 @@ export function JournalScreen() {
   const [tab, setTab] = useState<Tab>('contracts');
   const [good, setGood] = useState('iron_ore');
   const active = s.contracts.filter((c) => c.state === 'active');
+  // s.prices holds the last seen prices per visited station, so the table shows remembered, possibly stale data
   const visitedStations = Object.keys(s.prices);
   const priceRows = visitedStations
     .map((sid) => ({ st: g.stationsById[sid], p: s.prices[sid][good] }))
@@ -101,6 +107,8 @@ export function JournalScreen() {
                         rows={2}
                         value={s.notes[`sys:${id}`] ?? ''}
                         placeholder={t('journal.note')}
+                        // written straight into the state without act(): no re-render per keystroke,
+                        // the note is persisted with the next save
                         onInput={(e) => {
                           s.notes[`sys:${id}`] = (e.target as HTMLTextAreaElement).value;
                         }}

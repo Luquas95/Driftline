@@ -1,3 +1,4 @@
+/** Modals around a fight: the pre-combat encounter dialogue and the post-combat result (combatCtl.ts). */
 import { ENEMIES_BY_ID } from '../content/enemies';
 import type { EncounterOption } from '../core/combat/types';
 import { fmt, money, t } from '../i18n';
@@ -35,6 +36,7 @@ export function EncounterModal() {
             key={o.id}
             icon={OPT_ICON[o.id]}
             kind={o.id === 'fight' ? 'danger' : undefined}
+            // paid options (bribe, pay) need the credits up front
             disabled={!!o.cost && s.credits < o.cost}
             testid={`enc-${o.id}`}
             onClick={() => pickEncounterOption(o.id)}
@@ -57,6 +59,7 @@ export function EncounterModal() {
 export function CombatResultModal() {
   const r = combatSummary.value;
   if (!r) return null;
+  // loot rows only make sense when the enemy lost (destroyed or surrendered)
   const good = r.outcome === 'victory' || r.outcome === 'surrender';
   return (
     <Modal

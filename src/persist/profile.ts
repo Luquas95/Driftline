@@ -1,3 +1,4 @@
+/** Browser storage for the cross-run profile (achievements, unlocked starts, daily scores) from core/profile.ts. */
 import { emptyProfile, parseProfile, type Profile } from '../core/profile';
 
 const KEY = 'driftline.profile.v1';
@@ -12,6 +13,7 @@ export function loadProfile(): Profile {
   }
 }
 
+/** Persist the profile; failures are swallowed since losing it never breaks a run. */
 export function saveProfile(p: Profile): void {
   try {
     window.localStorage.setItem(KEY, JSON.stringify(p));

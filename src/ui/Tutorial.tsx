@@ -1,3 +1,4 @@
+/** Step-by-step hint card for a new game; App mounts it while `state.tutorial.done` is false. */
 import { useEffect } from 'preact/hooks';
 import { t } from '../i18n';
 import { Btn } from './components';
@@ -6,6 +7,7 @@ import { updateSettings } from './settings';
 
 const STEPS = 6;
 
+/** Whether the player has already done what a step asks; some steps read `tut:*` flags set by the screens. */
 function satisfied(step: number, s: NonNullable<typeof game.value>): boolean {
   switch (step) {
     case 0:
@@ -29,6 +31,8 @@ export function Tutorial() {
   void rev.value;
   const s = game.value!;
   const step = s.tutorial.step;
+  // checked after every render; the last step only ends by the player's click. Tutorial state is
+  // mutated in place, hence the manual rev bumps here and below
   useEffect(() => {
     if (step < STEPS - 1 && satisfied(step, s)) {
       s.tutorial.step = step + 1;

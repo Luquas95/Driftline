@@ -1,3 +1,7 @@
+/**
+ * Crew screen (nav "crew"): roster with vitals, skills and race traits, plus a hiring tab while
+ * docked. Hiring, dismissal and recruit lists come from core/crew.ts.
+ */
 import { useState } from 'preact/hooks';
 import { OFFICERS_BY_ID, RACES_BY_ID, SKILLS, ROLE_SKILL } from '../../content/crew';
 import {
@@ -22,6 +26,7 @@ function moodTone(m: number): 'good' | 'warn' | 'bad' {
   return m >= 55 ? 'good' : m >= 25 ? 'warn' : 'bad';
 }
 
+/** Skill bars; the role's main skill is highlighted. */
 function SkillRows({ c }: { c: Pick<CrewMember, 'skills' | 'role'> }) {
   return (
     <div class="skill-grid">
@@ -40,6 +45,7 @@ function SkillRows({ c }: { c: Pick<CrewMember, 'skills' | 'role'> }) {
   );
 }
 
+/** Race multipliers that differ noticeably (±15 %) from the human baseline, as good/bad tags. */
 function RaceTraits({ race }: { race: keyof typeof RACES_BY_ID }) {
   const r = RACES_BY_ID[race];
   const items: [string, number][] = [
@@ -69,6 +75,7 @@ function RaceTraits({ race }: { race: keyof typeof RACES_BY_ID }) {
   );
 }
 
+/** Roster card; dismissal needs docking and a second click to confirm. */
 function CrewCard({ c, docked }: { c: CrewMember; docked: boolean }) {
   const [confirm, setConfirm] = useState(false);
   const off = c.officer ? OFFICERS_BY_ID[c.officer] : null;
@@ -141,6 +148,7 @@ function CrewCard({ c, docked }: { c: CrewMember; docked: boolean }) {
   );
 }
 
+/** Hiring card for one recruit offered at the docked station. */
 function RecruitCard({ r, stationId }: { r: Recruit; stationId: string }) {
   const s = game.value!;
   const off = r.officer ? OFFICERS_BY_ID[r.officer] : null;
@@ -180,6 +188,7 @@ function RecruitCard({ r, stationId }: { r: Recruit; stationId: string }) {
   );
 }
 
+/** Crew screen root. */
 export function CrewScreen() {
   void rev.value;
   const s = game.value!;
@@ -188,7 +197,9 @@ export function CrewScreen() {
   const cap = crewCapacity(s);
   const wages = s.crew.reduce((a, c) => a + c.wage, 0);
   const st = docked ? stationOf(s, s.location.stationId!) : null;
+  // safe during render: the list is seeded per station and epoch and cached on the station
   const recruits = st ? refreshRecruits(s, st) : [];
+  // undocking while on the hire tab falls back to the roster
   const cur: TabId = tab === 'hire' && !docked ? 'crew' : tab;
   return (
     <div class="screen" data-testid="screen-crew">
@@ -198,6 +209,7 @@ export function CrewScreen() {
             <Stat
               label={t('crew.count')}
               value={`${s.crew.length}/${cap}`}
+              // capacity is a soft limit: overcrowding is allowed but flagged
               tone={s.crew.length > cap ? 'neg' : ''}
               testid="crew-count"
             />

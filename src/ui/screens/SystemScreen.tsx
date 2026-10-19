@@ -1,3 +1,8 @@
+/**
+ * System screen (nav "system"): side panels over the Pixi system scene (render/systemscene.ts).
+ * Scanning, mining, probes, anomalies, docking and founding a base call core/exploration.ts,
+ * core/game.ts and core/base.ts; the scene then plays the matching effect.
+ */
 import { useEffect, useState } from 'preact/hooks';
 import { createSystemScene, rememberedCam, type SystemScene } from '../../render/systemscene';
 import { stage } from '../../render/instance';
@@ -42,6 +47,7 @@ import { dockReport } from '../DockReport';
 import { useScene } from '../useScene';
 import type { BodyStatic } from '../../core/types';
 
+// module-level so panels, key handlers and the e2e hook systemScene() reach the live scene
 let sceneRef: SystemScene | null = null;
 
 /** The running system scene (test hooks). */
@@ -49,6 +55,7 @@ export function systemScene(): SystemScene | null {
   return sceneRef;
 }
 
+/** System screen root: body list, selected body panel and the zoom/dock action bar. */
 export function SystemScreen() {
   void rev.value;
   const s = game.value!;
@@ -60,6 +67,7 @@ export function SystemScreen() {
   const selIdx = selectedBody.value;
   const body: BodyStatic | null = selIdx !== null ? (sys.bodies[selIdx] ?? null) : null;
 
+  // one-shot flags set by the station (undock) and map (jump) screens pick the entry animation
   useScene(() => {
     const launch = launchFlag.pending;
     launchFlag.pending = false;
@@ -100,6 +108,7 @@ export function SystemScreen() {
     return sc;
   }, [sys.id]);
 
+  // no deps: sync detections, selection and ship position into the scene after every render
   useEffect(() => {
     sceneRef?.setDetected([...detected]);
     sceneRef?.setSelected(selIdx);
@@ -140,9 +149,11 @@ export function SystemScreen() {
         selectedBody.value = null;
       }
     };
+    // capture phase, so Escape can be consumed here before App's global handler sees it
     window.addEventListener('keydown', onKey, true);
     return () => window.removeEventListener('keydown', onKey, true);
   }, []);
+  // body indices belong to one system; drop the selection after a jump
   useEffect(() => {
     selectedBody.value = null;
   }, [sys.id]);
@@ -235,6 +246,7 @@ export function SystemScreen() {
             </section>
           </div>
         </aside>
+        {/* undetected bodies can be selected in the list but reveal nothing until scanned */}
         {body && detected.has(body.id) && (
           <BodyPanel body={body} intensity={intensity} setIntensity={setIntensity} />
         )}
@@ -289,6 +301,7 @@ export function SystemScreen() {
   );
 }
 
+/** Panel for the selected body: scans, probe, travel, docking, rescue pickup, deposits and anomalies. */
 function BodyPanel({
   body,
   intensity,
@@ -305,6 +318,7 @@ function BodyPanel({
   const sys = galaxy.value!.systems[s.location.systemId];
   const stationHere = sys.stations.filter((st) => st.bodyIndex === body.index);
   const days = inSystemTravelDays(s, body.index);
+  // rescue progress 1 = the wreck was located by a system scan; pickup happens at its body
   const hasRescue = s.contracts.some(
     (c) => c.state === 'active' && c.kind === 'rescue' && c.targetBody === body.id && (c.progress ?? 0) === 1,
   );
@@ -414,6 +428,7 @@ function BodyPanel({
           {revealedDeposits.length === 0 && <p class="faint">{t('sys.noDeposits')}</p>}
           {revealedDeposits.map((d) => {
             const decay = depositDecay(dyn, d.id, s.day);
+            // preview with the chosen intensity; `blocked` carries the error mine() would return
             const est = estimateMine(s, body.index, d.id, intensity);
             return (
               <div key={d.id} class="contract-card" data-testid={`deposit-${d.id}`}>
@@ -481,6 +496,7 @@ function BodyPanel({
                     }
                   }}
                 >
+                  {/* drilling consumes a probe per run (core/exploration.ts) */}
                   {t('sys.mine')} ({method === 'drill' ? t('sys.usesProbe') : t(`sys.method.${method}`)})
                 </Btn>
               </div>
@@ -517,6 +533,7 @@ function BodyPanel({
   );
 }
 
+/** Base founding checklist for this body, or a link to the base if it stands here (one base per game). */
 function FoundBase({ body }: { body: BodyStatic }) {
   const s = game.value!;
   if (s.base) {

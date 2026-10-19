@@ -1,3 +1,7 @@
+/**
+ * Main menu overlay (shown while `menuOpen`): resume/continue, new game setup, daily challenge,
+ * save slots and import. Game creation and loading go through store.ts.
+ */
 import { useEffect, useState } from 'preact/hooks';
 import { createBackdropScene } from '../../render/backdrop';
 import { t, fmt, money } from '../../i18n';
@@ -12,12 +16,14 @@ import { STARTS } from '../../content/starts';
 import { dailyRanking, startUnlocked } from '../../core/profile';
 import { dailySeed } from '../../core/daily';
 
+/** UTC date key (YYYY-MM-DD) of the daily challenge; everyone gets the same seed on the same day. */
 function todayKey(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
 type View = 'main' | 'new' | 'load' | 'daily';
 
+/** Menu root; `view` switches between the main list and the sub-panels. */
 export function MenuScreen() {
   const [view, setView] = useState<View>('main');
   const [startId, setStartId] = useState('standard');
@@ -31,6 +37,7 @@ export function MenuScreen() {
     permadeath: false,
   });
   useScene(() => createBackdropScene({ spectral: 'G', starSeed: 7, tint: 2 }), []);
+  // reload the slot list whenever a sub-view opens or closes (saves may have changed meanwhile)
   useEffect(() => {
     void saves.list().then(setList);
   }, [view]);
@@ -55,6 +62,7 @@ export function MenuScreen() {
                 <Btn
                   kind={game.value ? undefined : 'primary'}
                   testid="menu-continue"
+                  // browsers only allow audio to start from a user gesture, so every start button unlocks it
                   onClick={async () => {
                     unlockAudio();
                     await loadSlot('autosave');
@@ -103,6 +111,7 @@ export function MenuScreen() {
                 {t('start.title')}
                 <div class="seg wrap" data-testid="start-select">
                   {STARTS.map((st) => {
+                    // alternative starts unlock through achievements stored in the cross-run profile
                     const ok = startUnlocked(profile.value, st.id);
                     return (
                       <button

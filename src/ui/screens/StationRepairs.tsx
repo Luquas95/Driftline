@@ -1,3 +1,4 @@
+/** Station screen, "repairs" tab: hull and per-module repairs priced by the station (core/game.ts). */
 import { analysis, act, report } from '../store';
 import { hullRepairCost, moduleRepairCost, repairAll, repairHull, repairModuleAt } from '../../core/game';
 import { MODULES_BY_ID } from '../../content/modules';
@@ -6,9 +7,11 @@ import { money, t } from '../../i18n';
 import { Bar, Btn, Panel, QualityBadge } from '../components';
 import type { GameState, StationStatic } from '../../core/types';
 
+/** Repairs tab body; a zero cost means nothing to fix, so the button is disabled. */
 export function RepairsTab({ s, st }: { s: GameState; st: StationStatic }) {
   const a = analysis.value!;
   const hullCost = hullRepairCost(s, st.id);
+  // "repair all" total = hull plus every module, using the same per-item prices as the buttons
   let total = hullCost;
   s.ship.slots.forEach((_, i) => (total += moduleRepairCost(s, st.id, i)));
   return (

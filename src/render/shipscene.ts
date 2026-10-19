@@ -1,3 +1,4 @@
+/** Pixi scene of the player's ship over a starfield, used by the ship screen. */
 import { Container, Graphics } from 'pixi.js';
 import { createNebula, createStarfield } from './materials';
 import { drawShip, Exhaust, type ShipDrawing } from './shipgen';
@@ -12,6 +13,7 @@ export interface ShipScene extends Scene {
   setRegion(x: number, y: number, w: number, h: number): void;
 }
 
+/** Ship scene; the ship is redrawn only after setShip/setHighlight, the background animates every frame. */
 export function createShipScene(initial: Ship, seedStr: string, compact = false): ShipScene {
   const container = new Container();
   const nebula = createNebula([0.08, 0.14, 0.32], [0.28, 0.12, 0.3], [0.08, 0.26, 0.36], 0.7);
@@ -29,6 +31,7 @@ export function createShipScene(initial: Ship, seedStr: string, compact = false)
   let W = 600;
   let H = 300;
   let region = { x: 0, y: 0, w: 0, h: 0 };
+  // small LCG for exhaust particles only: purely visual, so it needs neither the core Rng nor Math.random
   let seed = 1;
   const rand = () => {
     seed = (seed * 16807) % 2147483647;
@@ -36,6 +39,7 @@ export function createShipScene(initial: Ship, seedStr: string, compact = false)
   };
   function applyRegion(): void {
     const r = region.w > 0 ? region : { x: 0, y: 0, w: W, h: H };
+    // fit the ship drawing's nominal size (~400×215) into the region
     const k = Math.min(r.w / (compact ? 420 : 400), r.h / 215);
     shipLayer.scale.set(k);
     shipLayer.position.set(r.x + r.w / 2, r.y + r.h / 2);
@@ -62,6 +66,7 @@ export function createShipScene(initial: Ship, seedStr: string, compact = false)
       }
       const reduced = prefersReducedMotion();
       const r = region.w > 0 ? region : { x: 0, y: 0, w: W, h: H };
+      // gentle idle bob, off with reduced motion
       shipLayer.y = r.y + r.h / 2 + (reduced ? 0 : Math.sin(time * 0.9) * 4);
       if (drawing) exhaust.update(dt, drawing.nozzles, 1, reduced, rand);
       const aspect = W / H;

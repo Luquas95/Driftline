@@ -1,5 +1,10 @@
+/**
+ * Station types: what each produces and consumes (strength 0–1), its services, contract mix and
+ * spawn weight per region. Read by the galaxy generator, economy and contract boards.
+ */
 import type { StationTypeDef, StationTypeId } from '../core/types';
 
+/** Spawn weights per region, core to rim. Changing them re-types stations in existing saves (the galaxy is regenerated from the seed). */
 const w = (core: number, inner: number, outer: number, rim: number) => ({ core, inner, outer, rim });
 
 export const STATION_TYPES: StationTypeDef[] = [
@@ -160,6 +165,7 @@ export const STATION_TYPES: StationTypeDef[] = [
     shipyard: 1,
     cartography: false,
     intel: false,
+    // the only unlawful type: no customs inspections here, and the fleet route picker leaves it out
     blackMarket: true,
     contractBias: { courier: 3, freight: 2, passenger: 1 },
     weight: w(1.5, 1, 2.5, 3),

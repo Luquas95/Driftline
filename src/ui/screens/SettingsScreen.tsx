@@ -1,3 +1,7 @@
+/**
+ * Settings screen (nav "settings"): sound, display and combat preferences (ui/settings.ts, stored in
+ * localStorage), the current galaxy's seed and difficulty, manual save slots and JSON export/import.
+ */
 import { useEffect, useState } from 'preact/hooks';
 import { createBackdropScene } from '../../render/backdrop';
 import { useScene } from '../useScene';
@@ -18,8 +22,10 @@ import { settings, updateSettings } from '../settings';
 import { sfx } from '../../audio/audio';
 import type { SaveMeta } from '../../persist/store';
 
+// manual slots; "autosave" is a separate slot written by store.ts
 const SLOTS = ['slot1', 'slot2', 'slot3'];
 
+/** Settings screen root. */
 export function SettingsScreen() {
   void rev.value;
   useScene(() => createBackdropScene({ tint: 5 }), []);
@@ -29,6 +35,7 @@ export function SettingsScreen() {
   const refresh = () => void saves.list().then(setList);
   useEffect(refresh, []);
 
+  // export via a temporary object URL; revoked a bit later so the download has time to start
   const download = () => {
     const txt = exportCurrent();
     if (!txt) return;
@@ -99,6 +106,7 @@ export function SettingsScreen() {
                 </div>
                 <small class="faint">{t('settings.animHelp')}</small>
               </div>
+              {/* motion = accessibility override of prefers-reduced-motion; it also caps the animation level */}
               <div class="field">
                 {t('settings.motion')}
                 <div class="seg">
@@ -137,6 +145,7 @@ export function SettingsScreen() {
                   checked={set.tutorial}
                   onChange={(e) => {
                     updateSettings({ tutorial: (e.target as HTMLInputElement).checked });
+                    // re-enabling restarts the tutorial in the running game (outside act(), hence the rev bump)
                     if ((e.target as HTMLInputElement).checked) {
                       s.tutorial = { step: 0, done: false };
                       rev.value++;
@@ -191,6 +200,7 @@ export function SettingsScreen() {
                     await navigator.clipboard.writeText(s.seed);
                     toast(t('settings.seedCopied'), 'good');
                   } catch {
+                    // clipboard denied (insecure context, permissions): at least show the seed
                     toast(s.seed, 'info');
                   }
                 }}
@@ -231,6 +241,7 @@ export function SettingsScreen() {
                         small
                         onClick={async () => {
                           const saved = await writeSave(id, s, t('settings.slot', { n: i + 1 }));
+                          // writeSave already toasts its own failure
                           refresh();
                           if (saved) toast(t('settings.saved'), 'good');
                         }}

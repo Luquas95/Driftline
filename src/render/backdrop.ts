@@ -20,6 +20,7 @@ export function createBackdropScene(opts: {
   tint?: number;
 }): Scene {
   const container = new Container();
+  // `tint` gives each screen its own nebula colouring; any integer works, it wraps every 7
   const hueShift = ((opts.tint ?? 0) % 7) / 7;
   const nebula = createNebula(
     [0.08 + hueShift * 0.15, 0.14, 0.34 - hueShift * 0.1],
@@ -52,10 +53,12 @@ export function createBackdropScene(opts: {
   let H = 600;
   void STAR_COLORS;
 
+  /** Simple vector station (rings and spokes); pirate stations are drawn in orange. */
   function drawStation(t: number, cx: number, cy: number, r: number): void {
     stationGfx.clear();
     if (!opts.station) return;
     const type = opts.station.type;
+    // reduced motion: keep the station still
     const rot = prefersReducedMotion() ? 0 : t * 0.15;
     const col = type === 'pirate' ? 0xff9a6a : 0x8fe3ff;
     stationGfx.circle(cx, cy, r).stroke({ width: 3, color: col, alpha: 0.85 });
@@ -80,6 +83,7 @@ export function createBackdropScene(opts: {
         m.position.set(W / 2, H / 2);
         m.scale.set(W / 2, H / 2);
       }
+      // planet low right, half below the edge; sun top left, clear of most panels
       if (planet) {
         const r = Math.min(W, H) * 0.55;
         planet.mesh.position.set(W * 0.78, H * 1.02);

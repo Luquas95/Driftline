@@ -1,3 +1,8 @@
+/**
+ * Real-time combat screen: Pixi combat scene (render/combatscene.ts) under a HUD with weapons, power,
+ * crew and action tabs. The fight loop itself runs in combatCtl.ts; this file only issues orders
+ * to the core combat sim and renders its state.
+ */
 import { ENEMIES_BY_ID } from '../../content/enemies';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import {
@@ -37,6 +42,7 @@ const KIND_ICON_COLOR: Record<string, string> = {
   drones: '#b58cff',
   teleporter: '#6dffd6',
 };
+/** Keyboard shortcuts for power groups (Shift + key lowers, key alone raises). */
 const GROUP_KEYS: Record<PowerGroup, string> = {
   weapons: 'q',
   shields: 'w',
@@ -45,6 +51,7 @@ const GROUP_KEYS: Record<PowerGroup, string> = {
   other: 't',
 };
 
+// module-level so the e2e hook combatRoomPos can reach the live scene
 let scene: CombatScene | null = null;
 
 /** Screen position of a room (used by the test hooks to click on the canvas). */
@@ -56,6 +63,7 @@ export function combatRoomPos(
   return scene?.roomScreenPos(side, ship, room) ?? null;
 }
 
+/** Log params carry enemy ids; translate them to names before formatting. */
 function logParams(p?: Record<string, string | number>): Record<string, string | number> | undefined {
   if (p && typeof p.ship === 'string' && ENEMIES_BY_ID[p.ship]) return { ...p, ship: t(`enemy.${p.ship}`) };
   return p;
@@ -65,6 +73,7 @@ function weaponLabel(w: CWeapon): string {
   return `${t(`mod.${w.kind}`)} ${w.size}`;
 }
 
+/** Power pips 0–4 for a group: 2 = weight equals its need, 4 = double. */
 function powerLevel(s: CShip, g: PowerGroup): number {
   return s.need[g] > 0 ? Math.round((s.weights[g] / s.need[g]) * 2) : 0;
 }
@@ -107,7 +116,9 @@ function shipBars(s: CShip) {
   );
 }
 
+/** Combat screen root; mounted by App whenever `game.combat` is set. */
 export function CombatScreen() {
+  // combat state is mutated by the sim every tick, outside act(); combatCtl bumps combatRev instead of rev
   void combatRev.value;
   const s = game.value!;
   const c = s.combat!;
@@ -117,6 +128,7 @@ export function CombatScreen() {
   const [tab, setTab] = useState<'weapons' | 'power' | 'crew' | 'actions'>('weapons');
   const reduced = prefersReducedMotion();
 
+  // canvas clicks: own room = move the selected crew, enemy room = target (or board with a teleporter)
   useScene(() => {
     const sc = createCombatScene(c, driveCombat, c.seed.length * 977 + 13);
     scene = sc;
@@ -173,9 +185,11 @@ export function CombatScreen() {
     return sc;
   }, [c.seed]);
 
+  // push UI selection and effect settings into the scene on every HUD render
   scene?.setSelection({ crewId: selCrew.value, weaponId: selWeapon.value });
   scene?.setEffects({ shake: settings.value.shake, reduced });
 
+  // tell the scene how much of the viewport the top bar and HUD cover so ships stay visible
   useEffect(() => {
     const measure = () => {
       const top = topRef.current?.getBoundingClientRect().height ?? 0;
@@ -193,6 +207,7 @@ export function CombatScreen() {
     };
   }, [tab, c.enemies.length]);
 
+  // keys: Space pause, 1–9 weapons, F flee, A auto, Q/W/E/R/T power; Y/N answer a tribute demand
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const el = e.target as HTMLElement | null;
@@ -200,6 +215,7 @@ export function CombatScreen() {
       if (e.ctrlKey || e.metaKey || e.altKey) return;
       const cc = game.value?.combat;
       if (!cc || cc.outcome) return;
+      // a pending demand captures the keyboard until it is answered
       if (cc.demand !== null) {
         const k0 = e.key.toLowerCase();
         if (k0 === 'y') answerDemand(cc, true);
@@ -239,6 +255,7 @@ export function CombatScreen() {
     const sh = cc.player;
     if (sh.need[g] <= 0) return;
     const lvl = Math.max(0, Math.min(4, powerLevel(sh, g) + d));
+    // weights are relative shares of reactor output (see powerEff), so over-assigning lowers the others
     setWeights(cc, { [g]: (sh.need[g] * lvl) / 2 });
     sfx('click');
     pauseForSelection();
@@ -251,6 +268,7 @@ export function CombatScreen() {
     combatRev.value++;
   }
 
+  // shown in the tribute dialog: the demand is a share of the cargo, valued at base prices
   const cargoValue = s.cargo.reduce((a, it) => a + it.qty * (GOODS_BY_ID[it.goodId]?.basePrice ?? 0), 0);
   const pwrUse = POWER_GROUPS.reduce((a, g) => a + (p.need[g] > 0 ? p.weights[g] : 0), 0);
   const crewSel = p.crew.find((m) => m.id === selCrew.value);
@@ -440,6 +458,7 @@ export function CombatScreen() {
 
   return (
     <div class="combat" data-testid="screen-combat">
+      {/* top bar: enemy and player hull/shield meters */}
       <div class="combat-top" ref={topRef}>
         <div class="enemy-list">{c.enemies.map((e) => shipBars(e))}</div>
         <div class="combat-self" data-testid="player-bars">
@@ -475,6 +494,7 @@ export function CombatScreen() {
         </div>
       )}
 
+      {/* bottom HUD: all four sections render; CSS shows only the active tab below 900 px */}
       <div class="combat-hud" ref={hudRef}>
         <div class="hud-tabs">
           <Tabs

@@ -1,3 +1,7 @@
+/**
+ * Factions screen (nav "factions"): standing, territory and membership for each faction, active
+ * wars and the faction history log (core/factions.ts, core/territory.ts).
+ */
 import { FACTIONS, RANK_MERIT } from '../../content/factions';
 import { activeWars, joinFaction, leaveFaction, rankName } from '../../core/factions';
 import { repOf, territorySizes, tierOf } from '../../core/territory';
@@ -18,6 +22,7 @@ const TIER_TONE: Record<string, string> = {
   ally: 'good',
 };
 
+/** Reputation from -100 to +100 as a marker on a centred scale. */
 function RepBar({ rep }: { rep: number }) {
   const pos = (rep + 100) / 2;
   return (
@@ -34,6 +39,7 @@ function RepBar({ rep }: { rep: number }) {
   );
 }
 
+/** Factions screen root. */
 export function FactionsScreen() {
   void rev.value;
   useScene(() => createBackdropScene({ tint: 1 }), []);
@@ -95,6 +101,7 @@ export function FactionsScreen() {
                     <Btn
                       small
                       testid={`fac-join-${f.id}`}
+                      // one membership at a time; 15 mirrors the threshold in joinFaction
                       disabled={!!s.fac.member || rep < 15}
                       title={rep < 15 ? t('err.facRepLow') : undefined}
                       onClick={() => report(act((x) => joinFaction(x, f.id as FactionId)))}
@@ -116,6 +123,7 @@ export function FactionsScreen() {
             <div key={w.id} class="contract-card row">
               <FactionCrest id={w.a} size={32} />
               <span class="grow">
+                {/* describeMessage turns faction ids in a/b into names */}
                 {describeMessage('fac.warLine', { a: w.a, b: w.b, end: Math.ceil(w.end) })}
               </span>
               <FactionCrest id={w.b} size={32} />
@@ -133,6 +141,7 @@ export function FactionsScreen() {
                   <span class="mono">{Math.floor(h.day)}</span> ·{' '}
                   {describeMessage(
                     `fac.hist.${h.key}`,
+                    // history stores system indices; resolve to names here
                     typeof h.params?.system === 'number'
                       ? { ...h.params, system: galaxyOf(s).systems[h.params.system]?.name ?? '?' }
                       : h.params,
