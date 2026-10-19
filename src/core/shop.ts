@@ -222,10 +222,13 @@ function installPlan(
   );
 }
 
-/** Why a module (e.g. one still in a shop) could not be installed in that slot right now; null if it could. */
+/**
+ * Why a module could not be installed in that slot right now; null if it could. Without `condition` it is
+ * judged as a new module (a shop item); pass the condition of a worn one, as it changes beds and cargo cells.
+ */
 export function installError(
   state: GameState,
-  item: Pick<ModuleInstance, 'defId' | 'quality'>,
+  item: Pick<ModuleInstance, 'defId' | 'quality'> & Partial<Pick<ModuleInstance, 'condition'>>,
   slotIndex: number,
 ): string | null {
   const plan = installPlan(state, { uid: '', condition: 100, enabled: true, ...item }, slotIndex);
