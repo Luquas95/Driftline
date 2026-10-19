@@ -6,14 +6,14 @@ import { BUILDINGS_BY_ID, COLONY_BODIES, FOUNDING, fabQuality, type BuildingId }
 import { GOODS_BY_ID } from '../content/goods';
 import { HULLS_BY_ID } from '../content/hulls';
 import { MODULES_BY_ID } from '../content/modules';
-import { addGoods, removeGoods, unitsOf } from './cargo';
+import { removeGoods, unitsOf } from './cargo';
 import { spawnEncounter } from './combat/encounter';
 import { defaultCrew } from './crew';
 import { addRep } from './factions';
 import { fleetDaily } from './fleet';
 import { Rng } from './rng';
 import { buildStarterShip, modulePrice, newModule } from './ship';
-import { analyze, fail, galaxyOf, msg, newUid, ok, type Result } from './state';
+import { addToHold, analyze, fail, galaxyOf, msg, newUid, ok, type Result } from './state';
 import { ownerOf, repOf, tierOf } from './territory';
 import { hasTech, moduleUnlocked, techBonus } from './research';
 import { T } from './tuning';
@@ -180,10 +180,8 @@ export function checkBuilding(state: GameState, id: BuildingId): BuildCheck {
   if (id === 'hangar' && levelOf(base, 'shipyard') < 1)
     return { ...res, ok: false, error: 'err.needShipyard' };
   if (id === 'anchor' && levelOf(base, 'lab') < 2) return { ...res, ok: false, error: 'err.needLab' };
-  if (state.credits < res.credits) return { ...res, ok: false, error: 'err.noCredits' };
-  for (const [gid, n] of Object.entries(res.materials))
-    if ((base.storage[gid] ?? 0) < n) return { ...res, ok: false, error: 'err.baseMaterials' };
-  return { ...res, ok: true };
+  const unpaid = paymentError(state, base, res.credits, res.materials);
+  return unpaid ? { ...res, ok: false, error: unpaid } : { ...res, ok: true };
 }
 
 export function startBuilding(state: GameState, id: BuildingId): Result {
@@ -192,7 +190,7 @@ export function startBuilding(state: GameState, id: BuildingId): Result {
   if (!chk.ok) return fail(chk.error!);
   const base = state.base!;
   state.credits -= chk.credits;
-  for (const [gid, n] of Object.entries(chk.materials)) base.storage[gid] = (base.storage[gid] ?? 0) - n;
+  takeMaterials(base, chk.materials);
   base.queue.push({ id, level: chk.level, start: state.day, done: state.day + chk.days });
   return ok();
 }
@@ -222,9 +220,7 @@ export function transferGoods(
   }
   const stored = base.storage[goodId] ?? 0;
   if (stored <= 0) return fail('err.nothingToMove');
-  const { stats, dims } = analyze(state);
-  const quotas = { chilledCells: stats.chilledCells, secureCells: stats.secureCells };
-  const r = addGoods(state.cargo, dims, quotas, goodId, Math.min(qty, stored), 0, state.day);
+  const r = addToHold(state, goodId, Math.min(qty, stored));
   if (r.added <= 0) return fail('err.noCargoSpace');
   base.storage[goodId] = stored - r.added;
   if (base.storage[goodId] <= 0) delete base.storage[goodId];
@@ -386,8 +382,24 @@ export function hullMaterials(price: number): Record<string, number> {
   };
 }
 
+function hasMaterials(base: Base, mats: Record<string, number>): boolean {
+  return Object.entries(mats).every(([gid, n]) => (base.storage[gid] ?? 0) >= n);
+}
+
+/** The last check of every base order (building, module, hull): can the player pay for it? */
+function paymentError(
+  state: GameState,
+  base: Base,
+  credits: number,
+  mats: Record<string, number>,
+): string | null {
+  if (state.credits < credits) return 'err.noCredits';
+  if (!hasMaterials(base, mats)) return 'err.baseMaterials';
+  return null;
+}
+
 function takeMaterials(base: Base, mats: Record<string, number>): boolean {
-  for (const [gid, n] of Object.entries(mats)) if ((base.storage[gid] ?? 0) < n) return false;
+  if (!hasMaterials(base, mats)) return false;
   for (const [gid, n] of Object.entries(mats)) {
     base.storage[gid] -= n;
     if (base.storage[gid] <= 1e-6) delete base.storage[gid];
@@ -395,10 +407,35 @@ function takeMaterials(base: Base, mats: Record<string, number>): boolean {
   return true;
 }
 
-export function checkModuleOrder(
+/** Quote for a production order at the base; `error` says why it cannot be placed. */
+export interface OrderCheck {
+  ok: boolean;
+  error?: string;
+  credits: number;
+  days: number;
+  materials: Record<string, number>;
+}
+
+/** Checks shared by module and hull orders once their own requirements are met: queue room and payment. */
+function queueOrder(state: GameState, base: Base, res: Omit<OrderCheck, 'ok'>): OrderCheck {
+  if (base.orders.length >= MAX_ORDERS) return { ok: false, error: 'err.queueFull', ...res };
+  const unpaid = paymentError(state, base, res.credits, res.materials);
+  return unpaid ? { ok: false, error: unpaid, ...res } : { ok: true, ...res };
+}
+
+/** Pay for a checked order and put it in the production queue. */
+function placeOrder(
   state: GameState,
-  moduleId: string,
-): { ok: boolean; error?: string; credits: number; days: number; materials: Record<string, number> } {
+  chk: OrderCheck,
+  order: Omit<BuildOrder, 'id' | 'start' | 'done'>,
+): void {
+  const base = state.base!;
+  takeMaterials(base, chk.materials);
+  state.credits -= chk.credits;
+  base.orders.push({ id: newUid(state, 'o'), ...order, start: state.day, done: state.day + chk.days });
+}
+
+export function checkModuleOrder(state: GameState, moduleId: string): OrderCheck {
   const base = state.base;
   const def = MODULES_BY_ID[moduleId];
   const z = { credits: 0, days: 0, materials: {} };
@@ -416,35 +453,18 @@ export function checkModuleOrder(
   if (f < need) return { ok: false, error: 'err.needFactory', ...res };
   const gate = moduleUnlocked(state, moduleId);
   if (!gate) return { ok: false, error: 'err.techNeeded', ...res };
-  if (base.orders.length >= MAX_ORDERS) return { ok: false, error: 'err.queueFull', ...res };
-  if (state.credits < res.credits) return { ok: false, error: 'err.noCredits', ...res };
-  for (const [gid, n] of Object.entries(res.materials))
-    if ((base.storage[gid] ?? 0) < n) return { ok: false, error: 'err.baseMaterials', ...res };
-  return { ok: true, ...res };
+  return queueOrder(state, base, res);
 }
 
 export function commissionModule(state: GameState, moduleId: string): Result {
   if (!inBaseSystem(state)) return fail('err.notAtBase');
   const chk = checkModuleOrder(state, moduleId);
   if (!chk.ok) return fail(chk.error!);
-  const base = state.base!;
-  takeMaterials(base, chk.materials);
-  state.credits -= chk.credits;
-  base.orders.push({
-    id: newUid(state, 'o'),
-    kind: 'module',
-    item: moduleId,
-    quality: fabQuality(state.research.done),
-    start: state.day,
-    done: state.day + chk.days,
-  });
+  placeOrder(state, chk, { kind: 'module', item: moduleId, quality: fabQuality(state.research.done) });
   return ok();
 }
 
-export function checkHullOrder(
-  state: GameState,
-  hullId: string,
-): { ok: boolean; error?: string; credits: number; days: number; materials: Record<string, number> } {
+export function checkHullOrder(state: GameState, hullId: string): OrderCheck {
   const base = state.base;
   const h = HULLS_BY_ID[hullId];
   const z = { credits: 0, days: 0, materials: {} };
@@ -461,27 +481,14 @@ export function checkHullOrder(
     return { ok: false, error: 'err.facHull', ...res };
   if (base.hangar.length + base.orders.filter((o) => o.kind === 'hull').length >= hangarSlots(base))
     return { ok: false, error: 'err.hangarFull', ...res };
-  if (base.orders.length >= MAX_ORDERS) return { ok: false, error: 'err.queueFull', ...res };
-  if (state.credits < res.credits) return { ok: false, error: 'err.noCredits', ...res };
-  for (const [gid, n] of Object.entries(res.materials))
-    if ((base.storage[gid] ?? 0) < n) return { ok: false, error: 'err.baseMaterials', ...res };
-  return { ok: true, ...res };
+  return queueOrder(state, base, res);
 }
 
 export function commissionHull(state: GameState, hullId: string): Result {
   if (!inBaseSystem(state)) return fail('err.notAtBase');
   const chk = checkHullOrder(state, hullId);
   if (!chk.ok) return fail(chk.error!);
-  const base = state.base!;
-  takeMaterials(base, chk.materials);
-  state.credits -= chk.credits;
-  base.orders.push({
-    id: newUid(state, 'o'),
-    kind: 'hull',
-    item: hullId,
-    start: state.day,
-    done: state.day + chk.days,
-  });
+  placeOrder(state, chk, { kind: 'hull', item: hullId });
   return ok();
 }
 

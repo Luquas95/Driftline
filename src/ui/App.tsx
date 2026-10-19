@@ -1,3 +1,7 @@
+/**
+ * Root UI: the shared Pixi stage, top bar, navigation, the active screen and every modal layer
+ * (encounter, combat result, events, dock report, death, ending, help), plus global shortcuts.
+ */
 import { signal } from '@preact/signals';
 import { useEffect, useState } from 'preact/hooks';
 import { stage, stageFailed, stageReady } from '../render/instance';
@@ -43,8 +47,10 @@ import { Tutorial } from './Tutorial';
 import { HelpModal } from './HelpModal';
 import { undock } from '../core/game';
 
+/** Deaths already acknowledged in this session; a higher `stats.deaths` shows the respawn modal once. */
 const lastDeaths = signal(0);
 
+/** Mounts the single Pixi canvas that every screen's scene draws into (render/instance.ts). */
 function StageHost() {
   useEffect(() => {
     const host = document.getElementById('stage-host')!;
@@ -64,6 +70,7 @@ function StageHost() {
   return <div id="stage-host" class="stage-host" />;
 }
 
+/** Navigation entries; `key` is the keyboard shortcut handled in useShortcuts. */
 const NAV: { id: ScreenId; icon: string; label: string; key: string }[] = [
   { id: 'map', icon: 'map', label: 'nav.map', key: 'M' },
   { id: 'system', icon: 'system', label: 'nav.system', key: 'Y' },
@@ -77,6 +84,7 @@ const NAV: { id: ScreenId; icon: string; label: string; key: string }[] = [
   { id: 'settings', icon: 'settings', label: 'nav.settings', key: 'O' },
 ];
 
+/** Location, day, credits, fuel, hull, threat and power warnings. */
 function TopBar() {
   void rev.value;
   const s = game.value!;
@@ -88,6 +96,7 @@ function TopBar() {
   const lowFuel = fuelPct < 0.2;
   const hullPct = s.ship.hp / a.stats.hpMax;
   const noPower = a.stats.powerFree < -0.001;
+  // display signals glide after jumps and trades (ui/anim.ts); null = show the real value
   const dayVal = dayShown.value ?? s.day;
   const creditVal = creditsShown.value ?? s.credits;
   const creditFlash = useFlash(Math.round(s.credits));
@@ -125,6 +134,7 @@ function TopBar() {
           <Icon name="shield" />
           <span class="mono">{Math.round(hullPct * 100)}%</span>
         </span>
+        {/* the threat chip appears only once the Grey has started spreading */}
         {s.day >= s.threat.start && (
           <button
             type="button"
@@ -157,6 +167,7 @@ function TopBar() {
   );
 }
 
+/** Side/bottom navigation; locked during combat and the first ship purchase. */
 function Nav() {
   void rev.value;
   const s = game.value!;
@@ -203,6 +214,7 @@ function Toasts() {
   );
 }
 
+/** Permadeath end screen, or a one-time notice after an insured/uninsured respawn. */
 function DeathModal() {
   const s = game.value!;
   if (s.dead) {
@@ -246,6 +258,7 @@ function DeathModal() {
   return null;
 }
 
+/** Global keys: ? help, Escape back/close, letter shortcuts from NAV. Screens may capture keys first. */
 function useShortcuts() {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -273,6 +286,7 @@ function useShortcuts() {
         else if (screen.value !== 'map') go(s.location.stationId ? 'station' : 'map');
         return;
       }
+      // no navigation while a modal flow (ending, event, encounter, fight) owns the screen
       if (s.ending && (!s.ending.freePlay || !s.flags['endingSeen'])) return;
       if (s.pendingEvent || s.combat || s.encounter) return;
       const nav = NAV.find((n) => n.key.toLowerCase() === k.toLowerCase());
@@ -316,8 +330,10 @@ function FpsMeter() {
 
 const SHOW_FPS = import.meta.env.DEV || new URLSearchParams(window.location.search).get('fps') === '1';
 
+/** Everything inside the error boundary. */
 function AppInner() {
   useShortcuts();
+  // audio may only start after a user gesture; the first click or key unlocks it
   useEffect(() => {
     const unlock = () => unlockAudio();
     window.addEventListener('pointerdown', unlock, { once: true });
@@ -342,6 +358,7 @@ function AppInner() {
           <TopBar />
           <div class="main">
             <Nav />
+            {/* first ship purchase and combat replace the selected screen entirely */}
             <div class="content" data-screen={s.noShip ? 'firstship' : s.combat ? 'combat' : scr}>
               {s.noShip && <FirstShipScreen />}
               {s.combat && <CombatScreen />}
@@ -362,6 +379,7 @@ function AppInner() {
                 !eventResult.value && <Tutorial />}
             </div>
           </div>
+          {/* modal layers; the conditions keep at most one blocking dialog in front at a time */}
           {s.encounter && !s.combat && !s.pendingEvent && <EncounterModal />}
           {combatSummary.value && <CombatResultModal />}
           {(s.pendingEvent || eventResult.value) && <EventModal />}
@@ -383,6 +401,7 @@ function AppInner() {
   );
 }
 
+/** App root; a render crash drops the fight/encounter and returns to the menu instead of a blank page. */
 export function App() {
   return (
     <ErrorBoundary

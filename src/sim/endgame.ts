@@ -26,20 +26,20 @@ import {
   refuelAtBase,
   resupplyAtBase,
 } from '../core/base';
-import { addGoods } from '../core/cargo';
 import { exploreAnomaly, bodyDyn } from '../core/exploration';
 import { joinFaction, repOf } from '../core/factions';
 import { planTrip, setFleetOrder } from '../core/fleet';
 import { dist, shortestPath } from '../core/galaxy';
 import { canResearch, hasTech, startResearch } from '../core/research';
 import { ownerOf, tierOf } from '../core/territory';
-import { analyze, galaxyOf } from '../core/state';
+import { addToHold, galaxyOf } from '../core/state';
 import { newGame } from '../core/start';
 import { dockAt, undock, wait } from '../core/game';
 import { understanding } from '../core/lang';
 import { Bot, netWorth, type Strategy } from './bots';
 import type { GameState } from '../core/types';
 import type { EventDef } from '../core/eventTypes';
+import type { Base } from '../core/worldTypes';
 
 export type Target = 'science' | 'accord' | 'exodus' | 'dominion';
 
@@ -136,6 +136,13 @@ export interface EndgameRun {
   dailyIncome: number;
 }
 
+/** What buying the materials the base storage lacks would cost at market (with a 30 % margin). */
+function missingMaterialsCost(base: Base, materials: Record<string, number>): number {
+  return Object.entries(materials).reduce(
+    (sum, [gid, n]) => sum + Math.max(0, n - (base.storage[gid] ?? 0)) * GOODS_BY_ID[gid].basePrice * 1.3,
+    0,
+  );
+}
 export class EndgameBot extends Bot {
   target: Target;
   baseDay: number | null = null;
@@ -361,10 +368,8 @@ export class EndgameBot extends Bot {
       const price = 40 * GOODS_BY_ID.construction.basePrice + 12 * GOODS_BY_ID.machinery.basePrice;
       s.credits -= Math.round(price * 1.3);
       this.base_spent += Math.round(price * 1.3);
-      const { stats, dims } = analyze(s);
-      const q = { chilledCells: stats.chilledCells, secureCells: stats.secureCells };
-      addGoods(s.cargo, dims, q, 'construction', 40, 0, s.day);
-      addGoods(s.cargo, dims, q, 'machinery', 12, 0, s.day);
+      addToHold(s, 'construction', 40);
+      addToHold(s, 'machinery', 12);
       s.detected[c.x.id] = c.x.bodies.map((b) => b.id);
       // a day of scanning reveals what lies in the ground
       for (const b of c.x.bodies) {
@@ -436,12 +441,7 @@ export class EndgameBot extends Bot {
       let chk = checkBuilding(s, id);
       if (!chk.ok && chk.error === 'err.baseMaterials') {
         // only buy the materials when the whole building is affordable
-        const mats = Object.entries(chk.materials).reduce(
-          (sum, [gid, n]) =>
-            sum + Math.max(0, n - (base.storage[gid] ?? 0)) * GOODS_BY_ID[gid].basePrice * 1.3,
-          0,
-        );
-        if (s.credits - chk.credits - mats < 5000) continue;
+        if (s.credits - chk.credits - missingMaterialsCost(base, chk.materials) < 5000) continue;
         const paid = this.supply(chk.materials);
         if (paid >= 0) chk = checkBuilding(s, id);
       }
@@ -501,20 +501,10 @@ export class EndgameBot extends Bot {
       const chk = checkHullOrder(s, hull);
       if (!chk.ok && chk.error === 'err.baseMaterials') {
         // buy exactly the materials of the order (when affordable), then commission
-        const mats = Object.entries(chk.materials).reduce(
-          (sum, [gid, n]) =>
-            sum + Math.max(0, n - (base.storage[gid] ?? 0)) * GOODS_BY_ID[gid].basePrice * 1.3,
-          0,
-        );
-        if (s.credits - chk.credits - mats < 5000) continue;
-        if (this.supply(chk.materials) >= 0) {
-          const r = commissionHull(s, hull);
-          if (r.ok) this.base_spent += chk.credits;
-        }
-      } else if (chk.ok) {
-        const r = commissionHull(s, hull);
-        if (r.ok) this.base_spent += chk.credits;
-      }
+        if (s.credits - chk.credits - missingMaterialsCost(base, chk.materials) < 5000) continue;
+        if (this.supply(chk.materials) < 0) continue;
+      } else if (!chk.ok) continue;
+      if (commissionHull(s, hull).ok) this.base_spent += chk.credits;
     }
     // routes
     const g = galaxyOf(s);

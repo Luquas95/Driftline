@@ -1,3 +1,7 @@
+/**
+ * Galaxy map screen (nav "map"): HTML overlay (filters, zoom, system side panel, trade tips) over the
+ * Pixi map scene (render/mapscene.ts). Jumps, multi-hop autopilot, docking and towing call core/game.ts.
+ */
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { MARKET_GOODS } from '../../content/goods';
 import { STATION_TYPES_BY_ID } from '../../content/stations';
@@ -41,6 +45,7 @@ const FILTERS: { id: MapFilter; label: string; icon: string }[] = [
   { id: 'threat', label: 'map.filter.threat', icon: 'warning' },
 ];
 
+// module-level so keyboard handlers, child panels and the e2e hook mapScene() reach the live scene
 let sceneRef: (MapScene & { attach: (c: HTMLCanvasElement) => void }) | null = null;
 
 /** The running map scene (test hooks). */
@@ -48,6 +53,7 @@ export function mapScene(): MapScene | null {
   return sceneRef;
 }
 
+/** Map screen root; owns the filter, route and autopilot state. */
 export function MapScreen() {
   void rev.value;
   const s = game.value!;
@@ -78,6 +84,7 @@ export function MapScreen() {
     return sc;
   }, [g.seed]);
 
+  // no deps on purpose: sync the scene after every render (rev bumps, filter, selection, route)
   useEffect(() => {
     const sc = sceneRef;
     if (!sc) return;
@@ -94,6 +101,7 @@ export function MapScreen() {
   }, [sel, s.location.systemId, Math.floor(s.ship.fuel), s.cargo.length]);
 
   // autopilot: one jump at a time, each with its flight animation; Space pauses
+  // the ref lets the jump-finished callback see a pause pressed while the flight was playing
   const autoRef = useRef(autopilot);
   autoRef.current = autopilot;
   useEffect(() => {
@@ -111,12 +119,14 @@ export function MapScreen() {
     const to = path[here + 1];
     const day0 = game.value!.day;
     const r = act((st) => jump(st, to));
+    // stop on failure, or when an arrival event / death needs the player's attention
     if (!report(r) || game.value!.pendingEvent || game.value!.dead) {
       setAutopilot(null);
       return;
     }
     sfx('jump');
     flag('tut:jumped');
+    // the system view will play the hyperspace arrival; the top-bar day counter glides to the new day
     arrivalFlag.pending = true;
     tweenSignal(dayShown, day0, game.value!.day, 1200);
     const next = () => {
@@ -130,6 +140,7 @@ export function MapScreen() {
     else next();
   }, [autopilot, route]);
 
+  // keys: Space pauses/resumes autopilot, Space/Enter skip a jump animation, +/- zoom
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const el = e.target as HTMLElement;
@@ -157,6 +168,7 @@ export function MapScreen() {
     [],
   );
 
+  // recommendTrades searches known markets within several jumps, so only run it while the tips modal is open
   const tips = useMemo(() => (showTips ? recommendTrades(s, 6) : []), [showTips, rev.value]);
   const here = g.systems[s.location.systemId];
   const selSys = sel !== null ? g.systems[sel] : null;
@@ -213,6 +225,7 @@ export function MapScreen() {
         {hover && hover.id !== sel && (
           <HoverTip id={hover.id} x={hover.x} y={hover.y} filter={filter} good={good} />
         )}
+        {/* side panel: the selected system, or a hint with fuel range when nothing is selected */}
         {selSys && (
           <aside class="side-panel panel" data-testid="map-panel">
             <SystemPanel
@@ -286,6 +299,7 @@ export function MapScreen() {
   );
 }
 
+/** Jump range and fuel gauge for the empty side panel. */
 function RangeInfo() {
   const a = analysis.value!;
   const s = game.value!;
@@ -308,6 +322,7 @@ function RangeInfo() {
   );
 }
 
+/** Offers a paid tow when no neighbouring system is reachable with current fuel and power (isStranded). */
 function StrandedNotice() {
   const s = game.value!;
   if (!isStranded(s)) return null;
@@ -330,6 +345,7 @@ function StrandedNotice() {
   );
 }
 
+/** Floating tooltip for the hovered system; under the price filter it lists remembered prices. */
 function HoverTip({
   id,
   x,
@@ -374,6 +390,7 @@ function HoverTip({
   );
 }
 
+/** Owning faction with the player's standing, plus the Grey threat level if any. */
 function OwnerLine({ s, sysId }: { s: GameState; sysId: number }) {
   const o = ownerOf(s, sysId);
   const grip = s.threat.grip[sysId] ?? 0;
@@ -396,6 +413,7 @@ function OwnerLine({ s, sysId }: { s: GameState; sysId: number }) {
   );
 }
 
+/** Side panel for the selected system: info, route plan, jump/autopilot, docking and notes. */
 function SystemPanel({
   s,
   sysId,
@@ -419,6 +437,7 @@ function SystemPanel({
   const adjacent = g.systems[s.location.systemId].neighbors.includes(sysId);
   const detected = (s.detected[sysId] ?? []).length;
   const note = s.notes[`sys:${sysId}`] ?? '';
+  // a direct jump is only offered to neighbours; farther systems go through the autopilot
   const plan = adjacent ? planJump(s, sysId) : null;
   const contractsHere = s.contracts.filter(
     (c) => c.state === 'active' && (c.destSystem === sysId || c.targetSystem === sysId),
@@ -526,6 +545,7 @@ function SystemPanel({
                   disabled={!plan?.ok}
                   testid="btn-jump"
                   onClick={() => {
+                    // ignore clicks while a flight is still animating
                     if (sceneRef?.isJumping()) return;
                     const from = s.location.systemId;
                     const day0 = s.day;
@@ -614,6 +634,7 @@ function SystemPanel({
             <textarea
               rows={2}
               value={note}
+              // same in-place write as the journal notes: persisted with the next save, no re-render
               onInput={(e) => {
                 s.notes[`sys:${sysId}`] = (e.target as HTMLTextAreaElement).value;
               }}

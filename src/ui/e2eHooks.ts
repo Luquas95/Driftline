@@ -10,8 +10,7 @@ import { combatRev } from './combatCtl';
 import { spawnEncounter } from '../core/combat/encounter';
 import { MODULES_BY_ID } from '../content/modules';
 import { hullSlots, moduleFits, newModule } from '../core/ship';
-import { addGoods } from '../core/cargo';
-import { analyze, newUid } from '../core/state';
+import { addToHold, newUid } from '../core/state';
 import { cheatApi } from './cheats';
 
 const CHEATS = import.meta.env.VITE_E2E === '1' || import.meta.env.DEV ? cheatApi : null;
@@ -57,16 +56,7 @@ export function installE2eHooks(): void {
         if (slot) s.ship.slots[slot.index] = newModule(id, 'C', newUid(s, 'm'));
       }
       if (missiles > 0) {
-        const { dims, stats } = analyze(s);
-        addGoods(
-          s.cargo,
-          dims,
-          { chilledCells: stats.chilledCells, secureCells: stats.secureCells },
-          'missiles',
-          missiles,
-          0,
-          s.day,
-        );
+        addToHold(s, 'missiles', missiles);
       }
       rev.value++;
     },

@@ -6,6 +6,7 @@ import { HULLS } from '../src/content/hulls';
 import { TECHS } from '../src/content/tech';
 import { ENDINGS } from '../src/core/endings';
 import { cs } from '../src/i18n/cs';
+import { eventTextKeys } from './helpers';
 
 const has = (k: string) => k in cs || k in EVENT_TEXTS_CS;
 
@@ -34,14 +35,7 @@ describe('v3 dictionary', () => {
         for (const o of c.outcomes) for (const fx of o.effects) if (fx.t === 'decide') keys.add(fx.key);
     expect(keys.size).toBeGreaterThanOrEqual(15);
     expect([...keys].filter((k) => !has(`story.dec.${k}`))).toEqual([]);
-    const need: string[] = [];
-    for (const e of EVENTS) {
-      need.push(e.titleKey, e.textKey);
-      for (const c of e.choices) {
-        need.push(c.textKey);
-        for (const o of c.outcomes) need.push(o.textKey);
-      }
-    }
+    const need = eventTextKeys();
     expect(need.filter((k) => !has(k))).toEqual([]);
   });
 

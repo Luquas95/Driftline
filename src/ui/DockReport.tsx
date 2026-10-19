@@ -1,11 +1,14 @@
+/** Summary shown after docking: contracts handed in (with bundle bonus) and customs inspection results. */
 import { signal } from '@preact/signals';
 import type { DockReport } from '../core/game';
 import { t, money } from '../i18n';
 import { Btn, Modal } from './components';
 import { Icon } from './Icon';
 
+/** Set by the screens that call dockAt; App shows the modal once no event or fight is in front. */
 export const dockReport = signal<DockReport | null>(null);
 
+/** Dock report modal; an empty report is discarded without showing anything. */
 export function DockReportModal() {
   const r = dockReport.value;
   if (!r) return null;

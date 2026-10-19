@@ -24,7 +24,7 @@ import { addGoods } from '../src/core/cargo';
 import { ownerOf } from '../src/core/factions';
 import { analyze, galaxyOf } from '../src/core/state';
 import { passTime } from '../src/core/time';
-import { mk } from './helpers';
+import { mk, stockFoundingMaterials } from './helpers';
 import type { GameState } from '../src/core/types';
 
 /** A game with the captain in a free system next to some bodies, rich and carrying founding materials. */
@@ -61,18 +61,7 @@ function founded(seed = 'BASE1'): GameState {
   s.cargo = [];
   s.ship.hullId = 'wayfarer';
   // materials directly into the cargo grid (the hold is small: use the base storage afterwards)
-  s.cargo.push({
-    uid: 'c1',
-    goodId: 'construction',
-    qty: 40,
-    w: 2,
-    h: 2,
-    x: 0,
-    y: 0,
-    cost: 0,
-    acquiredDay: 0,
-  });
-  s.cargo.push({ uid: 'c2', goodId: 'machinery', qty: 12, w: 2, h: 2, x: 2, y: 0, cost: 0, acquiredDay: 0 });
+  stockFoundingMaterials(s);
   expect(foundBase(s, 0, 'Test').ok).toBe(true);
   return s;
 }
@@ -93,28 +82,7 @@ describe('base: founding', () => {
   it('needs credits, goods in the hold, a known body and friendly or free space', () => {
     const s = setup('BASE2');
     expect(foundBase(s, 0, 'X').ok).toBe(false);
-    s.cargo.push({
-      uid: 'c1',
-      goodId: 'construction',
-      qty: 40,
-      w: 2,
-      h: 2,
-      x: 0,
-      y: 0,
-      cost: 0,
-      acquiredDay: 0,
-    });
-    s.cargo.push({
-      uid: 'c2',
-      goodId: 'machinery',
-      qty: 12,
-      w: 2,
-      h: 2,
-      x: 2,
-      y: 0,
-      cost: 0,
-      acquiredDay: 0,
-    });
+    stockFoundingMaterials(s);
     s.credits = 100;
     const r = foundBase(s, 0, 'X');
     expect(r.ok).toBe(false);

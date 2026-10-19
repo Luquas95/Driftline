@@ -1,3 +1,4 @@
+/** Journal screen tabs added in v4: story progress, alien language, the Grey threat and achievements. */
 import { ACHIEVEMENTS } from '../../content/achievements';
 import { dictionary, understanding } from '../../core/lang';
 import { consumedShare, gripLevel, spreadSpeed } from '../../core/threat';
@@ -45,6 +46,7 @@ function condLabel(c: Cond): string | null {
   }
 }
 
+/** Checklist of every ending's conditions, evaluated live with the same evalCond the story engine uses. */
 function EndingGoals({ s }: { s: GameState }) {
   const ends = STORY_BEATS.filter((b) => b.id.startsWith('end_'));
   return (
@@ -72,6 +74,7 @@ function EndingGoals({ s }: { s: GameState }) {
   );
 }
 
+/** Story tab: stage hint, ending goals (from stage 5 until an ending), decisions log. */
 export function StoryTab() {
   void rev.value;
   const s = game.value!;
@@ -95,6 +98,7 @@ export function StoryTab() {
   );
 }
 
+/** Language tab: dictionary of alien words; unknown meanings stay hidden. */
 export function LanguageTab() {
   void rev.value;
   const s = game.value!;
@@ -123,6 +127,7 @@ export function LanguageTab() {
   );
 }
 
+/** Threat tab: how far the Grey has spread and how fast (core/threat.ts). */
 export function ThreatTab() {
   void rev.value;
   const s = game.value!;
@@ -158,6 +163,7 @@ export function ThreatTab() {
   );
 }
 
+/** Achievements tab: union of the cross-run profile and this run's unlocks. */
 export function AchievementsTab() {
   void rev.value;
   const p = profile.value;

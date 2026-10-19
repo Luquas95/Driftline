@@ -1,9 +1,12 @@
+/**
+ * Station screen, "shipyard" tab: module shop, hull swaps and the module inventory (core/shop.ts).
+ * StatDiff and disassemble are shared with the ship screen.
+ */
 import { useState } from 'preact/hooks';
 import { HULLS_BY_ID } from '../../content/hulls';
 import { MODULES_BY_ID } from '../../content/modules';
-import { addGoods, cargoMass } from '../../core/cargo';
+import { cargoMass } from '../../core/cargo';
 import { computeShipStats, hullSlots, moduleFits, modulePrice } from '../../core/ship';
-import { analyze } from '../../core/state';
 import {
   buyHull,
   buyModule,
@@ -25,6 +28,7 @@ import type { ModuleInstance, ModuleKind, Ship, StationStatic } from '../../core
 
 type Sub = 'modules' | 'hulls' | 'inventory';
 
+/** Shipyard tab body with three sub-tabs; installs and hull swaps open a preview modal first. */
 export function ShipyardTab({ st }: { st: StationStatic }) {
   void rev.value;
   const s = game.value!;
@@ -81,6 +85,7 @@ export function ShipyardTab({ st }: { st: StationStatic }) {
                   </tr>
                 </thead>
                 <tbody>
+                  {/* e2e tests select rows by shop-<defId>-<quality>; keep the test ids stable */}
                   {list.map((m) => {
                     const def = MODULES_BY_ID[m.defId];
                     return (
@@ -192,28 +197,7 @@ export function ShipyardTab({ st }: { st: StationStatic }) {
                   >
                     {t('market.sell')} ({money(sellValue(m))})
                   </Btn>
-                  <Btn
-                    small
-                    kind="danger"
-                    onClick={() => {
-                      const r = act((x) =>
-                        disassembleModule(x, m.uid, (g, q) => {
-                          const { stats, dims } = analyze(x);
-                          return addGoods(
-                            x.cargo,
-                            dims,
-                            { chilledCells: stats.chilledCells, secureCells: stats.secureCells },
-                            g,
-                            q,
-                            0,
-                            x.day,
-                          ).added;
-                        }),
-                      );
-                      if (report(r) && r.ok)
-                        toast(t('yard.disassembled', { metals: r.metals, parts: r.parts }), 'info');
-                    }}
-                  >
+                  <Btn small kind="danger" onClick={() => disassemble(m.uid)}>
                     {t('yard.disassemble')}
                   </Btn>
                 </div>
@@ -297,6 +281,13 @@ export function InstallModal({ mod, onClose }: { mod: ModuleInstance; onClose: (
   );
 }
 
+/** Break a module (from the inventory or the ship) down into materials in the hold. */
+export function disassemble(uid: string): void {
+  const r = act((x) => disassembleModule(x, uid));
+  if (report(r) && r.ok) toast(t('yard.disassembled', { metals: r.metals, parts: r.parts }), 'info');
+}
+
+/** Before/after table of ship stats; rows flagged true are "lower is better" (draw, mass). */
 export function StatDiff({
   before,
   after,
@@ -323,6 +314,7 @@ export function StatDiff({
   return (
     <dl class="kv" data-testid="stat-diff">
       {rows
+        // hide stats the ship has neither before nor after (e.g. no shield at all)
         .filter((r) => Math.abs(r[1]) > 1e-9 || Math.abs(r[2]) > 1e-9)
         .map(([k, b, a, d, u, inv]) => (
           <>
@@ -336,6 +328,7 @@ export function StatDiff({
   );
 }
 
+/** Hull swap preview: price after trade-in, which modules move over and which go to the inventory. */
 function HullModal({ st, hullId, onClose }: { st: StationStatic; hullId: string; onClose: () => void }) {
   const s = game.value!;
   const p = previewHullSwap(s, st, hullId);

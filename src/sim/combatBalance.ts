@@ -8,7 +8,6 @@ import { HULLS_BY_ID } from '../content/hulls';
 import { defaultCrew } from '../core/crew';
 import { MODULES_BY_ID } from '../content/modules';
 import { WEAPON_SIZES } from '../content/weapons';
-import { addGoods } from '../core/cargo';
 import { autoResolve, makeEncounter, startCombat } from '../core/combat/encounter';
 import { makeDuel, type DuelSide } from '../core/combat/duel';
 import { resolveCombat } from '../core/combat/resolve';
@@ -17,7 +16,7 @@ import { moduleRepairCost, hullRepairCost } from '../core/game';
 import { Rng } from '../core/rng';
 import { buildStarterShip, hullSlots, moduleFits, newModule } from '../core/ship';
 import { newGame } from '../core/start';
-import { analyze, newUid } from '../core/state';
+import { addToHold, analyze, newUid } from '../core/state';
 import type { Size } from '../core/types';
 
 export type Archetype = 'energy' | 'kinetic' | 'missile' | 'ion' | 'drones' | 'mixed';
@@ -135,16 +134,7 @@ function armedGame(seed: string, arch: Archetype, risk: 'low' | 'normal' | 'high
   }
   s.ship.hp = analyze(s).stats.hpMax;
   s.crew = defaultCrew(seed, 'mule', 0, () => newUid(s, 'w'));
-  const { dims, stats } = analyze(s);
-  addGoods(
-    s.cargo,
-    dims,
-    { chilledCells: stats.chilledCells, secureCells: stats.secureCells },
-    'missiles',
-    10,
-    0,
-    0,
-  );
+  addToHold(s, 'missiles', 10);
   return s;
 }
 

@@ -91,6 +91,29 @@ export async function openScreen(page: Page, id: string) {
   await expect(page.getByTestId(`screen-${id}`)).toBeVisible();
 }
 
+/** Cheats exist only in builds made with VITE_E2E=1 (the playwright web server does that). */
+export const cheat = <T = unknown>(page: Page, fn: string, ...args: unknown[]) =>
+  page.evaluate(
+    ({ fn, args }) => {
+      const c = (window as any).__dl.cheat; // eslint-disable-line @typescript-eslint/no-explicit-any
+      return c[fn](...args) as T;
+    },
+    { fn, args },
+  );
+
+/** Cheats credits and founding goods, detects the current system and founds a base on body-0 from the system screen. */
+export async function foundBaseHere(page: Page, credits: number) {
+  await cheat(page, 'credits', credits);
+  await cheat(page, 'goods', 'construction', 40);
+  await cheat(page, 'goods', 'machinery', 12);
+  await cheat(page, 'detectHere');
+  await openScreen(page, 'system');
+  await page.getByTestId('body-0').click();
+  await expect(page.getByTestId('btn-found-base')).toBeEnabled();
+  await page.getByTestId('btn-found-base').click();
+  await expect(page.getByTestId('screen-base')).toBeVisible();
+}
+
 /** On narrow screens the trade panel is a modal: close it so navigation is reachable. */
 export async function closeTrade(page: Page) {
   const m = page.getByTestId('modal-trade');

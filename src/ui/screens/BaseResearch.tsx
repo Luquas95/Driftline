@@ -1,3 +1,4 @@
+/** Base screen, "research" tab: tech tree from content/tech.ts, driven by core/research.ts. */
 import { TECHS, type TechBranch } from '../../content/tech';
 import { canResearch, hasTech, labRate, startResearch } from '../../core/research';
 import { t, fmt } from '../../i18n';
@@ -64,6 +65,7 @@ export function BaseResearch() {
                     <Btn
                       small
                       kind={isActive ? undefined : 'primary'}
+                      // switching to another tech is allowed: startResearch refunds the progress
                       disabled={!can || isActive}
                       testid={`research-${x.id}`}
                       onClick={() => report(act((st) => startResearch(st, x.id)))}

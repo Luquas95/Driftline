@@ -1,3 +1,7 @@
+/**
+ * Base screen, "production" tab: mine output, production lines, port auto-sell thresholds and
+ * hull/module commissions (all actions from core/base.ts).
+ */
 import { useState } from 'preact/hooks';
 import { HULLS } from '../../content/hulls';
 import { MODULES } from '../../content/modules';
@@ -18,6 +22,7 @@ import { t, fmt, money } from '../../i18n';
 import { Bar, Btn, Empty } from '../components';
 import { act, game, report, rev } from '../store';
 
+/** Production tab body; the order buttons stay disabled until the core pre-check passes. */
 export function BaseProduction() {
   void rev.value;
   const s = game.value!;
@@ -96,6 +101,7 @@ export function BaseProduction() {
             small
             disabled={!pick}
             testid="line-add"
+            // cap 0 = no stock limit; the line runs until inputs or storage run out
             onClick={() => report(act((st) => setLine(st, pick, true, 0)))}
           >
             {t('ui3.add')}
@@ -116,6 +122,7 @@ export function BaseProduction() {
                   style={{ width: 80 }}
                   aria-label={t('ui3.keep')}
                   placeholder={t('ui3.keep')}
+                  // value = units to keep in storage; the port sells the surplus. Empty clears the rule.
                   value={base.autoSell[gid] ?? ''}
                   onChange={(e) => {
                     const v = (e.target as HTMLInputElement).value;
@@ -131,6 +138,7 @@ export function BaseProduction() {
         {base.orders.map((o) => (
           <div key={o.id}>
             <div class="spread">
+              {/* module ids are `<kind>_<s|m|l>`: translate the kind, show the size letter */}
               <span>
                 {o.kind === 'hull'
                   ? t(`hull.${o.item}`)

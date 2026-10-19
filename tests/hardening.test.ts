@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { advanceChain, makeContract } from '../src/core/contracts';
+import { advanceChain } from '../src/core/contracts';
 import { completeContractsAt, isDeliverable } from '../src/core/contractOps';
 import { buyFuel, wait } from '../src/core/game';
 import { makeEncounter, startCombat } from '../src/core/combat/encounter';
@@ -7,22 +7,16 @@ import { Rng } from '../src/core/rng';
 import { deserializeState, serializeState, SaveError } from '../src/core/save';
 import { newModule, hullSlots } from '../src/core/ship';
 import { sellModule, toggleModule } from '../src/core/shop';
-import { analyze, galaxyOf, stationOf } from '../src/core/state';
+import { analyze, galaxyOf } from '../src/core/state';
 import { CHAINS } from '../src/content/chains';
-import { mk } from './helpers';
+import { firstChainContract, mk } from './helpers';
 
 describe('hardening', () => {
   it('every story chain can be played to its end (next step cargo is loaded)', () => {
     for (const chain of CHAINS) {
       const s = mk(`CH-${chain.id}`, 200);
       const g = galaxyOf(s);
-      const st = stationOf(s, s.location.stationId!);
-      let c = makeContract(g, s, st, Rng.fromSeed('c0'), {
-        kind: chain.steps[0].kind,
-        step: chain.steps[0],
-        chainId: chain.id,
-        chainStep: 0,
-      });
+      let c = firstChainContract(s, chain);
       if (!c) continue;
       c.state = 'active';
       s.contracts.push(c);

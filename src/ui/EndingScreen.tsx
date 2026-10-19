@@ -1,3 +1,4 @@
+/** Full-screen ending summary (core/endings.ts endingSummary), mounted by App while an ending is unseen. */
 import { Fragment } from 'preact';
 import { endingSummary, markEndingSeen } from '../core/endings';
 import { t, fmt } from '../i18n';
@@ -71,6 +72,8 @@ export function EndingScreen() {
                 kind="primary"
                 testid="ending-continue"
                 onClick={() => {
+                  // sets flags.endingSeen, which App checks to unmount this screen; it is a direct
+                  // mutation outside act(), so bump rev and save by hand
                   markEndingSeen(s);
                   rev.value++;
                   scheduleAutosave(s);

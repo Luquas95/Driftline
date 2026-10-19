@@ -1,18 +1,12 @@
+/**
+ * Main menu overlay (shown while `menuOpen`): resume/continue, new game setup, daily challenge,
+ * save slots and import. Game creation and loading go through store.ts.
+ */
 import { useEffect, useState } from 'preact/hooks';
 import { createBackdropScene } from '../../render/backdrop';
-import { t, fmt } from '../../i18n';
+import { t, fmt, money } from '../../i18n';
 import { Btn, Panel } from '../components';
-import {
-  exportCurrent,
-  game,
-  profile,
-  importFromText,
-  loadSlot,
-  menuOpen,
-  saves,
-  startNewGame,
-  toast,
-} from '../store';
+import { game, profile, importFromFile, loadSlot, menuOpen, saves, startNewGame, toast } from '../store';
 import { settings, updateSettings } from '../settings';
 import { unlockAudio, sfx } from '../../audio/audio';
 import { useScene } from '../useScene';
@@ -22,12 +16,14 @@ import { STARTS } from '../../content/starts';
 import { dailyRanking, startUnlocked } from '../../core/profile';
 import { dailySeed } from '../../core/daily';
 
+/** UTC date key (YYYY-MM-DD) of the daily challenge; everyone gets the same seed on the same day. */
 function todayKey(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
 type View = 'main' | 'new' | 'load' | 'daily';
 
+/** Menu root; `view` switches between the main list and the sub-panels. */
 export function MenuScreen() {
   const [view, setView] = useState<View>('main');
   const [startId, setStartId] = useState('standard');
@@ -41,21 +37,11 @@ export function MenuScreen() {
     permadeath: false,
   });
   useScene(() => createBackdropScene({ spectral: 'G', starSeed: 7, tint: 2 }), []);
+  // reload the slot list whenever a sub-view opens or closes (saves may have changed meanwhile)
   useEffect(() => {
     void saves.list().then(setList);
   }, [view]);
   const auto = list.find((x) => x.id === 'autosave');
-
-  const importFile = () => {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = '.json,application/json';
-    input.onchange = async () => {
-      const f = input.files?.[0];
-      if (f) importFromText(await f.text());
-    };
-    input.click();
-  };
 
   return (
     <div class="menu-screen" data-testid="menu">
@@ -76,6 +62,7 @@ export function MenuScreen() {
                 <Btn
                   kind={game.value ? undefined : 'primary'}
                   testid="menu-continue"
+                  // browsers only allow audio to start from a user gesture, so every start button unlocks it
                   onClick={async () => {
                     unlockAudio();
                     await loadSlot('autosave');
@@ -83,7 +70,7 @@ export function MenuScreen() {
                 >
                   {t('menu.continue')}{' '}
                   <span class="dim">
-                    · {t('top.dayShort')} {auto.day}, {fmt(auto.credits)} kr
+                    · {t('top.dayShort')} {auto.day}, {money(auto.credits)}
                   </span>
                 </Btn>
               )}
@@ -100,7 +87,7 @@ export function MenuScreen() {
               <Btn onClick={() => setView('load')} testid="menu-load">
                 {t('menu.load')}
               </Btn>
-              <Btn onClick={importFile}>{t('menu.import')}</Btn>
+              <Btn onClick={importFromFile}>{t('menu.import')}</Btn>
               <p class="faint right" style={{ marginTop: 6 }}>
                 {t('menu.offline')}
               </p>
@@ -124,6 +111,7 @@ export function MenuScreen() {
                 {t('start.title')}
                 <div class="seg wrap" data-testid="start-select">
                   {STARTS.map((st) => {
+                    // alternative starts unlock through achievements stored in the cross-run profile
                     const ok = startUnlocked(profile.value, st.id);
                     return (
                       <button
@@ -285,7 +273,7 @@ export function MenuScreen() {
                     <span class="grow" style={{ textAlign: 'left' }}>
                       {m.name}{' '}
                       <span class="dim">
-                        · {m.ship} · {t('top.dayShort')} {m.day} · {fmt(m.credits)} kr · {m.seed}
+                        · {m.ship} · {t('top.dayShort')} {m.day} · {money(m.credits)} · {m.seed}
                       </span>
                     </span>
                   </Btn>
@@ -308,5 +296,3 @@ export function MenuScreen() {
     </div>
   );
 }
-
-void exportCurrent;

@@ -1,40 +1,16 @@
 // Produces the README screenshots: node scripts/screenshots.mjs  (needs `npm run build && npm run preview` on :4173)
-import { chromium } from '@playwright/test';
 import { mkdirSync } from 'node:fs';
+import { GAME_URL, launchBrowser, newSession, snap, startNewGame } from './lib/browser.mjs';
 
 mkdirSync('docs/screenshots', { recursive: true });
-const browser = await chromium.launch({
-  executablePath: process.env.CHROMIUM_PATH || '/opt/pw-browsers/chromium',
-  args: [
-    '--use-angle=swiftshader',
-    '--use-gl=angle',
-    '--enable-unsafe-swiftshader',
-    '--ignore-gpu-blocklist',
-    '--no-sandbox',
-  ],
-});
+const browser = await launchBrowser();
 
 async function session(name, viewport, mobile) {
-  const ctx = await browser.newContext({
-    viewport,
-    deviceScaleFactor: 1,
-    hasTouch: mobile,
-    isMobile: mobile,
-  });
-  const page = await ctx.newPage();
-  page.on('pageerror', (e) => console.log('[pageerror]', e.message));
-  await page.addInitScript(() =>
-    localStorage.setItem(
-      'driftline.settings',
-      JSON.stringify({ tutorial: false, motion: 'reduced', muted: true }),
-    ),
-  );
-  await page.goto('http://localhost:4173/?e2e=1');
+  const { ctx, page } = await newSession(browser, { viewport, mobile });
+  await page.goto(GAME_URL);
   await page.waitForTimeout(1200);
   await page.screenshot({ path: `docs/screenshots/${name}-menu.png` });
-  await page.getByTestId('menu-new').click();
-  await page.getByTestId('new-seed').fill('SHOWCASE');
-  await page.getByTestId('menu-start').click();
+  await startNewGame(page);
   await page.waitForFunction(() => !!window.__dl?.state());
   await page.evaluate(() => window.__dl.autoplay('trader', 22));
   await page.waitForTimeout(500);
@@ -42,10 +18,7 @@ async function session(name, viewport, mobile) {
     await page.getByTestId(`nav-${id}`).click();
     await page.waitForTimeout(700);
     if (prep) await prep();
-    await page.evaluate(() => window.__dl.freeze(3));
-    await page.waitForTimeout(500);
-    await page.screenshot({ path: `docs/screenshots/${name}-${file}.png` });
-    await page.evaluate(() => window.__dl.unfreeze());
+    await snap(page, `docs/screenshots/${name}-${file}.png`);
     await page.keyboard.press('Escape');
   };
   // market with a selected good

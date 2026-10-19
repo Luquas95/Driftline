@@ -1,3 +1,7 @@
+/**
+ * Base screen, "fleet" tab: hangar ships with standing orders and automatic trade routes
+ * (core/fleet.ts). Trips themselves are simulated day by day in passTime.
+ */
 import { useState } from 'preact/hooks';
 import { planTrip, protectionOf, renameFleetShip, setFleetOrder, switchShip } from '../../core/fleet';
 import { galaxyOf } from '../../core/state';
@@ -9,9 +13,11 @@ import { MARKET_GOODS } from '../../content/goods';
 
 const ORDERS: FleetShip['order'][] = ['idle', 'trade', 'escort', 'guard'];
 
+/** One hangar ship: order selector, route builder with a live trip preview, rename and switch. */
 function ShipCard({ fs }: { fs: FleetShip }) {
   const s = game.value!;
   const g = galaxyOf(s);
+  // only stations with a market the player knows about; pirate dens never take fleet trade
   const stations = Object.keys(s.prices)
     .map((id) => g.stationsById[id])
     .filter((x) => x && x.type !== 'pirate');
@@ -19,7 +25,9 @@ function ShipCard({ fs }: { fs: FleetShip }) {
   const [to, setTo] = useState(fs.route?.to ?? stations[1]?.id ?? '');
   const [good, setGood] = useState<string>(fs.route?.goodId ?? '');
   const [name, setName] = useState(fs.name);
+  // empty good = let the planner pick the most profitable common good
   const route = { from, to, goodId: good || null };
+  // same budget the daily simulation uses (base treasury), so the preview matches what gets booked
   const plan = from && to && from !== to ? planTrip(s, fs, route, Math.max(0, s.base!.treasury)) : null;
   return (
     <div class="contract-card stack" data-testid={`fleet-${fs.id}`}>
@@ -38,6 +46,7 @@ function ShipCard({ fs }: { fs: FleetShip }) {
             type="button"
             class={fs.order === o ? 'active' : ''}
             data-testid={`fleet-order-${o}`}
+            // switching to "trade" reuses the route currently shown in the builder
             onClick={() =>
               report(act((st) => setFleetOrder(st, fs.id, o, o === 'trade' ? route : undefined)))
             }
@@ -95,6 +104,7 @@ function ShipCard({ fs }: { fs: FleetShip }) {
                 units: plan.units,
                 net: money(Math.round(plan.net)),
                 days: Math.ceil(plan.days),
+                // effective loss chance: route threat reduced by the ship's own protection
                 risk: Math.round(plan.risk * (1 - plan.protection) * 100),
               })
             : t(plan.error ?? 'err.badRoute')}
@@ -127,6 +137,7 @@ function ShipCard({ fs }: { fs: FleetShip }) {
           style={{ maxWidth: 150 }}
           aria-label={t('menu.shipName')}
           onInput={(e) => setName((e.target as HTMLInputElement).value)}
+          // commit on blur (Enter blurs) so typing does not fire one action per keystroke
           onBlur={() => name !== fs.name && report(act((st) => renameFleetShip(st, fs.id, name)))}
           onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
         />
@@ -135,6 +146,7 @@ function ShipCard({ fs }: { fs: FleetShip }) {
   );
 }
 
+/** Fleet tab body: one card per hangar ship plus the fleet's daily income. */
 export function BaseFleet() {
   void rev.value;
   const base = game.value!.base!;

@@ -211,6 +211,18 @@ export function importFromText(text: string): boolean {
   }
 }
 
+/** Let the player pick an exported save file and load it. */
+export function importFromFile(): void {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.json,application/json';
+  input.onchange = async () => {
+    const f = input.files?.[0];
+    if (f) importFromText(await f.text());
+  };
+  input.click();
+}
+
 export function exportCurrent(): string | null {
   const s = game.value;
   if (!s) return null;

@@ -1,50 +1,25 @@
 /* global document */
 // README media for v3: node scripts/screenshots-v3.mjs  (needs `npm run build && npm run preview` on :4173, ffmpeg for the GIF)
-import { chromium } from '@playwright/test';
 import { mkdirSync, rmSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
+import { GAME_URL, launchBrowser, newSession, snap as snapPng, startNewGame } from './lib/browser.mjs';
 
 mkdirSync('docs/screenshots', { recursive: true });
-const browser = await chromium.launch({
-  executablePath: process.env.CHROMIUM_PATH || '/opt/pw-browsers/chromium',
-  args: [
-    '--use-angle=swiftshader',
-    '--use-gl=angle',
-    '--enable-unsafe-swiftshader',
-    '--ignore-gpu-blocklist',
-    '--no-sandbox',
-  ],
-});
+const browser = await launchBrowser();
 
 async function newPage(viewport, mobile, video) {
-  const ctx = await browser.newContext({
+  const { ctx, page } = await newSession(browser, {
     viewport,
-    deviceScaleFactor: 1,
-    hasTouch: mobile,
-    isMobile: mobile,
-    ...(video ? { recordVideo: { dir: 'tmp-video', size: viewport } } : {}),
+    mobile,
+    settings: { motion: 'full', animations: 'full' },
+    recordVideo: video ? { dir: 'tmp-video', size: viewport } : null,
   });
-  const page = await ctx.newPage();
-  page.on('pageerror', (e) => console.log('[pageerror]', e.message));
-  await page.addInitScript(() =>
-    localStorage.setItem(
-      'driftline.settings',
-      JSON.stringify({ tutorial: false, motion: 'full', animations: 'full', muted: true }),
-    ),
-  );
-  await page.goto('http://localhost:4173/?e2e=1');
-  await page.getByTestId('menu-new').click();
-  await page.getByTestId('new-seed').fill('SHOWCASE');
-  await page.getByTestId('menu-start').click();
+  await page.goto(GAME_URL);
+  await startNewGame(page);
   await page.getByTestId('screen-firstship').waitFor();
   return { ctx, page };
 }
-const snap = async (page, file) => {
-  await page.evaluate(() => window.__dl.freeze(3));
-  await page.waitForTimeout(500);
-  await page.screenshot({ path: `docs/screenshots/${file}.png` });
-  await page.evaluate(() => window.__dl.unfreeze());
-};
+const snap = (page, file) => snapPng(page, `docs/screenshots/${file}.png`);
 const buyThird = async (page) => {
   await page.locator('[data-price]').nth(2).click();
   await page.getByTestId('first-name').fill('Nadějná');

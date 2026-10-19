@@ -16,7 +16,7 @@ import { refreshShop } from '../src/core/shop';
 import { galaxyOf } from '../src/core/state';
 import { isKnown, learningOrder, understanding, WORD_COUNT } from '../src/core/lang';
 import { passTime } from '../src/core/time';
-import { mk } from './helpers';
+import { makeBase, mk } from './helpers';
 
 describe('research: data', () => {
   it('has a consistent tree: known prerequisites, no cycles, valid gated modules and hulls', () => {
@@ -55,25 +55,7 @@ describe('research: progress', () => {
   it('the lab produces points while time passes', () => {
     const s = mk('RES2');
     expect(labRate(s)).toBe(0);
-    s.base = {
-      systemId: 0,
-      bodyIndex: 0,
-      kind: 'station',
-      name: 'B',
-      founded: 0,
-      buildings: { lab: 3 },
-      queue: [],
-      storage: {},
-      treasury: 0,
-      lines: [],
-      orders: [],
-      autoSell: {},
-      hangar: [],
-      attack: null,
-      log: [],
-      lastTick: 0,
-      stats: { produced: 0, sold: 0, fleetIncome: 0, upkeep: 0, attacks: 0, repelled: 0 },
-    };
+    makeBase(s, { name: 'B', buildings: { lab: 3 } });
     s.credits = 1e6;
     expect(labRate(s)).toBeGreaterThan(8);
     startResearch(s, 'deep_scan');

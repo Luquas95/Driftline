@@ -1,10 +1,20 @@
 import { addRep } from './factions';
 import { addResearchPoints } from './research';
 import { GOODS_BY_ID } from '../content/goods';
-import { addGoods } from './cargo';
 import { rollEvent } from './events';
 import { sublightDays, wearKind, canJump as _unused } from './ship';
-import { analyze, damageHull, fail, galaxyOf, msg, newUid, ok, withRng, type Result } from './state';
+import {
+  addToHold,
+  analyze,
+  damageHull,
+  fail,
+  galaxyOf,
+  msg,
+  newUid,
+  ok,
+  withRng,
+  type Result,
+} from './state';
 import { passTime } from './time';
 import { T, riskFactor } from './tuning';
 import type { BodyDyn, BodyStatic, GameState, SystemStatic } from './types';
@@ -176,9 +186,7 @@ export function salvage(state: GameState): Result {
     const t = travelToBody(state, body.index);
     if (!t.ok) return t;
   }
-  const { stats, dims } = analyze(state);
-  const quotas = { chilledCells: stats.chilledCells, secureCells: stats.secureCells };
-  const r = addGoods(state.cargo, dims, quotas, 'survivors', 1, 0, state.day, c.id);
+  const r = addToHold(state, 'survivors', 1, { contractId: c.id });
   if (r.added < 1) return fail('err.noCargoSpace');
   c.progress = 2;
   passTime(state, 0.5);
@@ -251,7 +259,7 @@ export function mine(
   if (!body || !dep) return fail('err.noDeposit');
   const dyn = bodyDyn(state, body.id);
   if (!dyn.revealed.includes(dep.id)) return fail('err.depositUnknown');
-  const { stats, dims } = analyze(state);
+  const { stats } = analyze(state);
   const method = mineMethodFor(body);
   const base =
     method === 'laser' ? stats.laserYield : method === 'scoop' ? stats.scoopYield : stats.probeValue * 5.5;
@@ -305,10 +313,8 @@ export function mine(
       const refinedUnits = Math.floor(refUnits * rf[1]);
       const rest = units - refUnits;
       // add refined product first, then the raw remainder
-      const quotas = { chilledCells: stats.chilledCells, secureCells: stats.secureCells };
-      const r1 = addGoods(state.cargo, dims, quotas, rf[0], refinedUnits, 0, state.day);
-      const r2 =
-        rest > 0 ? addGoods(state.cargo, dims, quotas, dep.goodId, rest, 0, state.day) : { added: 0 };
+      const r1 = addToHold(state, rf[0], refinedUnits);
+      const r2 = rest > 0 ? addToHold(state, dep.goodId, rest) : { added: 0 };
       goodId = rf[0];
       outUnits = r1.added + r2.added;
       refined = true;
@@ -320,8 +326,7 @@ export function mine(
       });
     }
   }
-  const quotas = { chilledCells: stats.chilledCells, secureCells: stats.secureCells };
-  const r = addGoods(state.cargo, dims, quotas, goodId, units, 0, state.day);
+  const r = addToHold(state, goodId, units);
   state.stats.unitsMined += r.added;
   passTime(state, 1);
   if (hullDamage) damageHull(state, hullDamage);

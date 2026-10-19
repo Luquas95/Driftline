@@ -1,7 +1,7 @@
 import { EVENTS, EVENTS_BY_ID } from '../content/events';
 import { GOODS_BY_ID } from '../content/goods';
 import { MODULES } from '../content/modules';
-import { addGoods, removeGoods } from './cargo';
+import { removeGoods } from './cargo';
 import type { Cond, Effect, EventDef, EventTrigger } from './eventTypes';
 import { spawnEncounter } from './combat/encounter';
 import { crewCapacity, crewHasOfficer, gainXp, makeCrew } from './crew';
@@ -13,6 +13,7 @@ import {
   damageHull,
   destroyShip,
   fail,
+  addToHold,
   galaxyOf,
   learnStation,
   msg,
@@ -212,7 +213,7 @@ function randomInstalled(state: GameState, rng: Rng, kind?: string): number | nu
 }
 
 export function applyEffect(state: GameState, e: Effect, ctx?: EventContext): void {
-  const { stats, dims } = analyze(state);
+  const { stats } = analyze(state);
   const g = galaxyOf(state);
   switch (e.t) {
     case 'credits':
@@ -253,8 +254,7 @@ export function applyEffect(state: GameState, e: Effect, ctx?: EventContext): vo
       break;
     case 'goods':
       if (e.qty > 0) {
-        const quotas = { chilledCells: stats.chilledCells, secureCells: stats.secureCells };
-        addGoods(state.cargo, dims, quotas, e.goodId, e.qty, 0, state.day);
+        addToHold(state, e.goodId, e.qty);
       } else removeGoods(state.cargo, e.goodId, -e.qty);
       break;
     case 'loseCargo':

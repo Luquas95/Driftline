@@ -1,3 +1,7 @@
+/**
+ * First ship purchase, shown by App instead of the normal screens while `state.noShip` is set
+ * (a new game without quick start). Offers and the purchase come from core/firstShip.ts.
+ */
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { createBackdropScene } from '../../render/backdrop';
 import { hullThumb } from '../../render/hullThumb';
@@ -19,6 +23,7 @@ import { settings } from '../settings';
 import { act, game, report, rev } from '../store';
 import { useScene } from '../useScene';
 
+/** Async hull thumbnail (rendered off-screen by Pixi); ignores results that arrive after unmount. */
 function useThumb(hullId: string): string | null {
   const [url, setUrl] = useState<string | null>(null);
   useEffect(() => {
@@ -31,6 +36,7 @@ function useThumb(hullId: string): string | null {
   return url;
 }
 
+/** Key numbers of an offer, computed from a throwaway ship built exactly as the purchase would. */
 function OfferStats({ offer }: { offer: ShipOffer }) {
   const ship = useMemo(() => buildOfferShip(offer, 'x', () => 'p'), [offer.id]);
   const st = useMemo(() => computeShipStats(ship), [offer.id]);
@@ -58,6 +64,7 @@ function OfferStats({ offer }: { offer: ShipOffer }) {
   );
 }
 
+/** Selectable offer in the list; unaffordable offers stay selectable so they can be inspected. */
 function OfferCard({
   offer,
   selected,
@@ -108,6 +115,7 @@ export function FirstShipScreen() {
   const st = g.stationsById[s.location.stationId!];
   const sys = g.systems[st.systemId];
   const offers = useMemo(() => firstShipOffers(s), [s.seed, s.difficulty.prices]);
+  // preselect something that leaves most of the capital for cargo and fuel
   const [sel, setSel] = useState<string>(
     () => offers.find((o) => o.price <= s.credits * 0.3)?.id ?? offers[0].id,
   );
@@ -117,6 +125,7 @@ export function FirstShipScreen() {
   const detailRef = useRef<HTMLElement>(null);
   const prev = previewOffer(s, offer);
   const thumb = useThumb(offer.hullId);
+  // keep suggesting a name per hull until the player types their own
   useEffect(() => {
     if (!nameTouched.current) setName(suggestShipName(s.seed, offer.hullId));
   }, [sel]);
@@ -140,6 +149,7 @@ export function FirstShipScreen() {
   const buy = () => {
     const r = act((x) => buyFirstShip(x, offer.id, name));
     if (report(r) && r.ok) {
+      // the tutorial starts with the first flight; this mutation happens outside act(), hence the extra rev bump
       s.tutorial.done = !settings.value.tutorial;
       sfx('success');
       rev.value++;

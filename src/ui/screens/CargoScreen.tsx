@@ -1,3 +1,7 @@
+/**
+ * Cargo screen (nav "cargo"): drag-and-drop hold grid plus a summary and per-good list.
+ * Placement rules live in core/cargo.ts; moves go through cargoMove/cargoRotate in core/game.ts.
+ */
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { GOODS_BY_ID } from '../../content/goods';
 import { bestKnownPrice } from '../../core/advisor';
@@ -13,6 +17,7 @@ import { Icon } from '../Icon';
 import { act, analysis, game, report, rev } from '../store';
 import type { CargoItem } from '../../core/types';
 
+/** Hue per good category; contract cargo is drawn desaturated so it stands out from own goods. */
 const HUE: Record<string, number> = {
   raw: 35,
   food: 100,
@@ -29,6 +34,7 @@ const colorFor = (goodId: string, contract: boolean) => {
   return `hsl(${HUE[cat] ?? 35} ${contract ? 35 : 55}% ${l}%)`;
 };
 
+/** Cargo screen root: hold board (left) and summary + goods table (right). */
 export function CargoScreen() {
   void rev.value;
   useScene(() => createBackdropScene({ tint: 3 }), []);
@@ -50,6 +56,7 @@ export function CargoScreen() {
   } | null>(null);
   const rows = totalRows(dims);
 
+  // fit the cell size to the panel width (clamped so items stay readable and grabbable)
   useEffect(() => {
     const el = wrapRef.current;
     if (!el) return;
@@ -63,6 +70,7 @@ export function CargoScreen() {
     return () => ro.disconnect();
   }, [dims.cols]);
 
+  // "R" rotates the selected item, mirroring the rotate button label
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key.toLowerCase() === 'r' && selected) {
@@ -76,6 +84,7 @@ export function CargoScreen() {
 
   const onDown = (e: PointerEvent, it: CargoItem) => {
     e.preventDefault();
+    // capture keeps move/up events on this item even when the pointer leaves it mid-drag
     (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
     setSelected(it.uid);
     setDrag({ uid: it.uid, dx: 0, dy: 0, ox: e.clientX, oy: e.clientY, valid: true, gx: it.x, gy: it.y });
@@ -86,11 +95,13 @@ export function CargoScreen() {
     const dy = e.clientY - drag.oy;
     const gx = Math.round(it.x + dx / cell);
     const gy = Math.round(it.y + dy / cell);
+    // preview only: validity is shown live, the core re-checks on cargoMove
     const valid = fitsAt(dims, s.cargo, it.w, it.h, gx, gy, it.uid);
     setDrag({ ...drag, dx, dy, gx, gy, valid });
   };
   const onUp = (_e: PointerEvent, it: CargoItem) => {
     if (!drag || drag.uid !== it.uid) return;
+    // a few pixels of jitter still count as a tap, not a drag
     const moved = Math.hypot(drag.dx, drag.dy) > 6;
     if (moved && drag.valid && (drag.gx !== it.x || drag.gy !== it.y)) {
       const r = act((x) => cargoMove(x, it.uid, drag.gx, drag.gy));
@@ -105,7 +116,7 @@ export function CargoScreen() {
     setDrag(null);
   };
 
-  // aggregate by good
+  // aggregate by good; contract units are counted apart since they are not the player's to sell
   const byGood = new Map<string, { qty: number; cost: number; contract: number; oldest: number }>();
   for (const it of s.cargo) {
     const e = byGood.get(it.goodId) ?? { qty: 0, cost: 0, contract: 0, oldest: it.acquiredDay };
@@ -122,6 +133,7 @@ export function CargoScreen() {
   const quotas = quotaUse(s.cargo);
   const selItem = s.cargo.find((c) => c.uid === selected);
   const g = galaxyOf(s);
+  // estimate at the best known sell price, falling back to 80 % of base price for unseen goods
   const value = [...byGood.entries()].reduce(
     (v, [id, e]) => v + e.qty * (bestKnownPrice(s, id, 'sell')?.price ?? GOODS_BY_ID[id].basePrice * 0.8),
     0,
@@ -161,6 +173,7 @@ export function CargoScreen() {
               <Btn
                 small
                 kind="danger"
+                // contract cargo cannot be dumped (core: err.contractCargo)
                 disabled={!selItem || !!selItem.contractId}
                 onClick={() => {
                   const r = act((x) => jettison(x, selected!));
@@ -182,6 +195,7 @@ export function CargoScreen() {
               {Array.from({ length: rows * dims.cols }, (_, i) => {
                 const x = i % dims.cols;
                 const y = Math.floor(i / dims.cols);
+                // the last nominal row may be partly blocked; rows past `dims.rows` are the risky overflow
                 const blocked = y < dims.rows && y * dims.cols + x >= dims.cells;
                 const over = y >= dims.rows;
                 return (

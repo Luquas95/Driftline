@@ -1,3 +1,7 @@
+/**
+ * Station screen, "contracts" tab: the station's job board and the player's active contracts.
+ * ContractCard and describeContract are shared with the journal.
+ */
 import { CHAINS_BY_ID } from '../../content/chains';
 import { GOODS_BY_ID } from '../../content/goods';
 import { abandonContract, acceptContract, isDeliverable, activePassengers } from '../../core/contractOps';
@@ -19,6 +23,7 @@ const KIND_ICON: Record<string, string> = {
   rescue: 'warning',
 };
 
+/** One-line contract description; chain steps carry their own title key, others use the kind template. */
 export function describeContract(c: Contract, s: GameState): string {
   const g = galaxyOf(s);
   const dest = g.stationsById[c.dest];
@@ -37,6 +42,7 @@ export function describeContract(c: Contract, s: GameState): string {
   return t(`contract.desc.${c.kind}${c.kind === 'survey' && c.targetBody ? 'Body' : ''}`, params);
 }
 
+/** Card for an offered or active contract; buttons appear only for the callbacks passed in. */
 export function ContractCard({
   c,
   s,
@@ -55,6 +61,7 @@ export function ContractCard({
   const originSys = g.stationsById[c.origin].systemId;
   const len = pathLength(g, originSys, c.destSystem);
   const days = c.deadline - s.day;
+  // deliveries handed in together at one station earn a bundle bonus (completeContractsAt)
   const sameDest =
     s.contracts.some((x) => x.state === 'active' && x.dest === c.dest) && c.state === 'offered';
   const ready = c.state === 'active' && isDeliverable(s, c);
@@ -87,6 +94,7 @@ export function ContractCard({
         {c.deposit > 0 && c.state === 'offered' && (
           <Tag tone="good">{t('contract.advance', { n: money(c.deposit) })}</Tag>
         )}
+        {/* failing costs the penalty and repays the advance (failContract) */}
         <Tag tone="warn">{t('contract.penalty', { n: money(c.penalty + c.deposit) })}</Tag>
         {c.kind === 'passenger' && <Tag>{t('contract.comfort', { n: c.comfort ?? 1 })}</Tag>}
         {c.kind === 'supply' && c.goodId && (
@@ -117,6 +125,7 @@ export function ContractCard({
             small
             icon="map"
             onClick={() => {
+              // point at the survey/target system until that part is done, then at the delivery system
               selectedSystem.value =
                 c.targetSystem !== undefined && c.kind !== 'rescue' && (c.progress ?? 0) < 1
                   ? c.targetSystem
@@ -138,6 +147,7 @@ export function ContractCard({
   );
 }
 
+/** Contracts tab body for the docked station. */
 export function ContractsTab({ st }: { st: StationStatic }) {
   void rev.value;
   const s = game.value!;
@@ -152,6 +162,7 @@ export function ContractsTab({ st }: { st: StationStatic }) {
     <div class="stack">
       <Panel title={t('contract.board')} icon="contract">
         <p class="explain">
+          {/* max mirrors MAX_ACTIVE_CONTRACTS in core/contractOps.ts */}
           {t('contract.boardHelp', { max: 8, n: active.length })}{' '}
           {stats.beds > 0 &&
             t('contract.beds', { free: stats.beds - activePassengers(s), comfort: stats.comfort })}

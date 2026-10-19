@@ -210,17 +210,19 @@ export function addGoods(
     }
   }
   const use = quotaUse(items);
+  const chilled = good.tags.includes('chilled');
+  const sensitive = good.tags.includes('sensitive');
+  /** Which quota (if any) `cells` more cells of this good would exceed. */
+  const overQuota = (cells: number): AddResult['reason'] => {
+    if (chilled && use.chilled + cells > quotas.chilledCells) return 'chilled';
+    if (sensitive && use.secure + cells > quotas.secureCells) return 'secure';
+    return undefined;
+  };
   const shapes = remaining > 0 ? shapesFor(good, remaining) : [];
   for (const sh of shapes) {
     const cells = sh.w * sh.h;
-    if (good.tags.includes('chilled') && use.chilled + cells > quotas.chilledCells) {
-      reason = 'chilled';
-      break;
-    }
-    if (good.tags.includes('sensitive') && use.secure + cells > quotas.secureCells) {
-      reason = 'secure';
-      break;
-    }
+    reason = overQuota(cells);
+    if (reason) break;
     const spot = findSpot(d, items, sh.w, sh.h, allowOverflow);
     if (!spot) {
       reason = 'full';
@@ -230,12 +232,9 @@ export function addGoods(
       while (left > 0) {
         const s1 = findSpot(d, items, 1, 1, allowOverflow);
         if (!s1) break;
-        if (good.tags.includes('chilled') && use.chilled + 1 > quotas.chilledCells) {
-          reason = 'chilled';
-          break;
-        }
-        if (good.tags.includes('sensitive') && use.secure + 1 > quotas.secureCells) {
-          reason = 'secure';
+        const over = overQuota(1);
+        if (over) {
+          reason = over;
           break;
         }
         const q = Math.min(left, cap1);
@@ -251,8 +250,8 @@ export function addGoods(
           acquiredDay: day,
           contractId,
         });
-        if (good.tags.includes('chilled')) use.chilled++;
-        if (good.tags.includes('sensitive')) use.secure++;
+        if (chilled) use.chilled++;
+        if (sensitive) use.secure++;
         left -= q;
         added += q;
         remaining -= q;
@@ -271,8 +270,8 @@ export function addGoods(
       acquiredDay: day,
       contractId,
     });
-    use.chilled += good.tags.includes('chilled') ? cells : 0;
-    use.secure += good.tags.includes('sensitive') ? cells : 0;
+    if (chilled) use.chilled += cells;
+    if (sensitive) use.secure += cells;
     added += sh.qty;
     remaining -= sh.qty;
   }

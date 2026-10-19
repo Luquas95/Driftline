@@ -1,9 +1,11 @@
+/** Shared UI primitives (panels, buttons, tabs, modals, bars, stats, tags) used by every screen. */
 import { Component, type ComponentChildren, type JSX } from 'preact';
 import { useEffect, useRef } from 'preact/hooks';
 import { Icon } from './Icon';
-import { t } from '../i18n';
+import { fmt, t } from '../i18n';
 import { sfx } from '../audio/audio';
 
+/** Titled card; the header is rendered only when there is a title or actions. */
 export function Panel({
   title,
   icon,
@@ -50,6 +52,7 @@ type BtnProps = {
   sound?: boolean;
 };
 
+/** Button with the click sound built in; `testid` maps to data-testid for the e2e suite. */
 export function Btn({
   children,
   onClick,
@@ -69,6 +72,7 @@ export function Btn({
       class={`btn ${kind ?? ''} ${small ? 'small' : ''} ${active ? 'active' : ''} ${cls ?? ''}`}
       disabled={disabled}
       title={title}
+      // icon-only buttons need the title as their accessible name
       aria-label={title && !children ? title : undefined}
       data-testid={testid}
       onClick={() => {
@@ -82,6 +86,7 @@ export function Btn({
   );
 }
 
+/** Tab strip; each tab gets data-testid `tab-<id>`, which the e2e tests rely on. */
 export function Tabs<T extends string>({
   tabs,
   value,
@@ -115,6 +120,7 @@ export function Tabs<T extends string>({
   );
 }
 
+/** Dialog over a backdrop; Escape and a backdrop click close it only when `onClose` is given. */
 export function Modal({
   title,
   children,
@@ -139,6 +145,7 @@ export function Modal({
         onClose();
       }
     };
+    // capture phase + stopPropagation: Escape closes the dialog without App also navigating back
     window.addEventListener('keydown', onKey, true);
     return () => window.removeEventListener('keydown', onKey, true);
   }, [onClose]);
@@ -168,6 +175,7 @@ export function Modal({
   );
 }
 
+/** Progress bar, clamped to 0–100 %; `segments` draws a stacked bar instead of one fill. */
 export function Bar({
   value,
   max,
@@ -206,6 +214,7 @@ export function Bar({
   );
 }
 
+/** Label/value tile for the stats grids. */
 export function Stat({
   label,
   value,
@@ -232,6 +241,7 @@ export function Stat({
   );
 }
 
+/** "before → after" with the after value coloured; `invert` for stats where lower is better. */
 export function Delta({
   before,
   after,
@@ -246,10 +256,10 @@ export function Delta({
   invert?: boolean;
 }) {
   const d = after - before;
+  // a change that rounds away at the shown precision stays uncoloured
   const same = Math.abs(d) < Math.pow(10, -digits) / 2;
   const good = invert ? d < 0 : d > 0;
-  const f = (n: number) =>
-    n.toLocaleString('cs-CZ', { minimumFractionDigits: digits, maximumFractionDigits: digits });
+  const f = (n: number) => fmt(n, digits);
   return (
     <span class="delta mono">
       {f(before)}
@@ -262,6 +272,7 @@ export function Delta({
   );
 }
 
+/** Small pill label; `tone` is a CSS modifier (good, warn, bad, accent). */
 export function Tag({
   children,
   tone,
@@ -278,6 +289,7 @@ export function Tag({
   );
 }
 
+/** Module quality letter with its colour class. */
 export function QualityBadge({ q }: { q: string }) {
   return (
     <span class={`quality q-${q}`} title={t('ui.quality', { q })}>

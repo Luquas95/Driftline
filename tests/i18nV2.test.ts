@@ -1,9 +1,10 @@
 import { readFileSync, readdirSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { ENEMIES } from '../src/content/enemies';
-import { EVENT_TEXTS_CS, EVENTS } from '../src/content/events';
+import { EVENT_TEXTS_CS } from '../src/content/events';
 import { OFFICERS, RACES, ROLES, SKILLS } from '../src/content/crew';
 import { cs } from '../src/i18n/cs';
+import { eventTextKeys } from './helpers';
 
 describe('v2 dictionary', () => {
   it('has texts for races, roles, skills, officers, enemies and every event text', () => {
@@ -13,13 +14,7 @@ describe('v2 dictionary', () => {
     for (const k of SKILLS) need.push(`skill.${k}`, `skill.${k}.desc`);
     for (const o of OFFICERS) need.push(`officer.${o.id}.desc`);
     for (const e of ENEMIES) need.push(`enemy.${e.id}`, `combat.pers.${e.personality}`);
-    for (const e of EVENTS) {
-      need.push(e.titleKey, e.textKey);
-      for (const c of e.choices) {
-        need.push(c.textKey);
-        for (const o of c.outcomes) need.push(o.textKey);
-      }
-    }
+    need.push(...eventTextKeys());
     expect(need.filter((k) => !(k in cs) && !(k in EVENT_TEXTS_CS))).toEqual([]);
   });
 
