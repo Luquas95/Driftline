@@ -41,7 +41,7 @@ import {
   wait,
 } from '../core/game';
 import { computeShipStats, hullSlots, moduleFits, modulePrice } from '../core/ship';
-import { buyModule, installModule } from '../core/shop';
+import { buyModule, installError, installModule } from '../core/shop';
 import { analyze, galaxyOf, stationOf } from '../core/state';
 import { resolveEvent } from '../core/events';
 import {
@@ -362,8 +362,8 @@ export class Bot {
       const slot = free
         .filter((sl) => moduleFits(sl, MODULES_BY_ID[pick.defId]))
         .sort((a, b) => (a.size < b.size ? 1 : -1))[0];
-      const before = netWorth(s);
-      void before;
+      // never buy a module that could not be installed (e.g. it would starve the cabins of passengers aboard)
+      if (installError(s, pick, slot.index)) continue;
       if (buyModule(s, st.id, pick.uid).ok) {
         if (installModule(s, pick.uid, slot.index).ok) {
           if (this.run.firstUpgradeDay === null) this.run.firstUpgradeDay = s.day;
