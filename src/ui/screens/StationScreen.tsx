@@ -481,8 +481,7 @@ function TradePanel({
   const fresh = items.length ? freshness(good, s.day - Math.min(...items.map((c) => c.acquiredDay))) : 1;
   const oldest = items.length ? Math.min(...items.map((c) => c.acquiredDay)) : s.day;
   const left = daysLeft(good, s.day - oldest);
-  const quotas = { chilledCells: stats.chilledCells, secureCells: stats.secureCells };
-  const canLoad = loadableUnits(s.cargo, dims, quotas, goodId, 100000);
+  const canLoad = loadableUnits(s.cargo, dims, stats, goodId, 100000);
   const needsCooler = good.tags.includes('chilled') && stats.chilledCells <= 0;
   const needsVault = good.tags.includes('sensitive') && stats.secureCells <= 0;
   const buyN = Math.min(q, maxB);

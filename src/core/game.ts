@@ -6,16 +6,7 @@ import { rollEncounter } from './combat/encounter';
 import { GOODS_BY_ID, GOOD_INDEX, isIllegal } from '../content/goods';
 import { MODULES_BY_ID, QUALITY } from '../content/modules';
 import { STATION_TYPES_BY_ID } from '../content/stations';
-import {
-  addGoods,
-  autoArrange,
-  freshness,
-  loadableUnits,
-  moveItem,
-  removeGoods,
-  rotateItem,
-  unitsOf,
-} from './cargo';
+import { autoArrange, freshness, loadableUnits, moveItem, removeGoods, rotateItem, unitsOf } from './cargo';
 import { completeContractsAt } from './contractOps';
 import { refreshBoard } from './contracts';
 import {
@@ -33,6 +24,7 @@ import { bodyAu, travelToBody } from './exploration';
 import { canJump, jumpDays, jumpFuelCost, sublightDays, wearKind, wearModule } from './ship';
 import { refreshShop } from './shop';
 import {
+  addToHold,
   analyze,
   arrive,
   damageHull,
@@ -368,8 +360,7 @@ export function maxBuy(state: GameState, stationId: string, goodId: string): num
   const stock = Math.floor(stockOf(state, stationId, goodId));
   if (stock <= 0) return 0;
   const { stats, dims } = analyze(state);
-  const quotas = { chilledCells: stats.chilledCells, secureCells: stats.secureCells };
-  let q = Math.min(stock, loadableUnits(state.cargo, dims, quotas, goodId, stock));
+  let q = Math.min(stock, loadableUnits(state.cargo, dims, stats, goodId, stock));
   if (q <= 0) return 0;
   // affordability by bisection
   if (quoteFor(state, stationId, goodId, 'buy', q).total <= state.credits) return q;
@@ -409,10 +400,8 @@ export function buyGoods(
   }
   qty = Math.min(qty, max);
   const quote = quoteFor(state, stationId, goodId, 'buy', qty);
-  const { stats, dims } = analyze(state);
-  const quotas = { chilledCells: stats.chilledCells, secureCells: stats.secureCells };
   const paid = Math.round(quote.total);
-  const r = addGoods(state.cargo, dims, quotas, goodId, qty, paid, state.day);
+  const r = addToHold(state, goodId, qty, { cost: paid });
   if (r.added < qty) {
     // quota or overflow limited the load: pay only for what fits
     const part = quoteFor(state, stationId, goodId, 'buy', r.added);
@@ -477,23 +466,45 @@ export function serviceCost(state: GameState, stationId: string): number {
   return serviceMult(st, g.systems[st.systemId].region, state.difficulty);
 }
 
+/**
+ * Shared purchase of a ship consumable (fuel, supplies, probes): as many of `units` as there is `room`
+ * for and credits to pay, at `price` per unit; `fullError` when there is no room at all.
+ */
+function buyConsumable(
+  state: GameState,
+  units: number,
+  price: number,
+  room: number,
+  fullError: string,
+  apply: (n: number) => void,
+): Result<{ units: number; paid: number }> {
+  if (!Number.isFinite(units)) return fail('err.badAmount');
+  const n = Math.min(Math.floor(units), room, Math.floor(state.credits / price));
+  if (n <= 0) return fail(room <= 0 ? fullError : 'err.noCredits');
+  const paid = Math.round(n * price);
+  state.credits -= paid;
+  apply(n);
+  return ok({ units: n, paid });
+}
+
 export function buyFuel(
   state: GameState,
   stationId: string,
   units: number,
 ): Result<{ units: number; paid: number }> {
-  const st = atStation(state, stationId);
-  if (!st) return fail('err.notDocked');
+  if (!atStation(state, stationId)) return fail('err.notDocked');
   const { stats } = analyze(state);
-  if (!Number.isFinite(units)) return fail('err.badAmount');
   const room = Math.floor(stats.fuelCap - state.ship.fuel);
-  const unit = T.fuelPrice * serviceCost(state, stationId);
-  const n = Math.min(Math.floor(units), room, Math.floor(state.credits / unit));
-  if (n <= 0) return fail(room <= 0 ? 'err.tankFull' : 'err.noCredits');
-  const paid = Math.round(n * unit);
-  state.credits -= paid;
-  state.ship.fuel += n;
-  return ok({ units: n, paid });
+  return buyConsumable(
+    state,
+    units,
+    T.fuelPrice * serviceCost(state, stationId),
+    room,
+    'err.tankFull',
+    (n) => {
+      state.ship.fuel += n;
+    },
+  );
 }
 
 export function buySupplies(
@@ -501,18 +512,19 @@ export function buySupplies(
   stationId: string,
   units: number,
 ): Result<{ units: number; paid: number }> {
-  const st = atStation(state, stationId);
-  if (!st) return fail('err.notDocked');
+  if (!atStation(state, stationId)) return fail('err.notDocked');
   const { stats } = analyze(state);
-  if (!Number.isFinite(units)) return fail('err.badAmount');
   const room = Math.floor(stats.suppliesCap - state.ship.supplies);
-  const unit = T.suppliesPrice * serviceCost(state, stationId);
-  const n = Math.min(Math.floor(units), room, Math.floor(state.credits / unit));
-  if (n <= 0) return fail(room <= 0 ? 'err.suppliesFull' : 'err.noCredits');
-  const paid = Math.round(n * unit);
-  state.credits -= paid;
-  state.ship.supplies += n;
-  return ok({ units: n, paid });
+  return buyConsumable(
+    state,
+    units,
+    T.suppliesPrice * serviceCost(state, stationId),
+    room,
+    'err.suppliesFull',
+    (n) => {
+      state.ship.supplies += n;
+    },
+  );
 }
 
 /** Missiles are ammunition for missile launchers; they live in the cargo hold as the `missiles` good. */
@@ -521,25 +533,12 @@ export function buyMissiles(
   stationId: string,
   n: number,
 ): Result<{ units: number; paid: number }> {
-  const st = atStation(state, stationId);
-  if (!st) return fail('err.notDocked');
+  if (!atStation(state, stationId)) return fail('err.notDocked');
   if (!Number.isFinite(n)) return fail('err.badAmount');
   const unit = T.missilePrice * serviceCost(state, stationId);
-  const { dims, stats } = analyze(state);
   const want = Math.min(Math.floor(n), Math.floor(state.credits / unit));
   if (want <= 0) return fail('err.noCredits');
-  const quotas = { chilledCells: stats.chilledCells, secureCells: stats.secureCells };
-  const r = addGoods(
-    state.cargo,
-    dims,
-    quotas,
-    'missiles',
-    want,
-    Math.round(want * unit),
-    state.day,
-    undefined,
-    false,
-  );
+  const r = addToHold(state, 'missiles', want, { cost: Math.round(want * unit), allowOverflow: false });
   if (r.added <= 0) return fail('err.cargoFull');
   const paid = Math.round(r.added * unit);
   state.credits -= paid;
@@ -551,17 +550,18 @@ export function buyProbes(
   stationId: string,
   n: number,
 ): Result<{ units: number; paid: number }> {
-  const st = atStation(state, stationId);
-  if (!st) return fail('err.notDocked');
-  if (!Number.isFinite(n)) return fail('err.badAmount');
-  const unit = T.probePrice * serviceCost(state, stationId);
+  if (!atStation(state, stationId)) return fail('err.notDocked');
   const room = T.probeCap - state.ship.probes;
-  const units = Math.min(Math.floor(n), Math.floor(state.credits / unit), room);
-  if (units <= 0) return fail(room <= 0 ? 'err.probesFull' : 'err.noCredits');
-  const paid = Math.round(units * unit);
-  state.credits -= paid;
-  state.ship.probes += units;
-  return ok({ units, paid });
+  return buyConsumable(
+    state,
+    n,
+    T.probePrice * serviceCost(state, stationId),
+    room,
+    'err.probesFull',
+    (k) => {
+      state.ship.probes += k;
+    },
+  );
 }
 
 export function hullRepairCost(state: GameState, stationId: string): number {

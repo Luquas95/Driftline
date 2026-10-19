@@ -26,14 +26,13 @@ import {
   refuelAtBase,
   resupplyAtBase,
 } from '../core/base';
-import { addGoods } from '../core/cargo';
 import { exploreAnomaly, bodyDyn } from '../core/exploration';
 import { joinFaction, repOf } from '../core/factions';
 import { planTrip, setFleetOrder } from '../core/fleet';
 import { dist, shortestPath } from '../core/galaxy';
 import { canResearch, hasTech, startResearch } from '../core/research';
 import { ownerOf, tierOf } from '../core/territory';
-import { analyze, galaxyOf } from '../core/state';
+import { addToHold, galaxyOf } from '../core/state';
 import { newGame } from '../core/start';
 import { dockAt, undock, wait } from '../core/game';
 import { understanding } from '../core/lang';
@@ -361,10 +360,8 @@ export class EndgameBot extends Bot {
       const price = 40 * GOODS_BY_ID.construction.basePrice + 12 * GOODS_BY_ID.machinery.basePrice;
       s.credits -= Math.round(price * 1.3);
       this.base_spent += Math.round(price * 1.3);
-      const { stats, dims } = analyze(s);
-      const q = { chilledCells: stats.chilledCells, secureCells: stats.secureCells };
-      addGoods(s.cargo, dims, q, 'construction', 40, 0, s.day);
-      addGoods(s.cargo, dims, q, 'machinery', 12, 0, s.day);
+      addToHold(s, 'construction', 40);
+      addToHold(s, 'machinery', 12);
       s.detected[c.x.id] = c.x.bodies.map((b) => b.id);
       // a day of scanning reveals what lies in the ground
       for (const b of c.x.bodies) {

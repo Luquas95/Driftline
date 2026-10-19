@@ -2,7 +2,7 @@ import { ENEMIES_BY_ID } from '../../content/enemies';
 import { GOODS_BY_ID } from '../../content/goods';
 import { MODULES_BY_ID } from '../../content/modules';
 import { SKILLS } from '../../content/crew';
-import { addGoods, removeGoods, unitsOf } from '../cargo';
+import { removeGoods, unitsOf } from '../cargo';
 import { gainXp, maxHp } from '../crew';
 import { onBaseFightEnded } from '../base';
 import { learnWords } from '../lang';
@@ -10,7 +10,7 @@ import { addResearchPoints } from '../research';
 import { onFightEnded } from '../factions';
 import { Rng } from '../rng';
 import { newModule } from '../ship';
-import { analyze, destroyShip, msg, newUid } from '../state';
+import { addToHold, analyze, destroyShip, msg, newUid } from '../state';
 import type { GameState } from '../types';
 import { SHIELD_SCALE } from './build';
 import type { CShip, CombatOutcome, CombatState } from './types';
@@ -148,10 +148,9 @@ export function resolveCombat(state: GameState, c: CombatState): CombatSummary {
         sum.goods.push({ goodId: 'missiles', qty: Math.floor(e.missiles / 2) });
     }
     state.credits += sum.credits;
-    const { stats, dims } = analyze(state);
-    const quotas = { chilledCells: stats.chilledCells, secureCells: stats.secureCells };
+    const { stats } = analyze(state);
     for (const g of sum.goods) {
-      const r = addGoods(state.cargo, dims, quotas, g.goodId, g.qty, 0, state.day, undefined, false);
+      const r = addToHold(state, g.goodId, g.qty, { allowOverflow: false });
       if (r.added < g.qty) g.qty = r.added;
     }
     sum.goods = sum.goods.filter((g) => g.qty > 0);

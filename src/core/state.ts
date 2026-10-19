@@ -1,6 +1,14 @@
 import { HULLS_BY_ID } from '../content/hulls';
 import { MODULES_BY_ID } from '../content/modules';
-import { cargoMass, gridDims, overloadCells, syncCargoUid, type GridDims } from './cargo';
+import {
+  addGoods,
+  cargoMass,
+  gridDims,
+  overloadCells,
+  syncCargoUid,
+  type AddResult,
+  type GridDims,
+} from './cargo';
 import { snapshotPrice } from './economy';
 import { crewHasOfficer, crewSupplyPerDay } from './crewBase';
 import { defaultCrew } from './crew';
@@ -94,6 +102,30 @@ export function analyze(state: GameState): Analysis {
     stats.range = state.ship.fuel / stats.fuelPerLy;
   }
   return { stats, dims, overload };
+}
+
+/**
+ * Load goods into the ship's hold, respecting its grid and the chilled/secure quotas of its modules.
+ * `cost` is the total paid (for profit tracking); `allowOverflow: false` refuses cells beyond the grid.
+ */
+export function addToHold(
+  state: GameState,
+  goodId: string,
+  qty: number,
+  opts: { cost?: number; contractId?: string; allowOverflow?: boolean } = {},
+): AddResult {
+  const { stats, dims } = analyze(state);
+  return addGoods(
+    state.cargo,
+    dims,
+    stats,
+    goodId,
+    qty,
+    opts.cost ?? 0,
+    state.day,
+    opts.contractId,
+    opts.allowOverflow,
+  );
 }
 
 export function syncCounters(state: GameState): void {

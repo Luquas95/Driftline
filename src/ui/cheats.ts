@@ -1,10 +1,9 @@
-import { addGoods } from '../core/cargo';
 import { addRep } from '../core/factions';
 import { triggerEnding } from '../core/endings';
 import { learnWords } from '../core/lang';
 import { addResearchPoints } from '../core/research';
 import { passTime } from '../core/time';
-import { analyze } from '../core/state';
+import { addToHold } from '../core/state';
 import { rev } from './store';
 import { foundBase } from '../core/base';
 import { threatDaily } from '../core/threat';
@@ -31,16 +30,7 @@ export function cheatApi() {
     },
     goods: (goodId: string, qty: number) => {
       const st = s();
-      const { dims, stats } = analyze(st);
-      addGoods(
-        st.cargo,
-        dims,
-        { chilledCells: stats.chilledCells, secureCells: stats.secureCells },
-        goodId,
-        qty,
-        0,
-        st.day,
-      );
+      addToHold(st, goodId, qty);
       bump();
     },
     baseGoods: (goodId: string, qty: number) => {
@@ -121,16 +111,7 @@ export function cheatApi() {
         ['construction', 40],
         ['machinery', 12],
       ] as const) {
-        const { dims, stats } = analyze(st);
-        addGoods(
-          st.cargo,
-          dims,
-          { chilledCells: stats.chilledCells, secureCells: stats.secureCells },
-          g,
-          n,
-          0,
-          st.day,
-        );
+        addToHold(st, g, n);
       }
       foundBase(st, 0, 'Základna');
       if (st.base) Object.assign(st.base.buildings, levels);

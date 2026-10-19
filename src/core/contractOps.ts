@@ -1,9 +1,9 @@
 import { onContractDone, onContractFailed } from './factions';
 import { CHAINS_BY_ID } from '../content/chains';
-import { addGoods, removeGoods, unitsOf, loadableUnits } from './cargo';
+import { removeGoods, unitsOf, loadableUnits } from './cargo';
 import { advanceChain, isChainFinal } from './contracts';
 import { bedsUsedByCrew } from './crew';
-import { analyze, fail, msg, newUid, ok, stationOf, type Result } from './state';
+import { addToHold, analyze, fail, msg, newUid, ok, stationOf, type Result } from './state';
 import { newModule } from './ship';
 import { Rng } from './rng';
 import { MODULES } from '../content/modules';
@@ -32,10 +32,9 @@ export function acceptContract(state: GameState, stationId: string, contractId: 
     if (stats.comfort < (c.comfort ?? 1)) return fail('err.noComfort');
   }
   if ((c.kind === 'freight' || c.kind === 'courier') && c.goodId) {
-    const quotas = { chilledCells: stats.chilledCells, secureCells: stats.secureCells };
-    const can = loadableUnits(state.cargo, dims, quotas, c.goodId, c.qty ?? 1);
+    const can = loadableUnits(state.cargo, dims, stats, c.goodId, c.qty ?? 1);
     if (can < (c.qty ?? 1)) return fail('err.noCargoSpace');
-    addGoods(state.cargo, dims, quotas, c.goodId, c.qty ?? 1, 0, state.day, c.id);
+    addToHold(state, c.goodId, c.qty ?? 1, { contractId: c.id });
   }
   dyn.board = dyn.board.filter((x) => x.id !== c.id);
   c.state = 'active';
@@ -107,9 +106,7 @@ export function completeContractsAt(state: GameState, g: Galaxy, stationId: stri
       const nextC = advanceChain(g, state, c, st);
       if (nextC) {
         if ((nextC.kind === 'freight' || nextC.kind === 'courier') && nextC.goodId) {
-          const an = analyze(state);
-          const quotas = { chilledCells: an.stats.chilledCells, secureCells: an.stats.secureCells };
-          addGoods(state.cargo, an.dims, quotas, nextC.goodId, nextC.qty ?? 1, 0, state.day, nextC.id);
+          addToHold(state, nextC.goodId, nextC.qty ?? 1, { contractId: nextC.id });
         }
         state.contracts.push(nextC);
         msg(state, 'msg.chainNext', { chain: c.chainId }, 'info');
