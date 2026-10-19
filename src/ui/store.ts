@@ -1,6 +1,6 @@
 import { signal, computed } from '@preact/signals';
 import { newGame } from '../core/start';
-import { analyze, galaxyOf, type NewGameOptions, type Result } from '../core/state';
+import { analyze, galaxyOf, messagesSince, type NewGameOptions, type Result } from '../core/state';
 import { SaveStore } from '../persist/store';
 import { importSave, exportSave } from '../core/save';
 import { t } from '../i18n';
@@ -9,7 +9,7 @@ import { sfx } from '../audio/audio';
 import { settings } from './settings';
 import { loadProfile, saveProfile } from '../persist/profile';
 import { recordDaily, syncAchievements, type Profile } from '../core/profile';
-import type { GameState } from '../core/types';
+import type { GameState, Message } from '../core/types';
 
 export type ScreenId =
   'map' | 'system' | 'station' | 'ship' | 'cargo' | 'crew' | 'factions' | 'base' | 'journal' | 'settings';
@@ -44,7 +44,8 @@ export function toast(text: string, tone: Toast['tone'] = 'info', ms = 4200): vo
 
 export const saves = new SaveStore();
 let saveTimer: number | undefined;
-let msgSeen = 0;
+/** Last message already surfaced as a toast (an index would stall once the capped log is full). */
+let lastMsg: Message | null = null;
 
 export const analysis = computed(() => {
   void rev.value;
@@ -64,17 +65,16 @@ export function act<T>(fn: (s: GameState) => T): T {
 
 export function afterMutation(s: GameState): void {
   rev.value++;
-  for (let i = msgSeen; i < s.messages.length; i++) {
-    const m = s.messages[i];
+  for (const m of messagesSince(s.messages, lastMsg)) {
     if (m.tone !== 'info' || m.key.startsWith('msg.contract') || m.key.startsWith('msg.market')) {
       toast(describeMessage(m.key, m.params), m.tone);
     }
   }
-  msgSeen = s.messages.length;
+  lastMsg = s.messages.at(-1) ?? null;
   syncProfile(s);
   scheduleAutosave(s);
   if (s.dead) {
-    void saves.remove('autosave');
+    saves.remove('autosave').catch((err) => console.error('autosave delete failed', err));
   }
 }
 
@@ -93,9 +93,24 @@ export function syncProfile(s: GameState): void {
 
 /** Debounced autosave. Also used by the combat loop, which changes state outside `act`. */
 export function scheduleAutosave(s: GameState, delay = 1500): void {
+  clearTimeout(saveTimer);
   if (settings.value.autosave && !s.dead) {
-    clearTimeout(saveTimer);
-    saveTimer = window.setTimeout(() => void saves.put('autosave', s, t('save.autosave')), delay);
+    // re-check on fire: a death in the meantime deletes the autosave and must not write it back
+    saveTimer = window.setTimeout(() => {
+      if (!s.dead) void writeSave('autosave', s, t('save.autosave'));
+    }, delay);
+  }
+}
+
+/** Store a save slot; a failure (storage full or blocked) is shown to the player instead of being lost. */
+export async function writeSave(id: string, s: GameState, name: string): Promise<boolean> {
+  try {
+    await saves.put(id, s, name);
+    return true;
+  } catch (err) {
+    console.error('save failed', err);
+    toast(t('err.saveFailed'), 'bad');
+    return false;
   }
 }
 
@@ -104,7 +119,7 @@ export function flushAutosave(): void {
   const s = game.value;
   if (!s || s.dead || !settings.value.autosave || menuOpen.value) return;
   clearTimeout(saveTimer);
-  void saves.put('autosave', s, t('save.autosave'));
+  void writeSave('autosave', s, t('save.autosave'));
 }
 
 if (typeof window !== 'undefined') {
@@ -155,19 +170,19 @@ export const e2eFlags = { quick: false };
 export function startNewGame(opts: NewGameOptions): void {
   const s = newGame({ ...opts, quickStart: e2eFlags.quick, entropy: opts.entropy ?? Date.now() });
   game.value = s;
-  msgSeen = s.messages.length;
+  lastMsg = s.messages.at(-1) ?? null;
   menuOpen.value = false;
   screen.value = 'station';
   selectedSystem.value = null;
   s.tutorial.done = !settings.value.tutorial || s.noShip;
   rev.value++;
-  void saves.put('autosave', s, t('save.autosave'));
+  void writeSave('autosave', s, t('save.autosave'));
 }
 
 export function loadGame(s: GameState): void {
   if (s.combat) s.combat.paused = true;
   game.value = s;
-  msgSeen = s.messages.length;
+  lastMsg = s.messages.at(-1) ?? null;
   menuOpen.value = false;
   screen.value = s.location.stationId ? 'station' : 'system';
   selectedSystem.value = null;

@@ -104,6 +104,15 @@ describe('saving', () => {
     expect((await store.list()).length).toBe(1);
     void dockAt;
   });
+
+  it('rejects a failed IndexedDB write instead of leaving it pending', async () => {
+    const store = new SaveStore('test-db-' + Math.random());
+    const s = played();
+    // an id that is not a valid key makes the put fail
+    await expect(store.put(null as unknown as string, s)).rejects.toBeTruthy();
+    await store.put('ok', s);
+    expect((await store.list()).map((x) => x.id)).toEqual(['ok']);
+  });
 });
 
 function undockSafe(s: ReturnType<typeof mk>) {

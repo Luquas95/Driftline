@@ -46,10 +46,16 @@ export class SaveStore {
     const db = await this.open();
     if (!db) return null;
     return new Promise((resolve, reject) => {
-      const t = db.transaction(STORE, mode);
-      const req = fn(t.objectStore(STORE));
-      req.onsuccess = () => resolve(req.result);
-      req.onerror = () => reject(req.error);
+      try {
+        const t = db.transaction(STORE, mode);
+        const req = fn(t.objectStore(STORE));
+        // settle on the transaction, not the request: a successful put can still be rolled back (quota),
+        // and an aborted transaction never fires the request's error handler
+        t.oncomplete = () => resolve(req.result);
+        t.onabort = t.onerror = () => reject(req.error ?? t.error);
+      } catch (err) {
+        reject(err);
+      }
     });
   }
 
