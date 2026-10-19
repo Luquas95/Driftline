@@ -40,7 +40,7 @@ docs/           DESIGN.md, DECISIONS.md, balance.md, REVIEW-v1.md, screenshots/
 ## Pravidla
 
 - **Jádro je čisté.** V `src/core` a `src/content` nesmí být DOM, Pixi, `Math.random`, `Date.now`. ESLint to hlídá. Náhoda jen přes `Rng` (`withRng(state, …)` pro perzistentní proud, `Rng.fromSeed(\`${seed}:…\`)` pro odvozené).
-- **Jádro nevrací věty**, jen i18n klíče (`err.*`, `msg.*`). Každý nový klíč přidej do `src/i18n/cs.ts` (test `tests/i18n.test.ts` to ověří).
+- **Jádro nevrací věty**, jen i18n klíče (`err.*`, `msg.*`). Každý nový klíč přidej do českého slovníku: `src/i18n/cs.ts`, nebo do souboru oblasti, kterou návod níže uvádí (`cs-v2.ts`, `cs-v3.ts`, `cs-ui3.ts`; `cs.ts` je slučuje). Test `tests/i18n.test.ts` to ověří.
 - **Stav je JSON.** Nové pole `GameState` = zvýšit `SAVE_VERSION`, přidat migraci v `save.ts` a test.
 - Akce vrací `Result` (`ok()` / `fail('err.klíč')`) a mění stav na místě. UI je volá přes `act(fn)` (zvýší `rev`, ukáže zprávy, naplánuje autosave) a chyby ukáže `report(result)`.
 - Před commitem: `npm run lint && npm run typecheck && npm test`. Commity ve stylu Conventional Commits.

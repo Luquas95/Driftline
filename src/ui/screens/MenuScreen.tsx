@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'preact/hooks';
 import { createBackdropScene } from '../../render/backdrop';
-import { t, fmt } from '../../i18n';
+import { t, fmt, money } from '../../i18n';
 import { Btn, Panel } from '../components';
 import { game, profile, importFromFile, loadSlot, menuOpen, saves, startNewGame, toast } from '../store';
 import { settings, updateSettings } from '../settings';
@@ -62,7 +62,7 @@ export function MenuScreen() {
                 >
                   {t('menu.continue')}{' '}
                   <span class="dim">
-                    · {t('top.dayShort')} {auto.day}, {fmt(auto.credits)} kr
+                    · {t('top.dayShort')} {auto.day}, {money(auto.credits)}
                   </span>
                 </Btn>
               )}
@@ -264,7 +264,7 @@ export function MenuScreen() {
                     <span class="grow" style={{ textAlign: 'left' }}>
                       {m.name}{' '}
                       <span class="dim">
-                        · {m.ship} · {t('top.dayShort')} {m.day} · {fmt(m.credits)} kr · {m.seed}
+                        · {m.ship} · {t('top.dayShort')} {m.day} · {money(m.credits)} · {m.seed}
                       </span>
                     </span>
                   </Btn>

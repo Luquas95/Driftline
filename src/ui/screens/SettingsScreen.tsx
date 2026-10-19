@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'preact/hooks';
 import { createBackdropScene } from '../../render/backdrop';
 import { useScene } from '../useScene';
-import { fmt, t } from '../../i18n';
+import { money, t } from '../../i18n';
 import { Btn, Panel } from '../components';
 import {
   exportCurrent,
@@ -220,7 +220,7 @@ export function SettingsScreen() {
                       {t('settings.slot', { n: i + 1 })}{' '}
                       {m ? (
                         <span class="dim">
-                          · {t('top.dayShort')} {m.day} · {fmt(m.credits)} kr
+                          · {t('top.dayShort')} {m.day} · {money(m.credits)}
                         </span>
                       ) : (
                         <span class="faint">· {t('settings.empty')}</span>

@@ -1,7 +1,7 @@
 import { Component, type ComponentChildren, type JSX } from 'preact';
 import { useEffect, useRef } from 'preact/hooks';
 import { Icon } from './Icon';
-import { t } from '../i18n';
+import { fmt, t } from '../i18n';
 import { sfx } from '../audio/audio';
 
 export function Panel({
@@ -248,8 +248,7 @@ export function Delta({
   const d = after - before;
   const same = Math.abs(d) < Math.pow(10, -digits) / 2;
   const good = invert ? d < 0 : d > 0;
-  const f = (n: number) =>
-    n.toLocaleString('cs-CZ', { minimumFractionDigits: digits, maximumFractionDigits: digits });
+  const f = (n: number) => fmt(n, digits);
   return (
     <span class="delta mono">
       {f(before)}

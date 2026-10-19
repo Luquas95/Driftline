@@ -201,13 +201,9 @@ export function CrewScreen() {
               tone={s.crew.length > cap ? 'neg' : ''}
               testid="crew-count"
             />
-            <Stat label={t('crew.wages')} value={`${fmt(wages)} kr`} sub={t('crew.perDay')} />
+            <Stat label={t('crew.wages')} value={money(wages)} sub={t('crew.perDay')} />
             <Stat label={t('crew.supplies')} value={fmt(crewSupplyPerDay(s), 1)} sub={t('crew.perDay')} />
-            <Stat
-              label={t('crew.owed')}
-              value={`${fmt(Math.round(s.wagesDue))} kr`}
-              tone={s.wagesDue > 0 ? 'neg' : ''}
-            />
+            <Stat label={t('crew.owed')} value={money(s.wagesDue)} tone={s.wagesDue > 0 ? 'neg' : ''} />
           </div>
           {s.crew.length > cap && <p class="neg small">{t('crew.overcrowded')}</p>}
           <Tabs
