@@ -1,6 +1,8 @@
 import { HULLS, HULLS_BY_ID } from '../content/hulls';
 import { MODULES, MODULES_BY_ID } from '../content/modules';
 import { STATION_TYPES_BY_ID } from '../content/stations';
+import { activePassengers } from './contractOps';
+import { bedsUsedByCrew } from './crew';
 import { serviceMult } from './economy';
 import { exclusiveHullFor } from './factions';
 import { moduleUnlocked } from './research';
@@ -112,18 +114,29 @@ export function hullPrice(state: GameState, st: StationStatic, hullId: string): 
  * On success the repacked cargo positions are applied; returns an error key otherwise.
  */
 function refit(state: GameState, slots: (ModuleInstance | null)[]): string | null {
+  const plan = refitPlan(state, slots);
+  if ('error' in plan) return plan.error;
+  applyLayout(state, plan.layout);
+  return null;
+}
+
+/** The checks of `refit` without changing anything: an error key, or the repacked cargo to apply. */
+function refitPlan(
+  state: GameState,
+  slots: (ModuleInstance | null)[],
+): { error: string } | { layout: CargoItem[] } {
   const stats = computeShipStats({ ...state.ship, slots });
   const layout = cargoLayout(state, stats);
-  if (!layout) return 'err.cargoWontFit';
+  if (!layout) return { error: 'err.cargoWontFit' };
+  // passengers need beds the crew does not take; an overcrowded crew alone (a soft limit) blocks nothing
   const pax = state.contracts.filter((c) => c.state === 'active' && c.kind === 'passenger');
-  const need = pax.reduce((s, c) => s + (c.passengers ?? 0), 0);
+  const need = activePassengers(state);
   if (
-    need > stats.beds - Math.max(0, state.crew.length - (HULLS_BY_ID[state.ship.hullId]?.crew ?? 0)) ||
+    (need > 0 && need > stats.beds - bedsUsedByCrew(state)) ||
     pax.some((c) => (c.comfort ?? 1) > stats.comfort)
   )
-    return 'err.passengersAboard';
-  applyLayout(state, layout);
-  return null;
+    return { error: 'err.passengersAboard' };
+  return { layout };
 }
 
 /** The cargo repacked (on a copy) for a ship with these stats, or null if it would not fit the new grid. */
@@ -194,20 +207,40 @@ export function sellModule(state: GameState, stationId: string, uid: string): Re
   return ok({ price });
 }
 
+/** Can this module go into that slot? Same rules as taking one out: the cargo must fit, passengers keep their beds. */
+function installPlan(
+  state: GameState,
+  m: ModuleInstance,
+  slotIndex: number,
+): { error: string } | { layout: CargoItem[] } {
+  const slot = hullSlots(state.ship.hullId)[slotIndex];
+  if (!slot) return { error: 'err.noSlot' };
+  if (!moduleFits(slot, MODULES_BY_ID[m.defId])) return { error: 'err.moduleDoesNotFit' };
+  return refitPlan(
+    state,
+    state.ship.slots.map((x, i) => (i === slotIndex ? m : x)),
+  );
+}
+
+/** Why a module (e.g. one still in a shop) could not be installed in that slot right now; null if it could. */
+export function installError(
+  state: GameState,
+  item: Pick<ModuleInstance, 'defId' | 'quality'>,
+  slotIndex: number,
+): string | null {
+  const plan = installPlan(state, { uid: '', condition: 100, enabled: true, ...item }, slotIndex);
+  return 'error' in plan ? plan.error : null;
+}
+
 export function installModule(state: GameState, uid: string, slotIndex: number): Result {
   if (!state.location.stationId) return fail('err.mustBeDocked');
   const inv = state.inventory.findIndex((x) => x.uid === uid);
   if (inv < 0) return fail('err.itemGone');
-  const slot = hullSlots(state.ship.hullId)[slotIndex];
-  if (!slot) return fail('err.noSlot');
   const m = state.inventory[inv];
-  if (!moduleFits(slot, MODULES_BY_ID[m.defId])) return fail('err.moduleDoesNotFit');
   const old = state.ship.slots[slotIndex];
-  // only the cargo must still fit: unlike removing a module, swapping one does not check passenger beds
-  const trial: Ship = { ...state.ship, slots: state.ship.slots.map((x, i) => (i === slotIndex ? m : x)) };
-  const layout = cargoLayout(state, computeShipStats(trial));
-  if (!layout) return fail('err.cargoWontFit');
-  applyLayout(state, layout);
+  const plan = installPlan(state, m, slotIndex);
+  if ('error' in plan) return fail(plan.error);
+  applyLayout(state, plan.layout);
   state.inventory.splice(inv, 1);
   if (old) state.inventory.push(old);
   state.ship.slots[slotIndex] = m;
