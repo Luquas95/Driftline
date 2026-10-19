@@ -1,15 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { clearModals, openScreen, startGame, state } from './helpers';
-
-/** Cheats exist only in builds made with VITE_E2E=1 (the playwright web server does that). */
-const cheat = <T = unknown>(page: import('@playwright/test').Page, fn: string, ...args: unknown[]) =>
-  page.evaluate(
-    ({ fn, args }) => {
-      const c = (window as any).__dl.cheat; // eslint-disable-line @typescript-eslint/no-explicit-any
-      return c[fn](...args) as T;
-    },
-    { fn, args },
-  );
+import { cheat, clearModals, foundBaseHere, openScreen, startGame, state } from './helpers';
 
 test.describe('endgame: base, research, fleet, factions, endings', () => {
   test.beforeEach(async ({ page }) => {
@@ -18,15 +8,7 @@ test.describe('endgame: base, research, fleet, factions, endings', () => {
   });
 
   test('found a base from the system view, build and research', async ({ page }) => {
-    await cheat(page, 'credits', 120000);
-    await cheat(page, 'goods', 'construction', 40);
-    await cheat(page, 'goods', 'machinery', 12);
-    await cheat(page, 'detectHere');
-    await openScreen(page, 'system');
-    await page.getByTestId('body-0').click();
-    await expect(page.getByTestId('btn-found-base')).toBeEnabled();
-    await page.getByTestId('btn-found-base').click();
-    await expect(page.getByTestId('screen-base')).toBeVisible();
+    await foundBaseHere(page, 120000);
     expect((await state(page)).base).not.toBeNull();
     // materials for buildings
     await cheat(page, 'baseGoods', 'construction', 200);
@@ -51,14 +33,7 @@ test.describe('endgame: base, research, fleet, factions, endings', () => {
   });
 
   test('a ship in the hangar takes a trade route', async ({ page }) => {
-    await cheat(page, 'credits', 200000);
-    await cheat(page, 'goods', 'construction', 40);
-    await cheat(page, 'goods', 'machinery', 12);
-    await cheat(page, 'detectHere');
-    await openScreen(page, 'system');
-    await page.getByTestId('body-0').click();
-    await page.getByTestId('btn-found-base').click();
-    await expect(page.getByTestId('screen-base')).toBeVisible();
+    await foundBaseHere(page, 200000);
     // give the base a hangar with a ship (state edit through the order machinery)
     await cheat(page, 'baseGoods', 'construction', 400);
     await cheat(page, 'baseGoods', 'machinery', 200);
