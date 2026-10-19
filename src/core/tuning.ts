@@ -22,6 +22,8 @@ export const T = {
   fuelPrice: 8,
   suppliesPrice: 6,
   probePrice: 55,
+  /** Probes the ship can carry. */
+  probeCap: 20,
   missilePrice: 26,
   /** Sublight: days per AU at mass/thrust = 1 */
   sublightK: 0.08,

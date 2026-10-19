@@ -555,8 +555,9 @@ export function buyProbes(
   if (!st) return fail('err.notDocked');
   if (!Number.isFinite(n)) return fail('err.badAmount');
   const unit = T.probePrice * serviceCost(state, stationId);
-  const units = Math.min(Math.floor(n), Math.floor(state.credits / unit), 20 - state.ship.probes);
-  if (units <= 0) return fail('err.noCredits');
+  const room = T.probeCap - state.ship.probes;
+  const units = Math.min(Math.floor(n), Math.floor(state.credits / unit), room);
+  if (units <= 0) return fail(room <= 0 ? 'err.probesFull' : 'err.noCredits');
   const paid = Math.round(units * unit);
   state.credits -= paid;
   state.ship.probes += units;

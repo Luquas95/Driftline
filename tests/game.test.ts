@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { T } from '../src/core/tuning';
 import { STATION_TYPES } from '../src/content/stations';
 import {
   buyFuel,
@@ -59,6 +60,10 @@ describe('game actions', () => {
     expect(buySupplies(s, st, 5).ok).toBe(true);
     expect(buyProbes(s, st, 3).ok).toBe(true);
     expect(s.ship.probes).toBe(3);
+    s.ship.probes = T.probeCap;
+    const full = buyProbes(s, st, 1);
+    expect(!full.ok && full.error).toBe('err.probesFull');
+    s.ship.probes = 3;
     s.ship.fuel = analyze(s).stats.fuelCap;
     expect(buyFuel(s, st, 5).ok).toBe(false);
     s.credits = 0;

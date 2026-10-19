@@ -794,6 +794,7 @@ const base: Record<string, string> = {
   'err.noCargoSpace': 'V nákladu není místo (nebo chybí chlazení či trezor).',
   'err.tankFull': 'Nádrž je plná.',
   'err.suppliesFull': 'Zásoby jsou plné.',
+  'err.probesFull': 'Zásobník sond je plný.',
   'err.nothingToRepair': 'Není co opravovat.',
   'err.noRepairModule': 'Potřebuješ opravárenský modul.',
   'err.noSpareParts': 'Chybí náhradní díly v nákladu.',
