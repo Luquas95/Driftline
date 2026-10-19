@@ -39,6 +39,7 @@ import { understanding } from '../core/lang';
 import { Bot, netWorth, type Strategy } from './bots';
 import type { GameState } from '../core/types';
 import type { EventDef } from '../core/eventTypes';
+import type { Base } from '../core/worldTypes';
 
 export type Target = 'science' | 'accord' | 'exodus' | 'dominion';
 
@@ -135,6 +136,13 @@ export interface EndgameRun {
   dailyIncome: number;
 }
 
+/** What buying the materials the base storage lacks would cost at market (with a 30 % margin). */
+function missingMaterialsCost(base: Base, materials: Record<string, number>): number {
+  return Object.entries(materials).reduce(
+    (sum, [gid, n]) => sum + Math.max(0, n - (base.storage[gid] ?? 0)) * GOODS_BY_ID[gid].basePrice * 1.3,
+    0,
+  );
+}
 export class EndgameBot extends Bot {
   target: Target;
   baseDay: number | null = null;
@@ -433,12 +441,7 @@ export class EndgameBot extends Bot {
       let chk = checkBuilding(s, id);
       if (!chk.ok && chk.error === 'err.baseMaterials') {
         // only buy the materials when the whole building is affordable
-        const mats = Object.entries(chk.materials).reduce(
-          (sum, [gid, n]) =>
-            sum + Math.max(0, n - (base.storage[gid] ?? 0)) * GOODS_BY_ID[gid].basePrice * 1.3,
-          0,
-        );
-        if (s.credits - chk.credits - mats < 5000) continue;
+        if (s.credits - chk.credits - missingMaterialsCost(base, chk.materials) < 5000) continue;
         const paid = this.supply(chk.materials);
         if (paid >= 0) chk = checkBuilding(s, id);
       }
@@ -498,20 +501,10 @@ export class EndgameBot extends Bot {
       const chk = checkHullOrder(s, hull);
       if (!chk.ok && chk.error === 'err.baseMaterials') {
         // buy exactly the materials of the order (when affordable), then commission
-        const mats = Object.entries(chk.materials).reduce(
-          (sum, [gid, n]) =>
-            sum + Math.max(0, n - (base.storage[gid] ?? 0)) * GOODS_BY_ID[gid].basePrice * 1.3,
-          0,
-        );
-        if (s.credits - chk.credits - mats < 5000) continue;
-        if (this.supply(chk.materials) >= 0) {
-          const r = commissionHull(s, hull);
-          if (r.ok) this.base_spent += chk.credits;
-        }
-      } else if (chk.ok) {
-        const r = commissionHull(s, hull);
-        if (r.ok) this.base_spent += chk.credits;
-      }
+        if (s.credits - chk.credits - missingMaterialsCost(base, chk.materials) < 5000) continue;
+        if (this.supply(chk.materials) < 0) continue;
+      } else if (!chk.ok) continue;
+      if (commissionHull(s, hull).ok) this.base_spent += chk.credits;
     }
     // routes
     const g = galaxyOf(s);
