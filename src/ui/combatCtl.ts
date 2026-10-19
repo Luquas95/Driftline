@@ -27,6 +27,7 @@ export function resetCombatUi(): void {
   acc = 0;
   uiAcc = 0;
   outcomeSeen = false;
+  lastSaveSlot = 0;
 }
 
 function sounds(events: CombatEvent[]): void {
