@@ -2,17 +2,7 @@ import { useEffect, useState } from 'preact/hooks';
 import { createBackdropScene } from '../../render/backdrop';
 import { t, fmt } from '../../i18n';
 import { Btn, Panel } from '../components';
-import {
-  exportCurrent,
-  game,
-  profile,
-  importFromText,
-  loadSlot,
-  menuOpen,
-  saves,
-  startNewGame,
-  toast,
-} from '../store';
+import { game, profile, importFromFile, loadSlot, menuOpen, saves, startNewGame, toast } from '../store';
 import { settings, updateSettings } from '../settings';
 import { unlockAudio, sfx } from '../../audio/audio';
 import { useScene } from '../useScene';
@@ -45,17 +35,6 @@ export function MenuScreen() {
     void saves.list().then(setList);
   }, [view]);
   const auto = list.find((x) => x.id === 'autosave');
-
-  const importFile = () => {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = '.json,application/json';
-    input.onchange = async () => {
-      const f = input.files?.[0];
-      if (f) importFromText(await f.text());
-    };
-    input.click();
-  };
 
   return (
     <div class="menu-screen" data-testid="menu">
@@ -100,7 +79,7 @@ export function MenuScreen() {
               <Btn onClick={() => setView('load')} testid="menu-load">
                 {t('menu.load')}
               </Btn>
-              <Btn onClick={importFile}>{t('menu.import')}</Btn>
+              <Btn onClick={importFromFile}>{t('menu.import')}</Btn>
               <p class="faint right" style={{ marginTop: 6 }}>
                 {t('menu.offline')}
               </p>
@@ -308,5 +287,3 @@ export function MenuScreen() {
     </div>
   );
 }
-
-void exportCurrent;

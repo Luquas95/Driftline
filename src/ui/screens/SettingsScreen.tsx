@@ -6,7 +6,7 @@ import { Btn, Panel } from '../components';
 import {
   exportCurrent,
   game,
-  importFromText,
+  importFromFile,
   loadSlot,
   menuOpen,
   rev,
@@ -39,16 +39,6 @@ export function SettingsScreen() {
     a.click();
     setTimeout(() => URL.revokeObjectURL(a.href), 2000);
     toast(t('settings.exported'), 'good');
-  };
-  const importFile = () => {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = '.json,application/json';
-    input.onchange = async () => {
-      const f = input.files?.[0];
-      if (f) importFromText(await f.text());
-    };
-    input.click();
   };
   const slider = (key: 'master' | 'ambient' | 'sfx', label: string) => (
     <label class="field">
@@ -266,7 +256,7 @@ export function SettingsScreen() {
                 <Btn small icon="save" onClick={download} testid="btn-export">
                   {t('settings.export')}
                 </Btn>
-                <Btn small onClick={importFile}>
+                <Btn small onClick={importFromFile}>
                   {t('settings.import')}
                 </Btn>
               </div>
