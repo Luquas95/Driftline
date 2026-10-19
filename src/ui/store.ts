@@ -93,9 +93,12 @@ export function syncProfile(s: GameState): void {
 
 /** Debounced autosave. Also used by the combat loop, which changes state outside `act`. */
 export function scheduleAutosave(s: GameState, delay = 1500): void {
+  clearTimeout(saveTimer);
   if (settings.value.autosave && !s.dead) {
-    clearTimeout(saveTimer);
-    saveTimer = window.setTimeout(() => void saves.put('autosave', s, t('save.autosave')), delay);
+    // re-check on fire: a death in the meantime deletes the autosave and must not write it back
+    saveTimer = window.setTimeout(() => {
+      if (!s.dead) void saves.put('autosave', s, t('save.autosave'));
+    }, delay);
   }
 }
 
