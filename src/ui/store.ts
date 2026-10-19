@@ -74,7 +74,7 @@ export function afterMutation(s: GameState): void {
   syncProfile(s);
   scheduleAutosave(s);
   if (s.dead) {
-    void saves.remove('autosave');
+    saves.remove('autosave').catch((err) => console.error('autosave delete failed', err));
   }
 }
 
@@ -97,8 +97,20 @@ export function scheduleAutosave(s: GameState, delay = 1500): void {
   if (settings.value.autosave && !s.dead) {
     // re-check on fire: a death in the meantime deletes the autosave and must not write it back
     saveTimer = window.setTimeout(() => {
-      if (!s.dead) void saves.put('autosave', s, t('save.autosave'));
+      if (!s.dead) void writeSave('autosave', s, t('save.autosave'));
     }, delay);
+  }
+}
+
+/** Store a save slot; a failure (storage full or blocked) is shown to the player instead of being lost. */
+export async function writeSave(id: string, s: GameState, name: string): Promise<boolean> {
+  try {
+    await saves.put(id, s, name);
+    return true;
+  } catch (err) {
+    console.error('save failed', err);
+    toast(t('err.saveFailed'), 'bad');
+    return false;
   }
 }
 
@@ -107,7 +119,7 @@ export function flushAutosave(): void {
   const s = game.value;
   if (!s || s.dead || !settings.value.autosave || menuOpen.value) return;
   clearTimeout(saveTimer);
-  void saves.put('autosave', s, t('save.autosave'));
+  void writeSave('autosave', s, t('save.autosave'));
 }
 
 if (typeof window !== 'undefined') {
@@ -164,7 +176,7 @@ export function startNewGame(opts: NewGameOptions): void {
   selectedSystem.value = null;
   s.tutorial.done = !settings.value.tutorial || s.noShip;
   rev.value++;
-  void saves.put('autosave', s, t('save.autosave'));
+  void writeSave('autosave', s, t('save.autosave'));
 }
 
 export function loadGame(s: GameState): void {

@@ -294,7 +294,7 @@ export function MenuScreen() {
                     icon="close"
                     title={t('ui.delete')}
                     onClick={async () => {
-                      await saves.remove(m.id);
+                      await saves.remove(m.id).catch((err) => console.error('save delete failed', err));
                       setList(await saves.list());
                     }}
                   />

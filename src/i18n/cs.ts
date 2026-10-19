@@ -756,6 +756,7 @@ const base: Record<string, string> = {
   /* errors */
   'err.badAmount': 'Neplatné množství.',
   'err.badSave': 'Soubor s uloženou hrou je poškozený nebo z novější verze.',
+  'err.saveFailed': 'Hru se nepodařilo uložit: úložiště prohlížeče je plné nebo zablokované.',
   'err.webgl': 'Grafika WebGL není dostupná. Zkus jiný prohlížeč nebo zapni hardwarovou akceleraci.',
   'err.noCredits': 'Nemáš dost kreditů.',
   'err.noFuel': 'Nemáš dost paliva.',

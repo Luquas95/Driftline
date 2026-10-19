@@ -3,7 +3,17 @@ import { createBackdropScene } from '../../render/backdrop';
 import { useScene } from '../useScene';
 import { fmt, t } from '../../i18n';
 import { Btn, Panel } from '../components';
-import { exportCurrent, game, importFromText, loadSlot, menuOpen, rev, saves, toast } from '../store';
+import {
+  exportCurrent,
+  game,
+  importFromText,
+  loadSlot,
+  menuOpen,
+  rev,
+  saves,
+  toast,
+  writeSave,
+} from '../store';
 import { settings, updateSettings } from '../settings';
 import { sfx } from '../../audio/audio';
 import type { SaveMeta } from '../../persist/store';
@@ -230,9 +240,9 @@ export function SettingsScreen() {
                       <Btn
                         small
                         onClick={async () => {
-                          await saves.put(id, s, t('settings.slot', { n: i + 1 }));
+                          const saved = await writeSave(id, s, t('settings.slot', { n: i + 1 }));
                           refresh();
-                          toast(t('settings.saved'), 'good');
+                          if (saved) toast(t('settings.saved'), 'good');
                         }}
                         testid={`save-${id}`}
                       >
