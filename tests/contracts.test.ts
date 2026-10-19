@@ -23,7 +23,7 @@ import { passTime } from '../src/core/time';
 import { addGoods, unitsOf } from '../src/core/cargo';
 import { hullSlots, newModule } from '../src/core/ship';
 import type { Contract, GameState } from '../src/core/types';
-import { mk } from './helpers';
+import { firstChainContract, mk } from './helpers';
 
 function firstOf(s: GameState, kind: Contract['kind']): Contract | undefined {
   return s.stations[s.location.stationId!].board.find((c) => c.kind === kind);
@@ -203,12 +203,7 @@ describe('contracts', () => {
     const g = galaxyOf(s);
     const st = stationOf(s, s.location.stationId!);
     for (const chain of CHAINS) {
-      const first = makeContract(g, s, st, Rng.fromSeed('c0'), {
-        kind: chain.steps[0].kind,
-        step: chain.steps[0],
-        chainId: chain.id,
-        chainStep: 0,
-      });
+      const first = firstChainContract(s, chain);
       if (!first) continue;
       expect(first.title).toBe(`chain.${chain.id}.0.text`);
       expect(isChainFinal(first)).toBe(false);

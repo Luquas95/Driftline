@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { EVENT_TEXTS_CS, EVENTS_BY_ID } from '../src/content/events';
 import { STORY_BEATS } from '../src/content/story';
 import { ARTIFACT_EVENTS } from '../src/core/galaxy';
-import { checkBuilding, commissionHull, foundBase, hangarSlots, startBuilding } from '../src/core/base';
+import { checkBuilding, commissionHull, hangarSlots, startBuilding } from '../src/core/base';
 import { addMerit, addRep, joinFaction, ownerOf } from '../src/core/factions';
 import { choiceAvailable, evalCond, resolveEvent } from '../src/core/events';
 import { learnWords, WORD_COUNT } from '../src/core/lang';
@@ -11,7 +11,7 @@ import { rollStory } from '../src/core/story';
 import { galaxyOf } from '../src/core/state';
 import { passTime } from '../src/core/time';
 import { exploreAnomaly, scanSurface } from '../src/core/exploration';
-import { mk } from './helpers';
+import { foundBaseNearby, makeBase, mk } from './helpers';
 import type { GameState } from '../src/core/types';
 
 const TECH_ORDER = [
@@ -166,35 +166,9 @@ describe('story: data', () => {
 describe('story: every ending can be reached', () => {
   it('Kotva (science): research, anchor on the base, artifacts, language', () => {
     const s = freshGame('STORYS');
-    const g = galaxyOf(s);
     opening(s);
     // a base in a free system
-    const sys = g.systems.find((x) => ownerOf(s, x.id) === null && x.bodies.length >= 3)!;
-    place(s, sys.id);
-    s.detected[sys.id] = sys.bodies.map((b) => b.id);
-    s.cargo.push({
-      uid: 'c1',
-      goodId: 'construction',
-      qty: 40,
-      w: 2,
-      h: 2,
-      x: 0,
-      y: 0,
-      cost: 0,
-      acquiredDay: 0,
-    });
-    s.cargo.push({
-      uid: 'c2',
-      goodId: 'machinery',
-      qty: 12,
-      w: 2,
-      h: 2,
-      x: 2,
-      y: 0,
-      cost: 0,
-      acquiredDay: 0,
-    });
-    expect(foundBase(s, 0, 'Maják').ok).toBe(true);
+    expect(foundBaseNearby(s, 'Maják').ok).toBe(true);
     Object.assign(s.base!.storage, {
       construction: 2000,
       machinery: 800,
@@ -240,34 +214,8 @@ describe('story: every ending can be reached', () => {
 
   it('Exodus: the ark, a fleet of three and the drive', () => {
     const s = freshGame('STORYE');
-    const g = galaxyOf(s);
     opening(s);
-    const sys = g.systems.find((x) => ownerOf(s, x.id) === null && x.bodies.length >= 3)!;
-    place(s, sys.id);
-    s.detected[sys.id] = sys.bodies.map((b) => b.id);
-    s.cargo.push({
-      uid: 'c1',
-      goodId: 'construction',
-      qty: 40,
-      w: 2,
-      h: 2,
-      x: 0,
-      y: 0,
-      cost: 0,
-      acquiredDay: 0,
-    });
-    s.cargo.push({
-      uid: 'c2',
-      goodId: 'machinery',
-      qty: 12,
-      w: 2,
-      h: 2,
-      x: 2,
-      y: 0,
-      cost: 0,
-      acquiredDay: 0,
-    });
-    foundBase(s, 0, 'Archa');
+    foundBaseNearby(s, 'Archa');
     research(s, ['deep_scan', 'fusion_2', 'jump_2', 'mass_prod', 'logistics', 'exodus_drive']);
     Object.assign(s.base!.buildings, { shipyard: 3, hangar: 4, warehouse: 3 });
     expect(hangarSlots(s.base!)).toBe(5);
@@ -293,25 +241,7 @@ describe('story: every ending can be reached', () => {
     expect(joinFaction(s, 'consortium').ok).toBe(true);
     addMerit(s, 'consortium', 5000);
     expect(s.fac.rank).toBe(5);
-    s.base = {
-      systemId: 0,
-      bodyIndex: 0,
-      kind: 'station',
-      name: 'B',
-      founded: 0,
-      buildings: { port: 3, warehouse: 1 },
-      queue: [],
-      storage: {},
-      treasury: 0,
-      lines: [],
-      orders: [],
-      autoSell: {},
-      hangar: [],
-      attack: null,
-      log: [],
-      lastTick: 0,
-      stats: { produced: 0, sold: 0, fleetIncome: 0, upkeep: 0, attacks: 0, repelled: 0 },
-    };
+    makeBase(s, { name: 'B', buildings: { port: 3, warehouse: 1 } });
     const sysC = g.systems.find((x) => ownerOf(s, x.id) === 'consortium')!;
     place(s, sysC.id);
     expect(evalCond(s, { t: 'creditsMin', n: 150000 })).toBe(true);
