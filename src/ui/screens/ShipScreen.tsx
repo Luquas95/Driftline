@@ -364,6 +364,7 @@ export function ShipScreen() {
 
 /** Inventory modules that fit a slot, each with a stat diff against the current fit. */
 function InventoryInstall({ slot }: { slot: number }) {
+  void rev.value;
   const s = game.value!;
   const sl = hullSlots(s.ship.hullId)[slot];
   const fit = s.inventory.filter((m) => moduleFits(sl, MODULES_BY_ID[m.defId]));
@@ -376,7 +377,7 @@ function InventoryInstall({ slot }: { slot: number }) {
         // hypothetical ship with this module installed, for the preview only
         const trial = { ...s.ship, slots: s.ship.slots.map((x, i) => (i === slot ? m : x)) };
         return (
-          <div class="contract-card" key={m.uid}>
+          <div class="contract-card" key={m.uid} data-testid={`from-inv-${m.uid}`}>
             <div class="spread">
               <span>
                 {moduleName(m.defId)} <QualityBadge q={m.quality} />

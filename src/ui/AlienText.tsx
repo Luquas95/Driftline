@@ -1,12 +1,13 @@
 import type { ComponentChildren } from 'preact';
 import { translateAlien } from '../core/lang';
-import { game } from './store';
+import { game, rev } from './store';
 
 /**
  * Text with alien words: `⟦...⟧` marks are translated word by word from what the player has learned
  * (known words in Czech, unknown ones as glyphs) and drawn in a separate style.
  */
 export function AlienText({ text }: { text: string }) {
+  void rev.value;
   const s = game.value;
   const tr = s ? translateAlien(s, text) : text;
   const parts: ComponentChildren[] = [];
