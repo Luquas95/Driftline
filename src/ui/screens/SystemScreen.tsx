@@ -535,6 +535,7 @@ function BodyPanel({
 
 /** Base founding checklist for this body, or a link to the base if it stands here (one base per game). */
 function FoundBase({ body }: { body: BodyStatic }) {
+  void rev.value;
   const s = game.value!;
   if (s.base) {
     return s.base.systemId === s.location.systemId && s.base.bodyIndex === body.index ? (

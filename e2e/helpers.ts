@@ -5,6 +5,7 @@ export interface DL {
   screen: () => string;
   select: (id: number | null) => void;
   freeze: (t?: number) => void;
+  bump: () => void;
   neighborWithStation: () => number | null;
   delta: (id: number) => { dx: number; dy: number };
   loadout: (defs: string[], missiles?: number) => void;

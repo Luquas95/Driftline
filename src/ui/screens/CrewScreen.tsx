@@ -150,6 +150,7 @@ function CrewCard({ c, docked }: { c: CrewMember; docked: boolean }) {
 
 /** Hiring card for one recruit offered at the docked station. */
 function RecruitCard({ r, stationId }: { r: Recruit; stationId: string }) {
+  void rev.value;
   const s = game.value!;
   const off = r.officer ? OFFICERS_BY_ID[r.officer] : null;
   const can = s.credits >= r.fee;

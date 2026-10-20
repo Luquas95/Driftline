@@ -216,6 +216,7 @@ function Toasts() {
 
 /** Permadeath end screen, or a one-time notice after an insured/uninsured respawn. */
 function DeathModal() {
+  void rev.value;
   const s = game.value!;
   if (s.dead) {
     return (

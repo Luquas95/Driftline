@@ -43,6 +43,7 @@ docs/           DESIGN.md, DECISIONS.md, balance.md, REVIEW-v1.md, screenshots/
 - **Jádro nevrací věty**, jen i18n klíče (`err.*`, `msg.*`). Každý nový klíč přidej do českého slovníku: `src/i18n/cs.ts`, nebo do souboru oblasti, kterou návod níže uvádí (`cs-v2.ts`, `cs-v3.ts`, `cs-ui3.ts`; `cs.ts` je slučuje). Test `tests/i18n.test.ts` to ověří.
 - **Stav je JSON.** Nové pole `GameState` = zvýšit `SAVE_VERSION`, přidat migraci v `save.ts` a test.
 - Akce vrací `Result` (`ok()` / `fail('err.klíč')`) a mění stav na místě. UI je volá přes `act(fn)` (zvýší `rev`, ukáže zprávy, naplánuje autosave) a chyby ukáže `report(result)`.
+- **Komponenta, která čte `game.value`, musí číst i `rev.value`** (stačí `void rev.value;` na začátku), pokud už nečte `analysis.value` nebo nemá vlastní `useState`. Signál `game` se při akci nemění (stav je mutovaný na místě) a `@preact/signals` by komponentu se stejnými props nepřekreslil. Hlídá to `e2e/rerender.spec.ts`.
 - Před commitem: `npm run lint && npm run typecheck && npm test`. Commity ve stylu Conventional Commits.
 
 ## Jak přidat…

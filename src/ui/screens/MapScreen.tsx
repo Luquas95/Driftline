@@ -324,6 +324,7 @@ function RangeInfo() {
 
 /** Offers a paid tow when no neighbouring system is reachable with current fuel and power (isStranded). */
 function StrandedNotice() {
+  void rev.value;
   const s = game.value!;
   if (!isStranded(s)) return null;
   return (
