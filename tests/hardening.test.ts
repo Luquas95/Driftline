@@ -1,12 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { advanceChain } from '../src/core/contracts';
+import { crewCapacity } from '../src/core/crew';
 import { completeContractsAt, isDeliverable } from '../src/core/contractOps';
 import { buyFuel, wait } from '../src/core/game';
 import { makeEncounter, startCombat } from '../src/core/combat/encounter';
 import { Rng } from '../src/core/rng';
 import { deserializeState, serializeState, SaveError } from '../src/core/save';
 import { newModule, hullSlots } from '../src/core/ship';
-import { sellModule, toggleModule } from '../src/core/shop';
+import { installError, installModule, sellModule, toggleModule } from '../src/core/shop';
 import { analyze, galaxyOf } from '../src/core/state';
 import { CHAINS } from '../src/content/chains';
 import { firstChainContract, mk } from './helpers';
@@ -160,6 +161,43 @@ describe('hardening', () => {
       });
     const pod = s.ship.slots.findIndex((m) => m?.defId.startsWith('cargo_'));
     expect(sellModule(s, s.location.stationId!, s.ship.slots[pod]!.uid).ok).toBe(false);
+  });
+
+  it('swapping out the cabins of passengers aboard is refused like removing them', () => {
+    const s = mk('REFIT2');
+    const free = hullSlots(s.ship.hullId).filter((x) => !x.core && !s.ship.slots[x.index] && x.size !== 'L');
+    s.ship.slots[free[0].index] = newModule('quarters_s', 'C', 'q1');
+    s.inventory.push(newModule('fuel_s', 'C', 'f1'));
+    s.contracts.push({
+      id: 'k1',
+      kind: 'passenger',
+      origin: s.home,
+      dest: s.home,
+      destSystem: 0,
+      passengers: 2,
+      comfort: 1,
+      deadline: 99,
+      reward: 1,
+      deposit: 0,
+      penalty: 0,
+      state: 'active',
+    });
+    expect(installError(s, { defId: 'fuel_s', quality: 'C' }, free[0].index)).toBe('err.passengersAboard');
+    expect(installModule(s, 'f1', free[0].index)).toMatchObject({ ok: false, error: 'err.passengersAboard' });
+    expect(s.ship.slots[free[0].index]?.uid).toBe('q1');
+    s.contracts = [];
+    expect(installError(s, { defId: 'fuel_s', quality: 'C' }, free[0].index)).toBeNull();
+    expect(installModule(s, 'f1', free[0].index).ok).toBe(true);
+  });
+
+  it('an overcrowded crew without passengers does not block refits', () => {
+    const s = mk('REFIT3');
+    const free = hullSlots(s.ship.hullId).filter((x) => !x.core && !s.ship.slots[x.index] && x.size !== 'L');
+    // the crew limit is soft: hire beyond the cabins and beds
+    while (s.crew.length <= crewCapacity(s)) s.crew.push({ ...s.crew[0], id: `extra${s.crew.length}` });
+    s.inventory.push(newModule('fuel_s', 'C', 'f1'));
+    expect(installModule(s, 'f1', free[0].index).ok).toBe(true);
+    expect(sellModule(s, s.location.stationId!, 'f1').ok).toBe(true);
   });
 });
 

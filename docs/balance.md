@@ -4,12 +4,12 @@ Vygenerováno příkazem `npm run balance` (10 semínek × 120 dní na strategii
 
 | Strategie | Příjem/den (medián) | Příjem/den (průměr) | Čistá hodnota po 30 dnech | Dny do +3000 kr | První vylepšení (den) | Nehody/100 dnů | Zničení lodi | Zničení do dne 20 | Skoků |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| trader | 117 | 77 | 1007 | 51 (8/10) | 0 | 3.0 | 2 | 0/10 | 51 |
-| hauler | 55 | 18 | 702 | 58 (7/10) | 0 | 3.1 | 1 | 0/10 | 46 |
-| miner | 75 | 50 | -885 | 61 (7/10) | 0 | 2.2 | 0 | 0/10 | 46 |
-| explorer | 81 | 62 | 602 | 59 (8/10) | 0 | 1.8 | 1 | 0/10 | 38 |
-| oracle | 431 | 392 | 8301 | 12 (10/10) | 0 | 2.1 | 1 | 0/10 | 48 |
-| loop | -389 | -391 | -22886 | 0 (2/10) | — | 2.5 | 0 | 0/10 | 21 |
+| trader | 96 | 85 | 1167 | 63 (10/10) | 0 | 2.9 | 0 | 0/10 | 53 |
+| hauler | 6 | -3 | 75 | 46 (5/10) | 0 | 2.3 | 0 | 0/10 | 38 |
+| miner | 76 | 85 | -110 | 56 (8/10) | 0 | 2.7 | 0 | 0/10 | 49 |
+| explorer | 84 | 64 | 478 | 66 (7/10) | 0 | 1.8 | 0 | 0/10 | 34 |
+| oracle | 455 | 392 | 9589 | 14 (10/10) | 0 | 2.5 | 0 | 0/10 | 49 |
+| loop | -403 | -390 | -23227 | 0 (2/10) | — | 2.6 | 0 | 0/10 | 20 |
 
 ## Test smyčky zisku (pevná trasa A↔B)
 
@@ -17,33 +17,33 @@ Bot opakuje jedinou nejlepší trasu tam a zpět (okruh = obě cesty). Zisk jedn
 
 | Okruh | Průměrný zisk (kr) | Vzorků |
 |---:|---:|---:|
-| 1 | -1795 | 10 |
-| 2 | -7852 | 10 |
-| 3 | -5338 | 10 |
-| 4 | -3397 | 10 |
-| 5 | -1897 | 9 |
-| 6 | -1141 | 9 |
-| 7 | -330 | 8 |
-| 8 | -409 | 6 |
+| 1 | -1635 | 10 |
+| 2 | -7682 | 10 |
+| 3 | -5841 | 10 |
+| 4 | -3364 | 10 |
+| 5 | -1856 | 9 |
+| 6 | -1149 | 9 |
+| 7 | -192 | 8 |
+| 8 | -492 | 6 |
 | 9 | -124 | 5 |
-| 10 | -395 | 5 |
-| 11 | -313 | 5 |
-| 12 | -5 | 5 |
+| 10 | -418 | 5 |
+| 11 | -338 | 5 |
+| 12 | 9 | 5 |
 
-Zisk raných okruhů ≈ -4824 kr, pozdních ≈ -814 kr (poměr -813.53).
+Zisk raných okruhů ≈ -4658 kr, pozdních ≈ -829 kr (poměr -828.50).
 
 ## Nejvýdělečnější trasy (součet přes všechny boty)
 
 | Trasa (stanice>stanice:zboží) | Zisk |
 |---|---:|
-| 253:0>154:0:machinery | 30017 |
-| 76:0>15:0:computers | 17355 |
-| 250:0>15:0:spare_parts | 15626 |
-| 114:2>114:1:spare_parts | 15093 |
-| 194:0>195:0:machinery | 14848 |
-| 15:0>287:0:machinery | 14682 |
-| 68:0>145:0:spare_parts | 13082 |
-| 172:2>186:0:machinery | 12153 |
+| 253:0>154:0:machinery | 21456 |
+| 114:2>114:1:spare_parts | 19040 |
+| 68:0>145:0:spare_parts | 16628 |
+| 68:0>145:0:machinery | 15056 |
+| 250:0>15:0:spare_parts | 13663 |
+| 145:0>68:0:iron_ore | 13635 |
+| 253:0>154:0:spare_parts | 12677 |
+| 216:0>149:0:crystals | 12287 |
 
 ## Čistě obchodní hra bez zbraní (střety se řeší únikem, úplatkem, vyhnutím)
 
@@ -51,12 +51,12 @@ Boti nemají zbraně a střetům se vyhýbají (vyhnout se > zaplatit > úplatek
 
 | Strategie | Střety/100 dní | Boje/100 dní | Úplatky (kr/100 dní) | Zničení lodi | Příjem/den (medián) |
 |---|---:|---:|---:|---:|---:|
-| trader | 2.3 | 0.9 | 1356 | 2 | 117 |
-| hauler | 2.7 | 0.7 | 731 | 1 | 55 |
-| miner | 2.9 | 0.9 | 1210 | 0 | 75 |
-| explorer | 1.8 | 0.4 | 100 | 1 | 81 |
-| oracle | 3.0 | 0.4 | 2490 | 1 | 431 |
-| loop | 2.1 | 0.8 | 347 | 0 | -389 |
+| trader | 2.6 | 0.6 | 1406 | 0 | 96 |
+| hauler | 2.8 | 0.7 | 975 | 0 | 6 |
+| miner | 3.3 | 0.7 | 1527 | 0 | 76 |
+| explorer | 1.7 | 0.4 | 100 | 0 | 84 |
+| oracle | 3.2 | 0.6 | 2514 | 0 | 455 |
+| loop | 2.4 | 0.8 | 376 | 0 | -403 |
 
 ## Boj: míra výher zbraní (AI proti AI)
 
@@ -126,39 +126,6 @@ Míra výher 36 %, zničení vlastní lodi 55 %, průměrná kořist na souboj 3
 | drones | 36 % | 36 % | 36 % |
 | mixed | 36 % | 36 % | 36 % |
 
-## Nový začátek: první loď a kapitál
-
-Kapitál: snadná 60000 kr, normální 40000 kr, těžká 25000 kr. Boti si první loď vybírají podle strategie (nechají si 40–50 % kapitálu na první náklad). Tabulka ukazuje obchodníka, který dostal danou loď (6 semínek × 90 dní, normální obtížnost, jen nové kusy, které kapitál dovolí).
-
-| Loď | Cena (kr) | Zbude (kr) | Příjem/den (medián) | Čistá hodnota po 30 dnech | Zničení lodi | Dny do +3000 kr |
-|---|---:|---:|---:|---:|---:|---:|
-| courier | 7000 | 33000 | 52 | 2481 | 1 | 45 (4/6) |
-| wayfarer | 9000 | 31000 | -24 | -4256 | 1 | 63 (2/6) |
-| scout | 11500 | 28500 | 78 | -440 | 2 | 36 (3/6) |
-| kestrel | 12500 | 27500 | 94 | -185 | 2 | 18 (3/6) |
-| mule | 14500 | 25500 | 48 | -1577 | 1 | 17 (3/6) |
-| prospector | 15000 | 25000 | -35 | -3157 | 2 | 64 (2/6) |
-| swift | 15500 | 24500 | 25 | -297 | 2 | 34 (2/6) |
-| merchant | 31000 | 9000 | -44 | -3439 | 2 | 48 (2/6) |
-
-### Podle obtížnosti (výchozí volba bota)
-
-| Obtížnost | Strategie | První loď (modus) | Příjem/den (medián) | Zničení lodi | Dny do +3000 kr |
-|---|---|---|---:|---:|---:|
-| easy | trader | merchant | 82 | 0 | 51 (5/6) |
-| easy | miner | borer | 40 | 1 | 30 (3/6) |
-| easy | explorer | scout | 111 | 0 | 30 (6/6) |
-| normal | trader | merchant | -2 | 0 | 61 (3/6) |
-| normal | miner | prospector | -38 | 1 | 68 (1/6) |
-| normal | explorer | scout | 104 | 0 | 45 (6/6) |
-| hard | trader | mule | -75 | 1 | 64 (1/6) |
-| hard | miner | prospector | -87 | 2 | — (0/6) |
-| hard | explorer | wayfarer | 65 | 0 | 58 (4/6) |
-
-**Závěr k novému začátku.** Žádná první loď není jistá prohra pro všechny strategie: kurýr a kestrel jsou v normální obtížnosti kladné, průzkumník s lodí scout vydělává na všech obtížnostech. Nejdražší lodě (merchant) nechají málo na první náklad, těžařské trupy mají pomalý rozjezd (bot kupuje moduly až z výdělku) a na těžké obtížnosti jsou obchodník a těžař v prvních 90 dnech kolem nuly, což odpovídá záměru „těžká“. Žádná loď není triviálně nejlepší. Do ladění dál patří ceny těžařských trupů.
-
-Doba běhu simulace: 126 s.
-
 ## Koncová hra: základna, frakce, Šeď a konce
 
 ### Rychlost Šedi (bez zásahu hráče)
@@ -168,8 +135,8 @@ Dny do pohlcení podílu galaxie, medián přes semínka; „zpomalená“ = pln
 | Riziko | 20 % | 50 % | 80 % (konec „pohlceno“) | 80 % při plném zpomalení |
 |---|---:|---:|---:|---:|
 | low | 401 | 516 | 582 | 1734 |
-| normal | 238 | 337 | 408 | 1238 |
-| high | 187 | 250 | 313 | 964 |
+| normal | 243 | 350 | 451 | 1355 |
+| high | 187 | 254 | 319 | 978 |
 
 ### Boti v koncové hře
 
@@ -179,28 +146,51 @@ Bot má ke stejným strategiím jako dosud správce základny: staví podle plá
 
 | Strategie (cíl) | Konce | Medián dne konce | Základna (den) | Příběh 5 (den) | Podíl pasivního příjmu (den ~200) | Pohlceno na konci |
 |---|---|---:|---:|---:|---:|---:|
-| miner (science) | nic 1/3, consumed 2/3 | 452 | 215 | 352 | 0 % | 80 % |
-| explorer (accord) | consumed 3/3 | 433 | 239 | 426 | 0 % | 80 % |
-| trader (exodus) | consumed 3/3 | 421 | 163 | 401 | 0 % | 80 % |
-| hauler (dominion) | consumed 3/3 | 409 | 249 | 394 | 0 % | 80 % |
+| miner (science) | nic 1/6, consumed 5/6 | 535 | 215 | 319 | 0 % | 80 % |
+| explorer (accord) | consumed 5/6, accord 1/6 | 517 | 119 | 284 | 0 % | 80 % |
+| trader (exodus) | consumed 6/6 | 518 | 163 | 401 | 0 % | 80 % |
+| hauler (dominion) | consumed 6/6 | 518 | 249 | 394 | 0 % | 80 % |
 
 #### Hráč s vyšším příjmem (+600 kr/den navíc)
 
 | Strategie (cíl) | Konce | Medián dne konce | Základna (den) | Příběh 5 (den) | Podíl pasivního příjmu (den ~200) | Pohlceno na konci |
 |---|---|---:|---:|---:|---:|---:|
-| miner (science) | science 2/3, consumed 1/3 | 398 | 38 | 340 | 3 % | 52 % |
-| explorer (accord) | accord 1/3, consumed 2/3 | 438 | 35 | 233 | 1 % | 80 % |
-| trader (exodus) | consumed 3/3 | 435 | 30 | 317 | 0 % | 80 % |
-| hauler (dominion) | consumed 3/3 | 426 | 43 | 252 | 18 % | 80 % |
+| miner (science) | science 3/6, consumed 2/6, nic 1/6 | 500 | 46 | 219 | 4 % | 77 % |
+| explorer (accord) | accord 3/6, consumed 3/6 | 441 | 42 | 238 | 1 % | 80 % |
+| trader (exodus) | consumed 6/6 | 521 | 71 | 206 | 0 % | 80 % |
+| hauler (dominion) | consumed 6/6 | 536 | 47 | 207 | 12 % | 80 % |
 
 **Čtení tabulky.** Bot je v koncové hře slabý: nechává Šeď růst a spoléhá na obchod. Každý ze čtyř koncových scénářů je dosažitelný (scénář s příběhem prochází `tests/story.test.ts`), tabulka ukazuje tempo, kterého dosáhne bot, ne strop hráče.
 
-**Co z toho plyne.**
+## Nový začátek: první loď a kapitál
 
-- *Tempo Šedi:* normální obtížnost dává asi 410 až 475 dní do pohlcení 80 % galaxie, vysoká asi 310 až 350, nízká 530 až 580. Plné zpomalení je asi 3×, takže výzkum a rozhodnutí kupují čas, ale hru nezastaví.
-- *Pasivní příjem základny a flotily* je v polovině hry (kolem dne 200) 0 až 18 % přírůstku jmění, tedy hluboko pod hranicí 40 %. Základna je investice a zázemí, ne stroj na peníze.
-- *Konce bota:* bot dosáhl vědy (2 ze 3) a dohody (1 ze 3) jen s příjmem navíc a bez něj ho vždy pohltila Šeď. Exodus a nadvládu bot nedokončil: jeho obchodní příjem (asi 100 až 450 kr/den) nestačí na archu (118 000 kr) ani na 150 000 kr s hodností 5, a příběh dosahuje stádia 5 až kolem dne 250 až 430. Obě cesty jsou ve hře splnitelné (podmínky a skriptovaný průchod jsou v `tests/story.test.ts`), ale na ověření tempa člověkem je potřeba hra s lidským hráčem; simulace dává dolní odhad.
-- *Délka hry:* konec přichází mezi dnem 330 a 480, což odpovídá zhruba 6 až 15 hodinám hraní podle toho, kolik dní hráč stráví jedním skokem a zakázkou.
+Kapitál: snadná 60000 kr, normální 40000 kr, těžká 25000 kr. Boti si první loď vybírají podle strategie (nechají si 40–50 % kapitálu na první náklad). Tabulka ukazuje obchodníka, který dostal danou loď (6 semínek × 90 dní, normální obtížnost, jen nové kusy, které kapitál dovolí).
 
-Pro ladění: `COST_SCALE` (`content/buildings.ts`), `T.threat` (`core/tuning.ts`), `labRate` (`core/research.ts`), cena `ark` (`content/hulls.ts`) a práh nadvlády (`content/story.ts`).
+| Loď | Cena (kr) | Zbude (kr) | Příjem/den (medián) | Čistá hodnota po 30 dnech | Zničení lodi | Dny do +3000 kr |
+|---|---:|---:|---:|---:|---:|---:|
+| courier | 7000 | 33000 | 127 | 2949 | 1 | 34 (5/6) |
+| wayfarer | 9000 | 31000 | 5 | -3296 | 2 | 22 (2/6) |
+| scout | 11500 | 28500 | 92 | 290 | 1 | 41 (5/6) |
+| kestrel | 12500 | 27500 | 98 | 345 | 1 | 41 (5/6) |
+| mule | 14500 | 25500 | 50 | -1611 | 1 | 23 (3/6) |
+| prospector | 15000 | 25000 | 38 | -3500 | 0 | 40 (3/6) |
+| swift | 15500 | 24500 | 121 | 283 | 0 | 70 (6/6) |
+| merchant | 31000 | 9000 | 7 | -3708 | 0 | 44 (2/6) |
 
+### Podle obtížnosti (výchozí volba bota)
+
+| Obtížnost | Strategie | První loď (modus) | Příjem/den (medián) | Zničení lodi | Dny do +3000 kr |
+|---|---|---|---:|---:|---:|
+| easy | trader | merchant | 67 | 0 | 39 (5/6) |
+| easy | miner | borer | 27 | 1 | 47 (2/6) |
+| easy | explorer | scout | 75 | 1 | 28 (5/6) |
+| normal | trader | merchant | 44 | 2 | 62 (3/6) |
+| normal | miner | prospector | 41 | 0 | 43 (3/6) |
+| normal | explorer | scout | 64 | 1 | 28 (5/6) |
+| hard | trader | mule | -49 | 0 | 70 (1/6) |
+| hard | miner | prospector | -38 | 1 | — (0/6) |
+| hard | explorer | wayfarer | 41 | 1 | 55 (4/6) |
+
+**Závěr k novému začátku.** Žádná první loď není jistá prohra pro všechny strategie: kurýr a kestrel jsou v normální obtížnosti kladné, průzkumník s lodí scout vydělává na všech obtížnostech. Nejdražší lodě (merchant) nechají málo na první náklad, těžařské trupy mají pomalý rozjezd (bot kupuje moduly až z výdělku) a na těžké obtížnosti jsou obchodník a těžař v prvních 90 dnech kolem nuly, což odpovídá záměru „těžká“. Žádná loď není triviálně nejlepší. Do ladění dál patří ceny těžařských trupů.
+
+Doba běhu simulace: 308 s.
