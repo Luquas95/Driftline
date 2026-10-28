@@ -6,3 +6,7 @@ playwright-report
 test-results
 .DS_Store
 *.log
+
+# repo-doctor: doplněno 2026-10-28
+.env
+.env.*
